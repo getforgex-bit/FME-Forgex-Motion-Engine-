@@ -20,6 +20,15 @@ Se puede pasar el proyecto con una ruta absoluta o una URI `file:`. El modelo pu
 
 La salida contiene un `image/png` por fotograma. El frame relativo 0 de FME corresponde a `frame-0001.png`. Cada procedencia contiene la versión real de Blender, parámetros de render, hash SHA-256 del archivo y hash SHA-256 de los píxeles RGBA decodificados.
 
+## Gradientes de dirección artística
+
+El adaptador lee `expression` e `integration` de los canales de la capa y traduce sus valores con `blenderGradientOps` de `@fme/art-direction`. Usa los fotogramas relativos a la capa. Antes de la primera clave aplica `defaultValue`, para claves duplicadas toma la última, y en cada tramo usa el easing de la clave de destino. El mapeo acota los valores muestreados a 0–1.
+
+- `expression` controla un contorno negro de Freestyle en siluetas y bordes visibles, de 0 a 4 píxeles de grosor y de 0 a 1 de opacidad.
+- `integration` mezcla la emisión plana del color base con el shader físico original, conserva el alfa de Principled y escala la energía de la luz de área entre el 55 % y el 100 %. Los materiales sin un shader Principled conectado conservan su shader original.
+
+Si solo se declara `integration`, la expresión usa 0. Si solo se declara `expression`, la integración usa 1 y conserva la respuesta física y la luz original. Si no se declara ningún gradiente, se usa el render habitual. Una capa con gradientes debe ajustarse al máximo de 1 048 574 fotogramas de la escena de Blender. [Límites de fotogramas de Blender 5.2](https://docs.blender.org/api/5.2/bpy.types.Scene.html#bpy.types.Scene.frame_set)
+
 ```powershell
 npm --workspace @fme/adapter-blender test
 ```
