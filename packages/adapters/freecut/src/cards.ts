@@ -2,13 +2,19 @@ import type { CardAdvanced, CardSimple } from '@fme/connectors';
 
 export const ADAPTER_VERSION = '0.0.0';
 
-/** Tarjeta simple de FreeCut (FDN-012 / FDN-041). */
+/** Tarjeta simple de FreeCut (FDN-012 / FDN-041 / FDN-042a). */
 export const simple: CardSimple = {
   id: 'adapter.freecut',
   name: 'FreeCut',
   version: ADAPTER_VERSION,
   contractVersion: '0.1',
-  capabilities: ['edit.export', 'edit.timeline', 'compose.video', 'render.video'],
+  capabilities: [
+    'edit.export',
+    'edit.compose',
+    'edit.timeline',
+    'compose.video',
+    'render.video',
+  ],
   accepts: [
     'fme/project+json',
     'video/mp4',
@@ -23,11 +29,22 @@ export const simple: CardSimple = {
   executor: 'cli',
 };
 
-/** Tarjeta avanzada fiel a los hallazgos verificados localmente en FDN-012. */
+/**
+ * Tarjeta avanzada fiel a los hallazgos verificados localmente en FDN-012 y FDN-042a.
+ *
+ * Distingue `alpha: 'no'` (exportación MP4 yuv420p sin canal alfa) de los formatos
+ * de entrada con alpha verificados en composición (`alphaInputWebm`, `alphaInputProRes4444`,
+ * `alphaInputPng` con opacidad < 1 para evitar oclusión de pistas, y `pngSequenceInput: 'no'`).
+ */
 export const advanced: CardAdvanced = {
   pluginId: 'adapter.freecut',
   technical: {
     alpha: 'no',
+    alphaInputWebm: 'yes',
+    alphaInputProRes4444: 'yes',
+    alphaInputPng: 'yes',
+    pngSequenceInput: 'no',
+    multiTrackCompose: 'yes',
     depth: 'no',
     keyframes: 'unknown',
     audio: 'yes',
@@ -51,6 +68,7 @@ export const advanced: CardAdvanced = {
     verifiedFrames: 150,
     minFps: 1,
     maxFps: 240,
+    pngAlphaOpacityWorkaround: 0.999,
     browserNote: 'Requiere Chrome, Edge (msedge) o caché Playwright Chromium con WebGPU/WebCodecs',
   },
   permissions: ['fs:workspace', 'spawn:node', 'spawn:browser-headless', 'net:loopback-harness'],
