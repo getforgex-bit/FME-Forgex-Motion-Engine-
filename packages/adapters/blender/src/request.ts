@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { dirname, extname } from 'node:path';
 import { deserialize } from '@fme/project';
+import { prepareGradientOps } from './gradients.ts';
 import { filePath, optionalAsset, requirePath } from './paths.ts';
+import type { BlenderGradientOps } from '@fme/art-direction';
 import type { JobRequest } from '@fme/connectors';
 import type { Layer, Project } from '@fme/project';
 
@@ -14,6 +16,7 @@ export type RenderRequest = {
   durationFrames: number;
   fps: Project['fps'];
   channels: Layer['channels'];
+  gradientOps?: BlenderGradientOps[];
   seed: number;
 };
 
@@ -86,6 +89,7 @@ export function prepareJob(job: JobRequest, roots: readonly string[]): PreparedJ
   if (project.id !== job.projectId) throw new Error('projectId no coincide con el proyecto FME.');
   const layer = chooseLayer(project, layerId);
   const modelPath = chooseAsset(project, layer, projectPath, roots);
+  const gradientOps = prepareGradientOps(layer);
   return {
     layer,
     modelPath,
@@ -94,6 +98,7 @@ export function prepareJob(job: JobRequest, roots: readonly string[]): PreparedJ
       durationFrames: layer.durationFrames,
       fps: project.fps,
       channels: layer.channels,
+      ...(gradientOps === undefined ? {} : { gradientOps }),
       seed: job.seed ?? project.seed,
     },
   };

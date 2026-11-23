@@ -195,6 +195,100 @@ def set_camera(camera, focus, radius, curves, frame):
     point_at(camera, focus + radius * pan)
 
 
+def read_gradient_ops(params):
+    if "gradientOps" not in params:
+        return None
+    operations = params["gradientOps"]
+    if not isinstance(operations, list) or len(operations) != params["durationFrames"]:
+        raise ValueError("Se espera una operación de gradientes por fotograma.")
+    limits = {"freestyleThickness": 4, "freestyleAlpha": 1, "materialMix": 1, "shadowStrength": 1}
+    for operation in operations:
+        if not isinstance(operation, dict):
+            raise ValueError("Cada operación de gradientes debe ser un objeto.")
+        for field, maximum in limits.items():
+            value = operation.get(field)
+            if type(value) not in (int, float) or not 0 <= value <= maximum:
+                raise ValueError(f"{field} debe ser un número entre 0 y {maximum}.")
+    return operations
+
+
+def prepare_contour(scene):
+    scene.render.line_thickness_mode = "ABSOLUTE"
+    scene.render.line_thickness = 1
+    view_layer = bpy.context.view_layer
+    view_layer.use_freestyle = True
+    settings = view_layer.freestyle_settings
+    settings.mode = "EDITOR"
+    settings.as_render_pass = False
+    for lineset in tuple(settings.linesets):
+        settings.linesets.remove(lineset)
+    lineset = settings.linesets.new("Contorno FME")
+    lineset.select_silhouette = True
+    lineset.select_border = True
+    lineset.select_crease = False
+    lineset.linestyle.color = (0, 0, 0)
+    return lineset.linestyle
+
+
+def copy_shader_input(tree, source, target):
+    if source.is_linked:
+        tree.links.new(source.links[0].from_socket, target)
+    else:
+        target.default_value = source.default_value
+
+
+def prepare_material_mix():
+    controls = []
+    for material in bpy.data.materials:
+        tree = material.node_tree
+        if tree is None:
+            continue
+        output = tree.get_output_node("CYCLES")
+        surface = output.inputs.get("Surface") if output else None
+        shader = next((node for node in tree.nodes if node.type == "BSDF_PRINCIPLED"), None)
+        if surface is None or not surface.is_linked or shader is None:
+            continue
+
+        physical = surface.links[0].from_socket
+        emission = tree.nodes.new("ShaderNodeEmission")
+        copy_shader_input(tree, shader.inputs["Base Color"], emission.inputs["Color"])
+        emission.inputs["Strength"].default_value = 0.85
+        flat = emission.outputs[0]
+        alpha = shader.inputs["Alpha"]
+        if alpha.is_linked or alpha.default_value < 1:
+            mask = tree.nodes.new("ShaderNodeMixShader")
+            transparent = tree.nodes.new("ShaderNodeBsdfTransparent")
+            copy_shader_input(tree, alpha, mask.inputs[0])
+            tree.links.new(transparent.outputs[0], mask.inputs[1])
+            tree.links.new(flat, mask.inputs[2])
+            flat = mask.outputs[0]
+
+        blend = tree.nodes.new("ShaderNodeMixShader")
+        tree.links.new(flat, blend.inputs[1])
+        tree.links.new(physical, blend.inputs[2])
+        controls.append((tree, surface, physical, blend))
+    return controls
+
+
+def apply_gradients(scene, light, base_energy, contour, materials, operation):
+    thickness = operation["freestyleThickness"]
+    alpha = operation["freestyleAlpha"]
+    scene.render.use_freestyle = contour is not None and thickness > 0 and alpha > 0
+    if scene.render.use_freestyle:
+        contour.thickness = thickness
+        contour.alpha = alpha
+
+    mix = operation["materialMix"]
+    for tree, surface, physical, blend in materials:
+        blend.inputs[0].default_value = mix
+        shader = physical if mix == 1 else blend.outputs[0]
+        if surface.links[0].from_socket != shader:
+            tree.links.new(shader, surface)
+
+    # En integración plena se recupera exactamente la iluminación original.
+    light.data.energy = base_energy * (0.55 + 0.45 * operation["shadowStrength"])
+
+
 def build_scene(params, asset):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
@@ -233,7 +327,7 @@ def build_scene(params, asset):
     light.data.shape = "DISK"
     light.data.size = 4 * radius
     point_at(light, focus)
-    return scene, focus, radius
+    return scene, focus, radius, light
 
 
 def main():
@@ -242,7 +336,13 @@ def main():
         raise ValueError("Se esperaba el JSON de parámetros y, opcionalmente, un asset 3D.")
     params = json.loads(Path(arguments[0]).read_text(encoding="utf-8"))
     asset = Path(arguments[1]) if len(arguments) == 2 else None
-    scene, focus, radius = build_scene(params, asset)
+    operations = read_gradient_ops(params)
+    scene, focus, radius, light = build_scene(params, asset)
+    if operations is not None:
+        needs_contour = any(op["freestyleThickness"] > 0 and op["freestyleAlpha"] > 0 for op in operations)
+        contour = prepare_contour(scene) if needs_contour else None
+        materials = prepare_material_mix() if any(op["materialMix"] < 1 for op in operations) else []
+        base_energy = light.data.energy
     curves = camera_curves(params["channels"])
     output = Path.cwd() / "frames"
     output.mkdir(exist_ok=False)
@@ -252,6 +352,8 @@ def main():
         blender_frame = relative_frame + 1
         scene.frame_set(blender_frame)
         set_camera(scene.camera, focus, radius, curves, relative_frame)
+        if operations is not None:
+            apply_gradients(scene, light, base_energy, contour, materials, operations[relative_frame])
         path = output / f"frame-{blender_frame:04d}.png"
         scene.render.filepath = str(path)
         bpy.ops.render.render(write_still=True)
