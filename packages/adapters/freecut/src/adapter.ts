@@ -1,9 +1,8 @@
 /**
- * Adaptador FreeCut nivel A (FDN-041, ADR-0011).
+ * Adaptador FreeCut nivel A (FDN-041 / FDN-042a, ADR-0011).
  *
- * Ejecuta el motor wrapper `runtime/engines/freecut/cli.mjs` con `runIsolated` (sin shell,
- * rutas validadas, timeout y temporales dentro de `ctx.workDir`), calcula `sha256` del MP4
- * y `contentSha256` de los fotogramas decodificados vía FFmpeg.
+ * Soporta `edit.export` (FDN-041) y `edit.compose` (FDN-042a: pistas ordenadas por `zIndex`
+ * con overlays compatibles e inspección previa de alpha mediante `ffprobe`).
  */
 import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
@@ -29,8 +28,15 @@ import type {
   ProbeResult,
 } from '@fme/connectors';
 import { advanced, ADAPTER_VERSION, simple } from './cards.ts';
-import { MappingError, buildFreeCutJob } from './mapping.ts';
-import type { FreeCutEngineJob } from './mapping.ts';
+import {
+  MappingError,
+  buildFreeCutComposeJob,
+  buildFreeCutJob,
+} from './mapping.ts';
+import type {
+  ComposeInputArtifact,
+  FreeCutEngineJob,
+} from './mapping.ts';
 
 export type FreeCutBrowserMode = 'auto' | 'msedge' | 'chrome' | 'playwright';
 
@@ -227,6 +233,111 @@ async function computeDecodedVideoSha256(
   });
 }
 
+type StreamInspectInfo = {
+  codecName?: string;
+  pixFmt?: string;
+  hasAlpha: boolean;
+};
+
+const alphaPixFmtsCache = new Map<string, Set<string>>();
+
+async function getAlphaPixFmts(ffprobeBin: string): Promise<Set<string>> {
+  const cached = alphaPixFmtsCache.get(ffprobeBin);
+  if (cached !== undefined) return cached;
+
+  const stdout = await new Promise<string>((ok, fail) => {
+    execFile(
+      ffprobeBin,
+      ['-v', 'error', '-show_pixel_formats', '-print_format', 'json'],
+      { shell: false, windowsHide: true, timeout: 15_000, maxBuffer: 4 * 1024 * 1024 },
+      (err, out, stderr) => {
+        if (err) fail(new Error(stderr.trim() || err.message));
+        else ok(out);
+      },
+    );
+  });
+  const list = (JSON.parse(stdout) as { pixel_formats?: Array<{ name?: string; flags?: { alpha?: number } }> })
+    .pixel_formats ?? [];
+  const alphaSet = new Set(
+    list
+      .filter((item) => item.flags?.alpha === 1 && typeof item.name === 'string')
+      .map((item) => item.name as string),
+  );
+  alphaPixFmtsCache.set(ffprobeBin, alphaSet);
+  return alphaSet;
+}
+
+async function inspectMediaStream(
+  ffprobeBin: string,
+  mediaPath: string,
+): Promise<StreamInspectInfo | null> {
+  try {
+    const stdout = await new Promise<string>((ok, fail) => {
+      execFile(
+        ffprobeBin,
+        ['-v', 'error', '-print_format', 'json', '-show_streams', mediaPath],
+        { shell: false, windowsHide: true, timeout: 15_000, maxBuffer: 4 * 1024 * 1024 },
+        (err, out, stderr) => {
+          if (err) fail(new Error(stderr.trim() || err.message));
+          else ok(out);
+        },
+      );
+    });
+    const streams = (JSON.parse(stdout) as { streams?: Array<{ codec_type?: string; codec_name?: string; pix_fmt?: string }> }).streams ?? [];
+    const video = streams.find((s) => s.codec_type === 'video');
+    if (!video) return { hasAlpha: false };
+    const alphaFmts = await getAlphaPixFmts(ffprobeBin);
+    const pixFmt = video.pix_fmt;
+    const hasAlpha = typeof pixFmt === 'string' && alphaFmts.has(pixFmt);
+    return {
+      ...(video.codec_name !== undefined ? { codecName: video.codec_name.toLowerCase() } : {}),
+      ...(pixFmt !== undefined ? { pixFmt } : {}),
+      hasAlpha,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isSupportedAlphaStream(mimeType: string | undefined, info: StreamInspectInfo): boolean {
+  if (!info.hasAlpha) return true;
+  const codec = info.codecName ?? '';
+  if (mimeType === 'image/png' || codec === 'png') return true;
+  if (mimeType === 'video/webm' && (codec === 'vp9' || codec === 'vp8')) return true;
+  if (mimeType === 'video/quicktime' && codec === 'prores') return true;
+  return false;
+}
+
+function parseLayerInputMap(
+  requirements: JobRequest['requirements'],
+): Record<string, string> {
+  const map: Record<string, string> = {};
+  const rawJson = requirements.layerInputs;
+  if (typeof rawJson === 'string' && rawJson.trim().length > 0) {
+    try {
+      const parsed = JSON.parse(rawJson) as unknown;
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        for (const [k, v] of Object.entries(parsed)) {
+          if (typeof v === 'string' && v.trim().length > 0) {
+            map[k] = v;
+          }
+        }
+      }
+    } catch {
+      throw new MappingError(
+        'bad-requirements',
+        'requirements.layerInputs debe ser un JSON objeto { layerId: uri }.',
+      );
+    }
+  }
+  for (const [key, value] of Object.entries(requirements)) {
+    if (key.startsWith('input.') && typeof value === 'string' && value.trim().length > 0) {
+      map[key.slice('input.'.length)] = value;
+    }
+  }
+  return map;
+}
+
 export class FreeCutAdapter implements ConnectorAdapter {
   readonly simple = simple;
   readonly advanced = advanced;
@@ -364,7 +475,8 @@ export class FreeCutAdapter implements ConnectorAdapter {
       diagnostics: [{ code, message }],
     });
 
-    if (job.operation !== 'edit.export') {
+    const isCompose = job.operation === 'edit.compose';
+    if (job.operation !== 'edit.export' && !isCompose) {
       return fail('unsupported-operation', `Operación no soportada por FreeCut: ${job.operation}`);
     }
 
@@ -376,17 +488,6 @@ export class FreeCutAdapter implements ConnectorAdapter {
     const sceneId = job.requirements.sceneId;
     if (typeof sceneId !== 'string' || !sceneId) {
       return fail('bad-requirements', 'requirements.sceneId (string) es obligatorio.');
-    }
-
-    const tools = this.resolveTools();
-    if (tools.diagnostics.length > 0 || !tools.ffmpeg || !tools.ffprobe) {
-      return {
-        jobId: ctx.jobId,
-        status: 'failed',
-        outputs: [],
-        provenance: [],
-        diagnostics: tools.diagnostics,
-      };
     }
 
     let projectPath: string;
@@ -404,15 +505,55 @@ export class FreeCutAdapter implements ConnectorAdapter {
       );
     }
 
+    // En `edit.compose`, comprobamos primero la compatibilidad de inputs/alpha antes de exigir browser/motor
+    // para que un input con alpha no soportado (p. ej. image/png-sequence) falle siempre con `unsupported-alpha`.
     let engineJob: FreeCutEngineJob;
     try {
-      engineJob = buildFreeCutJob(parsed.value, {
-        sceneId,
-        projectDir: dirname(projectPath),
-      });
+      if (isCompose) {
+        const layerInputMap = parseLayerInputMap(job.requirements);
+        const composeInputs: ComposeInputArtifact[] = job.inputs
+          .slice(1)
+          .map((item) => ({ uri: item.uri, type: item.type }));
+        engineJob = buildFreeCutComposeJob(parsed.value, {
+          sceneId,
+          projectDir: dirname(projectPath),
+          inputs: composeInputs,
+          layerInputMap,
+        });
+      } else {
+        engineJob = buildFreeCutJob(parsed.value, {
+          sceneId,
+          projectDir: dirname(projectPath),
+        });
+      }
     } catch (err) {
       if (err instanceof MappingError) return fail(err.code, err.message);
       return fail('bad-input', err instanceof Error ? err.message : String(err));
+    }
+
+    const tools = this.resolveTools();
+    if (tools.diagnostics.length > 0 || !tools.ffmpeg || !tools.ffprobe) {
+      return {
+        jobId: ctx.jobId,
+        status: 'failed',
+        outputs: [],
+        provenance: [],
+        diagnostics: tools.diagnostics,
+      };
+    }
+
+    if (isCompose) {
+      for (const layer of engineJob.layers) {
+        if (layer.kind !== 'video' && layer.kind !== 'image') continue;
+        const streamInfo = await inspectMediaStream(tools.ffprobe, layer.mediaPath);
+        if (streamInfo !== null && !isSupportedAlphaStream(layer.mimeType, streamInfo)) {
+          return fail(
+            'unsupported-alpha',
+            `La entrada de la capa «${layer.id}» (${layer.mediaPath}) tiene canal alpha (${streamInfo.codecName ?? 'desconocido'} / ${streamInfo.pixFmt ?? '?'}) no soportado nativamente por FreeCut. ` +
+              'Alternativa: convertir a MOV ProRes 4444 (yuva444p12le), WebM VP9 (yuva420p) o PNG RGBA, o precomponer con FFmpeg overlay.',
+          );
+        }
+      }
     }
 
     mkdirSync(ctx.workDir, { recursive: true });
@@ -428,6 +569,12 @@ export class FreeCutAdapter implements ConnectorAdapter {
     const realNode = realpathSync(tools.node);
     const realCli = realpathSync(tools.cli);
     const realFreecutDir = realpathSync(tools.freecutDir);
+    const mediaPaths = new Set<string>();
+    for (const layer of engineJob.layers) {
+      if (layer.kind !== 'text') {
+        mediaPaths.add(realpathSync(layer.mediaPath));
+      }
+    }
 
     const run = await runIsolated({
       cmd: realNode,
@@ -445,7 +592,7 @@ export class FreeCutAdapter implements ConnectorAdapter {
         tools.browser,
       ],
       workDir,
-      allowedPaths: [realNode, realCli, realFreecutDir, workDir],
+      allowedPaths: [realNode, realCli, realFreecutDir, workDir, ...mediaPaths],
       timeoutMs: ctx.timeoutMs,
       env: buildEnv({
         TEMP: tmpDir,
@@ -503,6 +650,7 @@ export class FreeCutAdapter implements ConnectorAdapter {
       pluginVersion: ADAPTER_VERSION,
       engineVersion,
       params: {
+        operation: job.operation,
         sceneId: engineJob.sceneId,
         width: engineJob.width,
         height: engineJob.height,

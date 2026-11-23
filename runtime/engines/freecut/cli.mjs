@@ -218,6 +218,20 @@ async function runJob(args) {
       }
     });
 
+    const audioZIndices = [
+      ...new Set(spec.layers.filter((l) => l.kind === 'audio').map((l) => l.zIndex)),
+    ].sort((a, b) => a - b);
+    const audioTrackRefByZ = new Map();
+    audioZIndices.forEach((z, idx) => {
+      if (idx === 0) {
+        audioTrackRefByZ.set(z, 'track-2');
+      } else {
+        const callerId = `audioTrackZ_${idx}`;
+        ops.push({ callerId, op: 'addTrack', kind: 'audio' });
+        audioTrackRefByZ.set(z, { $ref: `${callerId}#/detail/trackId` });
+      }
+    });
+
     spec.layers.forEach((layer, idx) => {
       if (layer.kind === 'text') {
         ops.push({
@@ -241,18 +255,43 @@ async function runJob(args) {
         mediaId,
         from: layer.startFrame,
         durationInFrames: layer.durationFrames,
-        ...(layer.kind === 'audio' ? { trackId: 'track-2' } : { trackId: trackRefByZ.get(layer.zIndex) }),
+        ...(layer.kind === 'audio'
+          ? { trackId: audioTrackRefByZ.get(layer.zIndex) ?? 'track-2' }
+          : { trackId: trackRefByZ.get(layer.zIndex) }),
       };
       ops.push(clipOp);
 
+      const itemUpdates = {};
       if (layer.sourceInFrame > 0 && (layer.kind === 'video' || layer.kind === 'audio')) {
+        itemUpdates.sourceStart = layer.sourceInFrame;
+        itemUpdates.sourceEnd = layer.sourceInFrame + layer.durationFrames;
+      }
+
+      if (layer.kind !== 'audio') {
+        const transformUpdates = {};
+        if (layer.opacity !== undefined) {
+          transformUpdates.opacity = layer.opacity;
+        } else if (layer.preserveAlpha === true) {
+          // Evita la poda de oclusión en frame-occlusion.ts sobre capas image con canal alpha.
+          transformUpdates.opacity = 0.999;
+        }
+        if (layer.width !== undefined && layer.height !== undefined) {
+          transformUpdates.width = layer.width;
+          transformUpdates.height = layer.height;
+        }
+        if (Object.keys(transformUpdates).length > 0) {
+          itemUpdates.transform = transformUpdates;
+        }
+        if (layer.blendMode !== undefined) {
+          itemUpdates.blendMode = layer.blendMode;
+        }
+      }
+
+      if (Object.keys(itemUpdates).length > 0) {
         ops.push({
           op: 'updateItem',
           id: { $ref: `${callerId}#/detail/created/0/id` },
-          updates: {
-            sourceStart: layer.sourceInFrame,
-            sourceEnd: layer.sourceInFrame + layer.durationFrames,
-          },
+          updates: itemUpdates,
         });
       }
     });

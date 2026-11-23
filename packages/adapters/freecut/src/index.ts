@@ -4,11 +4,14 @@ export { ADAPTER_VERSION, simple, advanced } from './cards.ts';
 export {
   MappingError,
   buildDirectClipJob,
+  buildFreeCutComposeJob,
   buildFreeCutJob,
   findScene,
 } from './mapping.ts';
 export type {
+  BuildFreeCutComposeJobOptions,
   BuildFreeCutJobOptions,
+  ComposeInputArtifact,
   DirectClipJobOptions,
   FreeCutEngineJob,
   FreeCutLayerSpec,
