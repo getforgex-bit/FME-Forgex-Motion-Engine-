@@ -19,8 +19,16 @@ function migrateV0ToV1(project: Readonly<Record<string, unknown>>): MigrationRes
   return { ok: true, value: { ...project, schemaVersion: 1, fps: { num: fps, den: 1 } } };
 }
 
+/** v1 → v2 (ADR-0012): `Layer.text` es opcional, así que solo cambia la versión. */
+function migrateV1ToV2(project: Readonly<Record<string, unknown>>): MigrationResult {
+  return { ok: true, value: { ...project, schemaVersion: 2 } };
+}
+
 // Cada clave indica la versión de origen. Cada paso debe avanzar exactamente una versión.
-const migrations: ReadonlyMap<number, Migration> = new Map([[0, migrateV0ToV1]]);
+const migrations: ReadonlyMap<number, Migration> = new Map([
+  [0, migrateV0ToV1],
+  [1, migrateV1ToV2],
+]);
 
 function hasSchemaVersion(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value) &&

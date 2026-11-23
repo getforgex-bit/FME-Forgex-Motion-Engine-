@@ -62,3 +62,41 @@ test("29,97: la duración en segundos es exacta (30000 fotogramas = 1001 s)", ()
   assert.equal(frames, 30000);
   assert.equal(framesToSeconds(frames, p.fps), 1001);
 });
+
+test("híbrida v2: el título lleva su texto real (ADR-0012)", () => {
+  const p = cargar(hibrida);
+  const titulo = p.sequences[0]!.scenes[0]!.layers.find((l) => l.id === "capa-titulo")!;
+  assert.equal(titulo.kind, "text");
+  assert.equal(titulo.text?.content, "Forgex Motion Engine");
+});
+
+// Fixtures de migración: v0 (sintética) y v1 se migran a v2 y validan; las v1 equivalen a las v2 vigentes.
+const v1 = join(import.meta.dirname, "fixtures-v1");
+const v0 = join(import.meta.dirname, "fixtures-v0", "project.fme.json");
+
+for (const ruta of [v0, ...readdirSync(v1).map((f) => join(v1, f))]) {
+  test(`migra a v2 y valida: ${ruta.split(/[\/]/).slice(-2).join("/")}`, () => {
+    const p = cargar(ruta);
+    assert.equal(p.schemaVersion, 2);
+    assert.equal(serialize(cargar_texto(serialize(p))), serialize(p), "estable tras migrar");
+  });
+}
+
+function cargar_texto(texto: string): Project {
+  const r = deserialize(texto);
+  assert.ok(r.ok);
+  return r.value;
+}
+
+test("las fixtures v1 mínima y 29,97 migran exactamente a las v2 vigentes", () => {
+  for (const f of ["minima.fme.json", "ntsc-2997.fme.json"]) {
+    assert.equal(serialize(cargar(join(v1, f))), leer(join(dir, f)), f);
+  }
+});
+
+test("la híbrida v1 migra a la v2 salvo el texto del título", () => {
+  const migrada = cargar(join(v1, "hibrida.fme.json"));
+  const vigente = cargar(hibrida);
+  delete vigente.sequences[0]!.scenes[0]!.layers.find((l) => l.id === "capa-titulo")!.text;
+  assert.deepEqual(migrada, vigente);
+});

@@ -28,7 +28,7 @@
   "height": 1080,
   "id": "prueba-hibrida-10s",
   "name": "Prueba híbrida de 10 s",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "seed": 2026,
   "sequences": [
     {
@@ -267,6 +267,12 @@
               "techniques": [
                 "2d-guided-by-3d"
               ],
+              "text": {
+                "color": "#ffffff",
+                "content": "Forgex Motion Engine",
+                "fontFamily": "Inter",
+                "fontSize": 96
+              },
               "zIndex": 4
             }
           ]

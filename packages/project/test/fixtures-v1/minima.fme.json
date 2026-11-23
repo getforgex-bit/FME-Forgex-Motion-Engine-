@@ -1,0 +1,14 @@
+{
+  "assets": [],
+  "fps": {
+    "den": 1,
+    "num": 24
+  },
+  "height": 360,
+  "id": "minima",
+  "name": "Mínima",
+  "schemaVersion": 1,
+  "seed": 0,
+  "sequences": [],
+  "width": 640
+}
