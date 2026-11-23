@@ -1,0 +1,13 @@
+{
+  "name": "@fme/adapter-revideo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./dist/index.js" },
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@fme/connectors": "0.0.0",
+    "@fme/project": "0.0.0",
+    "@fme/runtime-workers": "0.0.0"
+  }
+}

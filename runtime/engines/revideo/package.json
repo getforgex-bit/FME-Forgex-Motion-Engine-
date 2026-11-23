@@ -1,0 +1,17 @@
+{
+  "name": "fme-engine-revideo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Motor Revideo de FME (FDN-032). Proyecto npm aislado, fuera de los workspaces de la raíz.",
+  "dependencies": {
+    "@revideo/2d": "0.11.0",
+    "@revideo/core": "0.11.0",
+    "@revideo/ffmpeg": "0.11.0",
+    "@revideo/renderer": "0.11.0",
+    "@revideo/ui": "0.11.0",
+    "@revideo/vite-plugin": "0.11.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

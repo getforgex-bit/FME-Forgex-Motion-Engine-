@@ -12,6 +12,9 @@
     },
     {
       "path": "packages/art-direction"
+    },
+    {
+      "path": "packages/adapters/revideo"
     }
   ]
 }
