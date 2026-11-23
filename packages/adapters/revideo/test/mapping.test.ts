@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { deserialize } from '@fme/project';
 import type { Layer, Project } from '@fme/project';
-import { MappingError, buildEngineJob, findLayer, sampleCurve, sampleTracks } from '../src/mapping.ts';
+import { MappingError, buildEngineJob, findLayer, sampleCurve, sampleGradientTracks, sampleTracks } from '../src/mapping.ts';
 
 const fixture = new URL('../../../../examples/prueba-hibrida-10s/project.fme.json', import.meta.url);
 function load(): Project {
@@ -114,4 +114,34 @@ test('capa svg exige el contenido del SVG', () => {
   const job = buildEngineJob(project, layer, { svgMarkup: '<svg xmlns="http://www.w3.org/2000/svg"/>' });
   assert.equal(job.kind, 'svg');
   assert.equal(job.frames, 210);
+});
+
+test('gradientes: expression sube el contorno y integration baja la sombra por fotograma (FDN-061)', () => {
+  const layer: Layer = {
+    id: 'g', kind: 'text', startFrame: 0, durationFrames: 11, zIndex: 0, techniques: ['2d'],
+    channels: {
+      expression: { defaultValue: 0, keyframes: [{ frame: 0, value: 0 }, { frame: 10, value: 1, easing: 'linear' }] },
+      integration: { defaultValue: 1, keyframes: [{ frame: 0, value: 1 }, { frame: 10, value: 0, easing: 'linear' }] },
+    },
+  };
+  const g = sampleGradientTracks(layer, 7);
+  assert.equal(g.strokeWidth.length, 11);
+  for (let f = 1; f < 11; f++) {
+    assert.ok(g.strokeWidth[f]! > g.strokeWidth[f - 1]!);
+    assert.ok(g.shadowBlur[f]! < g.shadowBlur[f - 1]!);
+  }
+  assert.equal(g.strokeWidth[0], 0);
+  assert.equal(g.shadowOpacity[10], 0);
+  // El temblor es determinista (misma semilla → mismos valores) y acotado por la amplitud.
+  assert.deepEqual(sampleGradientTracks(layer, 7), g);
+  assert.notDeepEqual(sampleGradientTracks(layer, 8).jitterX, g.jitterX);
+  assert.ok(g.jitterX.every((v, f) => Math.abs(v) <= 4 * (f / 10) + 1e-9));
+});
+
+test('buildEngineJob: sin curvas expression/integration no hay `gradients` (render idéntico al de FDN-032)', () => {
+  const project = load();
+  const { channels, ...rest } = findLayer(project, 'capa-titulo');
+  const bare: Layer = { ...rest, channels: { opacity: channels.opacity! } };
+  assert.equal(buildEngineJob(project, bare).gradients, undefined);
+  assert.ok(buildEngineJob(project, findLayer(project, 'capa-titulo')).gradients, 'el título de la fixture tiene expression');
 });

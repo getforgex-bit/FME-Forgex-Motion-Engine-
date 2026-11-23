@@ -8,9 +8,21 @@
  * - Antes del primer fotograma clave se usa su valor; tras el último, el último valor; sin claves, `defaultValue`.
  * - Canales: x, y en píxeles desde el centro del lienzo; rotation en grados; scale y opacity adimensionales.
  */
+import { fnv1a32, mulberry32, revideoGradientOps } from '@fme/art-direction';
 import type { Channel, Curve, Layer, Project } from '@fme/project';
 
 export type Tracks = { x: number[]; y: number[]; opacity: number[]; scale: number[]; rotation: number[] };
+
+/** Operaciones por fotograma derivadas de los gradientes `expression` e `integration` (FDN-061). */
+export type GradientTracks = {
+  strokeWidth: number[];
+  strokeOpacity: number[];
+  jitterX: number[];
+  jitterY: number[];
+  shadowBlur: number[];
+  shadowOffset: number[];
+  shadowOpacity: number[];
+};
 
 export type EngineJob = {
   width: number;
@@ -24,6 +36,8 @@ export type EngineJob = {
   fontFamily?: string;
   fill?: string;
   tracks: Tracks;
+  /** Solo si la capa tiene curva `expression` y/o `integration`; si no, el render es el de FDN-032 sin cambios. */
+  gradients?: GradientTracks;
 };
 
 export class MappingError extends Error {
@@ -67,6 +81,28 @@ export function sampleTracks(layer: Layer): Tracks {
   return { x: track('x'), y: track('y'), opacity: track('opacity'), scale: track('scale'), rotation: track('rotation') };
 }
 
+/**
+ * Muestrea `expression` e `integration` (0–1; si falta una curva, 0 = sin efecto) y las traduce con
+ * `revideoGradientOps` (tabla en el README de @fme/art-direction). El temblor usa una semilla determinista
+ * por proyecto, capa y fotograma: mismo proyecto, mismos píxeles.
+ */
+export function sampleGradientTracks(layer: Layer, projectSeed: number): GradientTracks {
+  const channels = layer.channels as Partial<Record<Channel, Curve>>;
+  const t: GradientTracks = { strokeWidth: [], strokeOpacity: [], jitterX: [], jitterY: [], shadowBlur: [], shadowOffset: [], shadowOpacity: [] };
+  for (let f = 0; f < layer.durationFrames; f++) {
+    const ops = revideoGradientOps(sampleCurve(channels.expression, f, 0), sampleCurve(channels.integration, f, 0));
+    const rng = mulberry32(fnv1a32(`${projectSeed}:${layer.id}:${f}`));
+    t.strokeWidth.push(ops.strokeWidth);
+    t.strokeOpacity.push(ops.strokeOpacity);
+    t.jitterX.push((rng() * 2 - 1) * ops.jitterAmplitude);
+    t.jitterY.push((rng() * 2 - 1) * ops.jitterAmplitude);
+    t.shadowBlur.push(ops.shadowBlur);
+    t.shadowOffset.push(ops.shadowOffset);
+    t.shadowOpacity.push(ops.shadowOpacity);
+  }
+  return t;
+}
+
 export function findLayer(project: Project, layerId: string): Layer {
   for (const seq of project.sequences) for (const scene of seq.scenes) for (const layer of scene.layers) if (layer.id === layerId) return layer;
   throw new MappingError('layer-not-found', `No existe la capa «${layerId}» en el proyecto`);
@@ -91,6 +127,7 @@ export function buildEngineJob(project: Project, layer: Layer, options: MapOptio
     kind: isText ? 'text' : 'svg',
     tracks: sampleTracks(layer),
   };
+  if (layer.channels.expression || layer.channels.integration) job.gradients = sampleGradientTracks(layer, project.seed);
   if (isText) {
     // Precedencia: sobrescritura explícita > layer.text (ADR-0012) > nombre del proyecto (solo capas v1 sin texto).
     job.text = options.text ?? layer.text?.content ?? project.name;
