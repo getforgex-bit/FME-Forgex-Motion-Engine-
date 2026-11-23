@@ -1,0 +1,26 @@
+{
+  "pluginId": "adapter.blender",
+  "technical": {
+    "headless": "yes",
+    "alpha": "yes",
+    "keyframes": "yes",
+    "audioInPngSequence": "no",
+    "depth": "unknown",
+    "gpuCompute": "unknown"
+  },
+  "limits": {
+    "verifiedWidth": 960,
+    "verifiedHeight": 540,
+    "verifiedFps": 30,
+    "verifiedFrames": 90,
+    "renderEngine": "Cycles",
+    "renderDevice": "CPU",
+    "renderSamples": 4
+  },
+  "permissions": [
+    "read:bundled-script",
+    "write:out"
+  ],
+  "editability": "unknown",
+  "licenseReview": "pending"
+}

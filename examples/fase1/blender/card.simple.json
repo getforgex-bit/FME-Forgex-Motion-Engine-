@@ -1,0 +1,17 @@
+{
+  "id": "adapter.blender",
+  "name": "Blender",
+  "version": "5.2.3",
+  "contractVersion": "0.1",
+  "capabilities": [
+    "animate.3d",
+    "render.image-sequence"
+  ],
+  "accepts": [
+    "text/x-python"
+  ],
+  "produces": [
+    "image/png-sequence"
+  ],
+  "executor": "cli"
+}
