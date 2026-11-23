@@ -46,6 +46,8 @@ const file = await renderVideo({
     outFile: basename(out), outDir: dirname(resolve(out)), logProgress: false,
     projectSettings: {range, size, exporter},
     ffmpeg: {ffmpegPath, ffprobePath},
+    // La caché de Vite por defecto cae en node_modules/.vite del motor; el adaptador la redirige a su workDir.
+    ...(process.env.FME_VITE_CACHE_DIR ? {viteConfig: {cacheDir: process.env.FME_VITE_CACHE_DIR}} : {}),
   },
 });
 console.log(JSON.stringify({ok: true, out: resolve(out), file}));

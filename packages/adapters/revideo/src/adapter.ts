@@ -173,6 +173,9 @@ export class RevideoAdapter implements ConnectorAdapter {
     const scenePath = join(workDir, `${ctx.jobId}.scene.json`);
     const outPath = join(workDir, `${ctx.jobId}.${alpha ? 'mov' : 'mp4'}`);
     writeFileSync(scenePath, JSON.stringify(engineJob), { flag: 'wx' });
+    // FDN-034 (ADR-0011 punto 3): los temporales de Revideo, Vite y Chrome van a `workDir`, no al temporal del sistema.
+    const tmpDir = join(workDir, `${ctx.jobId}.tmp`);
+    mkdirSync(tmpDir);
 
     const run = await runIsolated({
       cmd: tools.node,
@@ -181,7 +184,7 @@ export class RevideoAdapter implements ConnectorAdapter {
       workDir,
       allowedPaths: [tools.node, tools.cli, tools.ffmpeg, tools.ffprobe, workDir],
       timeoutMs: ctx.timeoutMs,
-      env: buildEnv({ PUPPETEER_CACHE_DIR: this.opts.puppeteerCacheDir ?? process.env.FME_PUPPETEER_CACHE_DIR, FFMPEG_PATH: tools.ffmpeg, FFPROBE_PATH: tools.ffprobe }),
+      env: buildEnv({ TEMP: tmpDir, TMP: tmpDir, TMPDIR: tmpDir, FME_VITE_CACHE_DIR: join(tmpDir, 'vite-cache'), PUPPETEER_CACHE_DIR: this.opts.puppeteerCacheDir ?? process.env.FME_PUPPETEER_CACHE_DIR, FFMPEG_PATH: tools.ffmpeg, FFPROBE_PATH: tools.ffprobe }),
     });
 
     if (run.killed || run.exitCode === null) return fail('timeout', `El render superó ${ctx.timeoutMs} ms y se terminó el proceso.`);
