@@ -12,6 +12,7 @@ import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { RevideoAdapter } from '@fme/adapter-revideo';
 import { ConnectorRegistryError, type ConnectorAdapter, type ConnectorFilter } from '@fme/connectors';
+import { exportProject } from '@fme/mcp/export';
 import {
   DEFAULT_PREVIEW_VRAM_MIB,
   OpsError,
@@ -48,6 +49,8 @@ Uso: fme <comando> [opciones]
 Comandos:
   project validate <archivo>                    Valida (y migra en memoria) un proyecto
   project migrate <archivo> [--out <archivo>]   Migra a la versión actual (stdout si no hay --out)
+  project export <archivo> --out <dir>          Exporta el MP4 final con Revideo, Blender y FreeCut reales
+                                                (--blender-resolution <ANCHOxALTO>, --timeout <ms> por paso; <dir> vacío o inexistente)
   connectors list [--capability c] [--accepts t] [--produces t]
   route plan <archivo> --layer <id>             Planifica qué conector renderiza la capa
   job run <archivo> --layer <id> --out <dir>    Ejecuta el job (--alpha, --timeout <ms>)
@@ -144,6 +147,7 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
         start: { type: 'string' },
         end: { type: 'string' },
         vram: { type: 'string' },
+        'blender-resolution': { type: 'string' },
       },
     });
   } catch (e) {
@@ -183,6 +187,21 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
         } else {
           io.stdout(text);
         }
+        return EXIT.ok;
+      }
+      case 'project export': {
+        const projectFile = resolve(requireString(file, 'el archivo del proyecto'));
+        const outDir = resolve(requireString(values.out, '--out <dir>'));
+        const timeoutMs = intOption(values.timeout, '--timeout', 1);
+        const blenderResolution = values['blender-resolution'];
+        const exported = await exportProject({
+          projectFile, outDir,
+          ...(blenderResolution !== undefined ? { blenderResolution } : {}),
+          ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+        });
+        emit(out, exported,
+          [`Exportado: ${exported.mp4}`, `Proyecto enlazado: ${exported.projectPath}`, 'Pasos:',
+            ...exported.progress.map((p) => `  ${p.status === 'ok' ? '✔' : '✖'} ${p.step} (${p.adapterId}, ${(p.durationMs / 1000).toFixed(1)} s)`)].join('\n'));
         return EXIT.ok;
       }
       case 'connectors list': {
