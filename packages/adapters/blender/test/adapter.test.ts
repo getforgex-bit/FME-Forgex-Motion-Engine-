@@ -9,6 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { test } from 'node:test';
 import { checkAdapterResult } from '@fme/connectors';
 import { createBlenderAdapter } from '../src/index.ts';
+import { prepareJob } from '../src/request.ts';
 import type { JobRequest } from '@fme/connectors';
 import type { TestContext } from 'node:test';
 
@@ -37,6 +38,22 @@ function setup(context: TestContext) {
   };
   return { root, adapter, work };
 }
+
+test('prepara el mismo trabajo a partir de la fixture FME de schemaVersion 1 y la vigente', () => {
+  const legacyPath = realpathSync.native(fileURLToPath(
+    new URL('../../../../packages/project/test/fixtures-v1/hibrida.fme.json', import.meta.url),
+  ));
+  assert.equal(JSON.parse(readFileSync(legacyPath, 'utf8')).schemaVersion, 1);
+  const legacyJob: JobRequest = {
+    ...projectJob,
+    inputs: [{ type: 'fme/project+json', uri: pathToFileURL(legacyPath).href }],
+  };
+
+  assert.deepEqual(
+    prepareJob(legacyJob, [dirname(legacyPath)]),
+    prepareJob(projectJob, [exampleRoot]),
+  );
+});
 
 test('probe devuelve indisponibilidad real con ruta inexistente', async (context) => {
   const { root } = setup(context);

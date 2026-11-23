@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { dirname, extname } from 'node:path';
-import { parseProject } from '@fme/project';
+import { deserialize } from '@fme/project';
 import { filePath, optionalAsset, requirePath } from './paths.ts';
 import type { JobRequest } from '@fme/connectors';
 import type { Layer, Project } from '@fme/project';
@@ -24,8 +24,7 @@ type PreparedJob = {
 };
 
 function readProject(projectPath: string): Project {
-  const raw: unknown = JSON.parse(readFileSync(projectPath, 'utf8'));
-  const result = parseProject(raw);
+  const result = deserialize(readFileSync(projectPath, 'utf8'));
   if (!result.ok) {
     const first = result.errors[0];
     throw new Error(first ? 'Proyecto FME inválido en ' + first.path + ': ' + first.message : 'Proyecto FME inválido.');
