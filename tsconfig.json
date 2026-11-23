@@ -30,6 +30,9 @@
     },
     {
       "path": "packages/render-plan"
+    },
+    {
+      "path": "packages/recovery"
     }
   ]
 }
