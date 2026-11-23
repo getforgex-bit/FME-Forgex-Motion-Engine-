@@ -81,6 +81,41 @@ function sesionFile(id) {
 const cargarSesion = (id) => leer(sesionFile(id));
 const guardarSesion = (id, meta, cuerpo) => escribir(sesionFile(id), meta, cuerpo);
 
+// --- Presencia del usuario y modo ausencia (ADR-0014) ---
+/** Horas sin presencia del usuario a partir de las cuales empieza el escalón 1 de ausencia (2X = escalón 2, 3X = escalón 3). */
+export const umbralAusenciaH = () => Number(process.env.FME_AUSENCIA_H ?? 2);
+export const NIVELES_AUSENCIA = [
+  "presente: trabajo normal",
+  "ausencia 1: solo tareas READY ya asignadas; toda decisión que requiera aprobación va a la cola (`pendiente`); sin descargas, sin relevos, sin aceptar ADR; A0 integra solo REVIEW en verde sin cambios de contrato ni dependencias nuevas",
+  "ausencia 2: solo terminar lo IN_PROGRESS; no tomar tareas nuevas; A0 sigue integrando solo lo verde",
+  "ausencia 3: punto de control (commit, bitácora, estado/<equipo>.md, traspaso) y PARADA total, incluida la integración",
+];
+/** Última presencia registrada del usuario (máximo entre los archivos `usuario/presencia-<sesion>.md`). */
+function ultimaPresencia() {
+  return listar("usuario").filter((f) => f.startsWith("presencia-")).map((f) => leer(join(dir("usuario"), f)).meta.ultima).filter(Boolean).sort().at(-1) ?? null;
+}
+/** Nivel de ausencia 0–3 según las horas transcurridas desde la última presencia. Sin registro previo, 0 (no se presupone ausencia). */
+export function nivelAusencia() {
+  const u = ultimaPresencia();
+  if (!u) return { nivel: 0, ultima: null, horas: null };
+  const horas = minutosDesde(u) / 60;
+  const x = umbralAusenciaH();
+  const nivel = horas >= 3 * x ? 3 : horas >= 2 * x ? 2 : horas >= x ? 1 : 0;
+  return { nivel, ultima: u, horas };
+}
+function decisionesPendientes() {
+  const resueltas = new Set(listar("decisiones").filter((f) => f.endsWith(".resolucion.md")).map((f) => f.replace(/\.resolucion\.md$/, ".md")));
+  const peso = { alto: 0, medio: 1, bajo: 2 };
+  return listar("decisiones").filter((f) => !f.endsWith(".resolucion.md") && !resueltas.has(f))
+    .map((f) => ({ f, ...leer(join(dir("decisiones"), f)) }))
+    .sort((a, b) => (peso[a.meta.impacto] ?? 1) - (peso[b.meta.impacto] ?? 1) || a.f.localeCompare(b.f));
+}
+/** Las acciones que el usuario debe autorizar exigen que esté presente (escalón 0). */
+function exigirPresencia(accion) {
+  const a = nivelAusencia();
+  if (a.nivel > 0) throw new Error(`${accion} necesita al usuario presente, pero su última presencia fue hace ${a.horas.toFixed(1)} h (escalón ${a.nivel}). Si te acaba de escribir, registra primero \`usuario --presente\`.`);
+}
+
 // --- Relevo entre equipos (ADR-0013) ---
 /** Estado de relevo de un equipo (`relevos/<equipo>.md`); vacío si nunca se declaró caído. */
 function estadoRelevo(equipo) {
@@ -103,7 +138,9 @@ export function estadoEquipos() {
     const minutos = ultimo ? minutosDesde(ultimo) : null;
     const rel = estadoRelevo(equipo).meta.estado;
     let estado = activas.length || nRecl ? "activo" : "inactivo";
-    if (estado === "activo" && minutos !== null && minutos >= umbralCaidaMin()) estado = "sospechoso";
+    // Codex y Antigravity solo trabajan cuando el usuario les escribe: sin usuario no hay latido, y eso no es una caída (ADR-0014).
+    const ausente = nivelAusencia().nivel > 0;
+    if (estado === "activo" && minutos !== null && minutos >= umbralCaidaMin()) estado = ausente ? "en pausa (usuario ausente)" : "sospechoso";
     if (rel === "caido") estado = "caido";
     else if (rel === "reincorporado" && estado !== "sospechoso") estado = `${estado} (reincorporado)`;
     return { equipo, estado, ultimo, minutos, activas, reclamos: nRecl };
@@ -215,6 +252,7 @@ export const comandos = {
       if (n) out.push(`${s.id}: ${n}`);
     }
     out.push(`\n${sesiones.length - activas.length} sesión(es) cerrada(s).`);
+    out.push("", "## Usuario (ADR-0014)", comandos.usuario({}));
     out.push("", "## Equipos (ADR-0013)", comandos.equipos());
     return out.join("\n");
   },
@@ -228,10 +266,65 @@ export const comandos = {
     if (sosp.length) out.push("", `⚠ Sospechosos de caída: ${sosp.map((e) => e.equipo).join(", ")}. Solo el usuario puede declararlos caídos (caida --cita).`);
     return out.join("\n");
   },
+  /**
+   * Presencia del usuario (ADR-0014). Con `--presente` la registra (cada coordinador, en cada mensaje del usuario);
+   * sin él, muestra el escalón de ausencia y qué está permitido. Al volver de una ausencia, avisa de las decisiones en cola.
+   */
+  usuario(o) {
+    if (o.presente) {
+      requerir(o, "sesion");
+      sesionFile(o.sesion);
+      const antes = nivelAusencia();
+      const t = ahora();
+      escribir(join(dir("usuario"), `presencia-${slug(o.sesion)}.md`), { sesion: o.sesion, ultima: t });
+      const pend = decisionesPendientes();
+      if (antes.nivel > 0) {
+        return `VUELTA DEL USUARIO tras ${antes.horas.toFixed(1)} h (escalón ${antes.nivel}). Presencia registrada.\n`
+          + `Muéstrale primero un resumen de lo ocurrido y después las ${pend.length} decisión(es) pendiente(s), una a una (\`pendientes\`).`;
+      }
+      return `Presencia registrada (${t}).${pend.length ? ` Hay ${pend.length} decisión(es) pendiente(s): \`pendientes\`.` : ""}`;
+    }
+    const a = nivelAusencia();
+    const pend = decisionesPendientes().length;
+    return [`Usuario: escalón ${a.nivel} · última presencia: ${a.ultima ?? "sin registro"}${a.horas === null ? "" : ` (hace ${a.horas.toFixed(1)} h)`} · umbral ${umbralAusenciaH()} h`,
+      `Permitido: ${NIVELES_AUSENCIA[a.nivel]}`, `Decisiones pendientes: ${pend}`].join("\n");
+  },
+  /** Encola una decisión que necesita la aprobación del usuario (en vez de tomarla). Impacto: alto | medio | bajo. */
+  pendiente(o) {
+    requerir(o, "sesion", "asunto", "texto");
+    sesionFile(o.sesion);
+    const impacto = o.impacto ?? "medio";
+    if (!["alto", "medio", "bajo"].includes(impacto)) throw new Error("--impacto debe ser alto, medio o bajo");
+    const t = ahora();
+    const nombre = `${t.replace(/[-:.]/g, "")}-${slug(o.sesion)}.md`;
+    escribir(join(dir("decisiones"), nombre), { de: o.sesion, impacto, asunto: o.asunto, fecha: t, ...(o.tarea ? { tarea: o.tarea } : {}) }, `\n${o.texto}\n`);
+    return `Decisión encolada: ${nombre} (impacto ${impacto}).`;
+  },
+  /** Decisiones pendientes de aprobación, ordenadas por impacto (alto primero). */
+  pendientes() {
+    const p = decisionesPendientes();
+    if (!p.length) return "Sin decisiones pendientes.";
+    return p.map((d, i) => `${i + 1}. [${d.meta.impacto}] ${d.meta.asunto} · de ${d.meta.de}${d.meta.tarea ? ` · ${d.meta.tarea}` : ""} · ${d.f}\n   ${d.cuerpo.trim().replace(/\n/g, "\n   ")}`).join("\n");
+  },
+  /** Registra la respuesta del usuario a una decisión de la cola (archivo de resolución aparte: un archivo, un autor). */
+  decidir(o) {
+    requerir(o, "sesion", "id", "resolucion", "cita");
+    sesionFile(o.sesion);
+    if (!["aprobada", "rechazada", "aplazada"].includes(o.resolucion)) throw new Error("--resolucion debe ser aprobada, rechazada o aplazada");
+    exigirPresencia("Resolver una decisión");
+    const f = join(dir("decisiones"), o.id);
+    if (!existsSync(f) || o.id.endsWith(".resolucion.md")) throw new Error(`No existe la decisión "${o.id}".`);
+    const { meta } = leer(f);
+    const t = ahora();
+    if (o.resolucion !== "aplazada") escribir(join(dir("decisiones"), o.id.replace(/\.md$/, ".resolucion.md")), { decision: o.id, resolucion: o.resolucion, por: o.sesion, fecha: t, cita: o.cita });
+    comandos.enviar({ de: o.sesion, para: meta.de, tipo: "respuesta", asunto: `Decisión ${o.resolucion}: ${meta.asunto}`, texto: `El usuario respondió: «${o.cita}» (${o.id}).` });
+    return `Decisión ${o.id}: ${o.resolucion}. Avisado ${meta.de}.`;
+  },
   /** Declara caído un equipo (solo con la cita literal del usuario) y guarda el acta de su estado. No toca sus worktrees ni ramas. */
   caida(o) {
     requerir(o, "sesion", "equipo", "cita");
     sesionFile(o.sesion);
+    exigirPresencia("Declarar una caída");
     const actual = estadoRelevo(o.equipo);
     if (actual.meta.estado === "caido") throw new Error(`El equipo "${o.equipo}" ya está declarado caído (${actual.meta.desde}).`);
     const t = ahora();
@@ -266,6 +359,7 @@ export const comandos = {
   relevar(o) {
     requerir(o, "sesion", "tarea", "de", "a", "cita");
     sesionFile(o.sesion);
+    exigirPresencia("Asignar un relevo");
     const rel = estadoRelevo(o.de);
     if (rel.meta.estado !== "caido") throw new Error(`El equipo "${o.de}" no está declarado caído: usa primero \`caida\`.`);
     if (o.de === o.a) throw new Error("El relevista debe ser otro equipo.");
@@ -330,7 +424,12 @@ Relevo entre equipos (ADR-0013; solo el integrador, con la cita literal del usua
   equipos                                         estado de cada equipo (sospechoso si no hay latido en ≥ FME_UMBRAL_CAIDA_MIN, 60 por defecto)
   caida        --equipo <x> --cita "<usuario>"   declara caído y guarda el acta (no toca worktrees)
   relevar      --tarea FDN-xxx --de <x> --a <y> --cita "<usuario>" [--rama <r>]
-  reincorporar --equipo <x>                       genera la nota de reincorporación y la envía`;
+  reincorporar --equipo <x>                       genera la nota de reincorporación y la envía
+Presencia del usuario (ADR-0014; escalones a X, 2X y 3X horas, con X = FME_AUSENCIA_H, 2 por defecto):
+  usuario [--presente]                            registra la presencia (en cada mensaje del usuario) o muestra el escalón
+  pendiente --asunto "<..>" --texto "<..>" [--impacto alto|medio|bajo] [--tarea FDN-xxx]   encola una decisión
+  pendientes                                      lista la cola (alto primero)
+  decidir   --id <archivo> --resolucion aprobada|rechazada|aplazada --cita "<usuario>"`;
   },
 };
 

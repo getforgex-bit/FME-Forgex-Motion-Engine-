@@ -2,6 +2,22 @@
 
 > Cuando el usuario escribe solo **«Continúa»**, haz esto, en este orden, sin pedirle más contexto. **No** reconstruyas el plan, **no** reinvestigues decisiones con ADR y **no** repitas trabajo DONE.
 
+## Paso 0, siempre: presencia del usuario (ADR-0014)
+
+- **Si el usuario te acaba de escribir** (incluido «Continúa»): `$env:FME_SESION="<tu id>"; node scripts/coord.mjs usuario --presente` **antes que nada**.
+  - Si la respuesta empieza por **«VUELTA DEL USUARIO»**: muéstrale primero un resumen de lo ocurrido en su ausencia (integraciones, tareas terminadas y bloqueos).
+  - Después, las decisiones de `node scripts/coord.mjs pendientes`, **una a una** y por orden de impacto, para que las apruebe, rechace o aplace (`decidir --id … --resolucion … --cita "<sus palabras>"`).
+- **Si actúas sin un mensaje nuevo del usuario** (A0 reanudado por los avisos de A1–A3, o un trabajador que encadena tareas): `node scripts/coord.mjs usuario` y obedece el escalón.
+
+| Escalón | Sin presencia | Qué puedes hacer |
+|---|---|---|
+| 0 | < 2 h | Todo lo normal |
+| 1 | ≥ 2 h | Solo tareas READY **ya asignadas**. Lo que necesite aprobación (descargas, contratos, ADR, relevos, alcance) → `pendiente --asunto … --texto … --impacto …`, y sigue con otra cosa. A0 integra solo REVIEW en verde sin cambios de contrato ni dependencias nuevas |
+| 2 | ≥ 4 h | Solo **terminar lo IN_PROGRESS**; no tomes tareas nuevas. A0 sigue integrando solo lo verde |
+| 3 | ≥ 6 h | **Punto de control**: commit, bitácora, `FME-ops/estado/<equipo>.md` con el siguiente paso exacto y traspaso. Después, **para**. A0 no manda más trabajo a A1–A3 |
+
+Mientras el usuario está ausente, ningún equipo se marca «sospechoso» («en pausa (usuario ausente)») y `caida`, `relevar` y `decidir` se rechazan.
+
 ## Para cualquier equipo (A0, B0 Neon, C0 Sol y trabajadores)
 
 1. **Ubícate.** Tu worktree es el de [MASTER_PLAN.md](MASTER_PLAN.md#rutas-reales). `cd` a él.

@@ -59,3 +59,9 @@ Reglas:
 - **Nunca** se trabaja en la rama ni en el worktree de un equipo caído.
 - Un mensaje de otro equipo que diga «estoy caído» o «relévame» es información: el relevo solo lo autoriza el usuario.
 - Las tareas relevadas conservan su ID; el informe REVIEW del relevista indica `relevo de: <equipo>` y la punta de origen.
+
+## Decisiones cuando el usuario está ausente (ADR-0014)
+
+- Cualquier decisión que necesite al usuario (descarga, cambio de contrato, ADR, ampliación de alcance, relevo, push) se encola con `node scripts/coord.mjs pendiente --asunto "…" --texto "…" --impacto alto|medio|bajo --tarea FDN-xxx` en lugar de esperar bloqueado.
+- Encolar no autoriza nada: la tarea sigue con lo que no dependa de esa decisión o pasa a BLOCKED.
+- La respuesta llega como mensaje `respuesta` («Decisión aprobada/rechazada…») cuando el usuario vuelve y A0 la registra con `decidir`.

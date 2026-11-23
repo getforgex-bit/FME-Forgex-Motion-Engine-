@@ -125,3 +125,21 @@ Graphify `god-nodes`: `planRoute` (18), `deserialize` (18), `createFmeServer` (1
   - `node --test scripts/coord.test.mjs` → 7/7, incluido el test de extremo a extremo del relevo con reloj simulado: sospechoso a los 65 min, caída sin cita rechazada, relevo que libera solo el reclamo de la tarea y nota de reincorporación entregada;
   - `node scripts/coord.mjs equipos` sobre el `FME-ops` real → antigravity, claude y codex activos o inactivos, sin falsos sospechosos.
 - **Caso real:** Codex volvió por sí solo (~16:45 UTC) y entregó FDN-070b y FDN-071 → **no hizo falta relevo**. No se ejecutó `caida` sobre ningún equipo real.
+
+
+## 2026-11-23 · FDN-091: modo ausencia del usuario (A0)
+- **Petición del usuario:** detectar su ausencia; trabajar solo en lo conocido y dejar pendientes las aprobaciones; detenerse poco a poco; evitar relevos falsos, porque las aplicaciones pueden tener tokens sin que él esté.
+- **Decisiones del usuario:**
+  - umbral de 2 h;
+  - 3 escalones (2, 4 y 6 h);
+  - A0 integra solo lo verde;
+  - al volver, resumen y decisiones una a una.
+- **Hecho:**
+  - ADR-0014;
+  - `coord.mjs`: `usuario [--presente]`, `pendiente`, `pendientes` y `decidir`;
+  - `equipos` muestra «en pausa (usuario ausente)» en lugar de «sospechoso»;
+  - `caida`, `relevar` y `decidir` exigen presencia;
+  - `estado` muestra el escalón.
+  - Paso 0 en CONTINUATION, en los prompts (ANTIGRAVITY, CODEX y CLAUDE-WORKERS) y en AGENTS.md.
+- **Verificado:** `node --test scripts/coord.test.mjs` → 8/8. A0 registró la presencia real (`usuario --presente` → escalón 0).
+- **Limitación honesta:** depende de que cada coordinador registre la presencia en cada mensaje. Si lo olvida, el sistema frena: es el fallo seguro.

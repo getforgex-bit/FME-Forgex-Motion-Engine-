@@ -22,3 +22,4 @@ Registro de las decisiones duraderas de FME. Formato heredado de Segundo Cerebro
 | [0011](0011-interfaz-de-adaptadores.md) | Interfaz común de adaptadores y procedencia | propuesta |
 | [0012](0012-contenido-de-capas-de-texto.md) | Contenido de las capas de texto y schemaVersion 2 | propuesta |
 | [0013](0013-relevo-entre-equipos.md) | Relevo entre equipos cuando uno se queda sin cuota | aceptada |
+| [0014](0014-modo-ausencia-del-usuario.md) | Modo ausencia del usuario: parada gradual y cola de decisiones | aceptada |

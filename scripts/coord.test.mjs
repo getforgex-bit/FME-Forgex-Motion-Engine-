@@ -102,3 +102,44 @@ test("relevo entre equipos (ADR-0013): sospechoso, caída con acta, relevo y rei
     delete process.env.FME_AHORA;
   }
 });
+
+test("modo ausencia del usuario (ADR-0014): escalones, sin falsas caídas, cola de decisiones y vuelta", () => {
+  process.env.FME_AHORA = "2031-01-01T08:00:00.000Z";
+  try {
+    reg("codex", "aus1", "aus-cx");
+    reg("claude-code", "aus0", "aus-int");
+    c.reclamar({ sesion: "codex-aus1", ruta: "packages/aus", motivo: "FDN-200" });
+    assert.match(c.usuario({ presente: true, sesion: "claude-code-aus0" }), /Presencia registrada/);
+    assert.match(c.usuario({}), /escalón 0/);
+
+    process.env.FME_AHORA = "2031-01-01T10:30:00.000Z"; // 2,5 h → escalón 1
+    c.avance({ sesion: "claude-code-aus0", texto: "A0 sigue solo" });
+    assert.match(c.usuario({}), /escalón 1[\s\S]*solo tareas READY ya asignadas/);
+    // El equipo sin latido no es sospechoso mientras el usuario esté ausente.
+    assert.match(c.equipos(), /aus-cx \| en pausa \(usuario ausente\)/);
+    assert.doesNotMatch(c.equipos(), /aus-cx \| sospechoso/);
+    // Las acciones que necesitan al usuario se rechazan.
+    assert.throws(() => c.caida({ sesion: "claude-code-aus0", equipo: "aus-cx", cita: "x" }), /necesita al usuario presente/);
+    // Las decisiones se encolan, en orden de impacto.
+    c.pendiente({ sesion: "claude-code-aus0", asunto: "Instalar SDK X", texto: "descarga de 4 MB", impacto: "bajo" });
+    c.pendiente({ sesion: "codex-aus1", asunto: "Cambiar contrato Layer", texto: "ADR nueva", impacto: "alto", tarea: "FDN-200" });
+    const cola = c.pendientes();
+    assert.ok(cola.indexOf("Cambiar contrato") < cola.indexOf("Instalar SDK"));
+
+    process.env.FME_AHORA = "2031-01-01T12:30:00.000Z"; // 4,5 h → escalón 2
+    assert.match(c.usuario({}), /escalón 2[\s\S]*solo terminar lo IN_PROGRESS/);
+    process.env.FME_AHORA = "2031-01-01T14:30:00.000Z"; // 6,5 h → escalón 3
+    assert.match(c.usuario({}), /escalón 3[\s\S]*PARADA total/);
+    assert.throws(() => c.decidir({ sesion: "claude-code-aus0", id: "x.md", resolucion: "aprobada", cita: "sí" }), /necesita al usuario presente/);
+
+    // El usuario vuelve: aviso de vuelta + resolución de la cola.
+    assert.match(c.usuario({ presente: true, sesion: "claude-code-aus0" }), /VUELTA DEL USUARIO tras 6\.5 h \(escalón 3\)[\s\S]*2 decisión/);
+    const id = c.pendientes().match(/(\S+-codex-aus1\.md)/)[1];
+    assert.match(c.decidir({ sesion: "claude-code-aus0", id, resolucion: "aprobada", cita: "sí, adelante con el ADR" }), /aprobada/);
+    assert.doesNotMatch(c.pendientes(), /Cambiar contrato/);
+    assert.match(c.buzon({ sesion: "codex-aus1" }), /Decisión aprobada: Cambiar contrato Layer/);
+    assert.match(c.usuario({}), /escalón 0/);
+  } finally {
+    delete process.env.FME_AHORA;
+  }
+});

@@ -59,6 +59,7 @@
 | FDN-080 | Servidor MCP mínimo (`apps/mcp`) | CL-A2 | 021, 030, 050 | DONE (0348125) |
 | FDN-081 | CLI (`apps/cli`) | CL-A2 | 080 | READY |
 | FDN-090 | Protocolo de relevo entre equipos (equipo sin cuota → otro lo releva; reincorporación con nota de lo avanzado) + ADR-0013 | CL-A0 | — | DONE (ADR-0013 aceptada; `coord.mjs equipos/caida/relevar/reincorporar`) |
+| FDN-091 | Modo ausencia del usuario (ADR-0014) | CL-A0 | 090 | DONE |
 | FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | IN_PROGRESS |
 
 ---

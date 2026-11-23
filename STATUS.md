@@ -68,3 +68,4 @@ Fase 1: fijar las versiones de FreeCut, Revideo y Blender y ejecutar una prueba 
 | 2026-11-22 | Red FDN: carpeta operativa local y plan versionado; A0 integrador; `develop` local (propuesta; plan aprobado) | ADR-0007 |
 | 2026-11-22 | Validación en runtime con Zod 4 (propuesta) | ADR-0008 |
 | 2026-11-23 | Relevo entre equipos: detección por latido (60 min) + declaración del usuario; A0 propone, el usuario aprueba; rama nueva desde la punta; el relevista termina; si cae A0, se pausa la integración y el usuario elige un suplente (Sol, Neon o Astra) | ADR-0013 |
+| 2026-11-23 | Modo ausencia del usuario: presencia en cada mensaje; escalones a 2, 4 y 6 h (solo lo asignado → solo lo en curso → punto de control y parada); sin relevos falsos; cola de decisiones con resumen y revisión una a una al volver; A0 integra solo lo verde | ADR-0014 |
