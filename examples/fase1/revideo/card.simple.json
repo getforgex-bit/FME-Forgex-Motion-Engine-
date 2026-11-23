@@ -1,0 +1,10 @@
+{
+  "id": "revideo",
+  "name": "Revideo",
+  "version": "0.11.0",
+  "contractVersion": "0.1",
+  "capabilities": ["animate.vector", "render.video", "render.video.alpha"],
+  "accepts": ["text/x-typescript", "application/json"],
+  "produces": ["video/mp4", "video/quicktime"],
+  "executor": "library"
+}
