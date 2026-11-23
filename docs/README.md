@@ -30,6 +30,7 @@ Un repositorio público no implica compatibilidad inmediata con FME, API estable
 | [memoria-y-registro.md](memoria-y-registro.md) | Sistema común de memoria y registro (FORGEX Stack) |
 | [decisiones/](decisiones/) | ADR |
 | [bitacora/](bitacora/) | Registro de sesiones de trabajo |
+| [agentes.md](agentes.md) | Trabajo con varios agentes y sesiones (protocolo de coordinación) |
 | [especificacion/](especificacion/) | PDF original v0.1 (fuente de verdad) |
 
 **Si hay conflicto** entre estos documentos y el PDF, prevalece el PDF hasta que un ADR diga lo contrario.

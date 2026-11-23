@@ -31,3 +31,5 @@
 {"type":"relation","from":"gotcha:freecut-api","to":"task:fase-1-verificar-software","relationType":"affects"}
 {"type":"relation","from":"component:packages/project","to":"FME","relationType":"part_of"}
 {"type":"relation","from":"component:packages/connectors","to":"FME","relationType":"part_of"}
+{"type":"entity","name":"convention:coordinacion-multiagente","entityType":"convention","observations":["2026-11-22 · PROPUESTO: las sesiones se coordinan por archivos en coordinacion/ (sesiones, buzon, reclamos), un archivo por autor; ayuda scripts/coord.mjs; solo el integrador edita STATUS/CHANGELOG/roadmap","Protocolo: docs/agentes.md · ADR-0006 · VERIFICADO con npm test (5 pruebas); uso real con varias herramientas POR VALIDAR"]}
+{"type":"relation","from":"convention:coordinacion-multiagente","to":"FME","relationType":"part_of"}

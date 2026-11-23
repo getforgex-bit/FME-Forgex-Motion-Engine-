@@ -12,7 +12,9 @@
   },
   "scripts": {
     "typecheck": "tsc -b",
-    "check:memory": "node scripts/check-memory.mjs"
+    "check:memory": "node scripts/check-memory.mjs",
+    "test": "node --test scripts/coord.test.mjs",
+    "coord": "node scripts/coord.mjs"
   },
   "devDependencies": {
     "typescript": "5.9.3"

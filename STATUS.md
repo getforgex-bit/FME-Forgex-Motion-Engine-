@@ -41,3 +41,4 @@ Fase 1: fijar las versiones de FreeCut, Revideo y Blender y ejecutar una prueba 
 | 2026-11-22 | FORGEX Stack (Segundo Cerebro, `develop`) como memoria y herramientas para agentes | ADR-0003 |
 | 2026-11-22 | Licencia de FME pendiente; uso interno (propuesta) | ADR-0004 |
 | 2026-11-22 | Monorepo TypeScript con npm workspaces (propuesta) | ADR-0005 |
+| 2026-11-22 | Coordinación multiagente por archivos versionados (propuesta) | ADR-0006 |

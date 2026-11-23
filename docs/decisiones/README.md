@@ -14,3 +14,4 @@ Registro de las decisiones duraderas de FME. Formato heredado de Segundo Cerebro
 | [0003](0003-forgex-stack-como-memoria.md) | FORGEX Stack como memoria y herramientas para agentes | aceptada |
 | [0004](0004-licencia-pendiente.md) | Licencia de FME pendiente; uso interno mientras tanto | propuesta |
 | [0005](0005-monorepo-typescript-npm-workspaces.md) | Monorepo TypeScript con npm workspaces | propuesta |
+| [0006](0006-coordinacion-multiagente-por-archivos.md) | Coordinación multiagente por archivos versionados | propuesta |

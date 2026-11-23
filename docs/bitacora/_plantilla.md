@@ -1,6 +1,6 @@
 # AAAA-MM-DD · <tema>
 
-- **Autor:** <persona o agente> · **Rama/commit:** <rama> @ <sha> · **Fase:** <n>
+- **Autor:** <persona o agente> · **Sesión:** <id en coordinacion/sesiones/> · **Rama/commit:** <rama> @ <sha> · **Fase:** <n>
 
 ## Objetivo
 <Una o dos líneas.>
