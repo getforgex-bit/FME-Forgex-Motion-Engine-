@@ -68,3 +68,7 @@ export type {
   InspectSections,
   InspectResult,
 } from './registry.ts';
+
+// Interfaz común de adaptadores (ADR-0011).
+export { checkAdapterResult } from './adapter.ts';
+export type { ArtifactProvenance, JobContext, AdapterJobResult, ProbeResult, ConnectorAdapter } from './adapter.ts';

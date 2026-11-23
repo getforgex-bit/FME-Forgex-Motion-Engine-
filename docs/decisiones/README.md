@@ -17,3 +17,6 @@ Registro de las decisiones duraderas de FME. Formato heredado de Segundo Cerebro
 | [0006](0006-coordinacion-multiagente-por-archivos.md) | Coordinación multiagente por archivos versionados | propuesta |
 | [0007](0007-carpeta-operativa-y-red-fdn.md) | Carpeta operativa local + documentos FDN versionados (sustituye parcialmente a 0006) | propuesta |
 | [0008](0008-validacion-runtime-con-zod.md) | Validación en runtime del proyecto con Zod 4 | propuesta |
+| [0009](0009-api-registro-conectores.md) | API del registro dinámico de conectores | propuesta |
+| [0010](0010-ffmpeg-del-sistema-para-revideo.md) | Revideo con el FFmpeg del sistema; FME no redistribuye FFmpeg | propuesta |
+| [0011](0011-interfaz-de-adaptadores.md) | Interfaz común de adaptadores y procedencia | propuesta |

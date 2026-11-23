@@ -144,6 +144,22 @@ Las capacidades del ejemplo son **objetivos del adaptador**. No implica que ya e
 - Las herramientas se instalan y ejecutan solo con permisos autorizados y rutas controladas.
 - Sustituir un plugin exige **pruebas de regresión de salida**, no solo que coincidan las etiquetas.
 
+### Interfaz de adaptadores y procedencia (ADR-0011, PROPUESTO)
+
+Implementada en `packages/connectors/src/adapter.ts`. `JobResult` no cambia; `AdapterJobResult` lo extiende.
+
+```ts
+interface ConnectorAdapter {
+  readonly simple: CardSimple; readonly advanced: CardAdvanced;
+  probe(): Promise<{ available: boolean; engineVersion?: string; diagnostics: { code: string; message: string }[] }>;
+  run(job: JobRequest, ctx: { jobId: string; workDir: string; timeoutMs: number }): Promise<AdapterJobResult>;
+}
+type AdapterJobResult = JobResult & { jobId: string; provenance: ArtifactProvenance[] }; // uno por output
+// ArtifactProvenance: uri, type, sha256, contentSha256?, pluginId, pluginVersion, engineVersion, params, seed?, startedAt, durationMs
+```
+
+La conformidad se comprueba con `checkAdapterResult(result, adapter)`. Los motores se ejecutan con `runIsolated` (`@fme/runtime-workers`), sin shell.
+
 ## 3. Herramientas MCP mínimas
 
 La capa MCP es un **adaptador de la API** de FME (SDK oficial MCP TypeScript).
