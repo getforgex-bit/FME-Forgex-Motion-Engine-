@@ -4,8 +4,7 @@
 //
 // `Project` (v1) no tiene dónde guardar los RenderArtifact: se escriben junto al proyecto en `workDir/artifacts.json` (nota para FDN-042).
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -15,13 +14,14 @@ import { checkAdapterResult, createConnectorRegistry } from '@fme/connectors';
 import { deserialize, parseProject, serialize } from '@fme/project';
 import type { Project, RenderArtifact } from '@fme/project';
 import { RevideoAdapter, newJobId } from '../src/index.ts';
+import { newWorkDir, probeWorkDir } from './workroot.ts';
 
 const repo = fileURLToPath(new URL('../../../../', import.meta.url));
 const fixturePath = join(repo, 'examples', 'prueba-hibrida-10s', 'project.fme.json');
 const phase1Cache = join(repo, 'examples', 'fase1', 'revideo', 'out', '.puppeteer');
 const puppeteerCacheDir = process.env.FME_PUPPETEER_CACHE_DIR ?? (existsSync(phase1Cache) ? phase1Cache : undefined);
 
-const adapter = new RevideoAdapter(puppeteerCacheDir ? { puppeteerCacheDir } : {});
+const adapter = new RevideoAdapter({ probeWorkDir, ...(puppeteerCacheDir ? { puppeteerCacheDir } : {}) });
 const probe = await adapter.probe();
 const skip = !probe.available
   ? `motor Revideo no disponible: ${probe.diagnostics.map((d) => d.message).join(' | ')}`
@@ -58,12 +58,11 @@ test('Fase 3 e2e: descubrir → ejecutar → procedencia → RenderArtifact → 
   const parsed = deserialize(readFileSync(fixturePath, 'utf8'));
   assert.ok(parsed.ok);
   const project: Project = parsed.value;
-  const ctx = { jobId: newJobId(), workDir: realpathSync(mkdtempSync(join(tmpdir(), 'fme-e2e-'))), timeoutMs: 180_000 };
-  const text = 'FME e2e';
+  const ctx = { jobId: newJobId(), workDir: newWorkDir('e2e'), timeoutMs: 180_000 };
   const result = await adapter.run({
     projectId: project.id, operation: 'render.video',
     inputs: [{ uri: fixturePath, type: 'fme/project+json' }],
-    requirements: { layerId: 'capa-titulo', text }, seed: project.seed,
+    requirements: { layerId: 'capa-titulo' }, seed: project.seed,
   }, ctx);
   assert.deepEqual(result.diagnostics, [], JSON.stringify(result.diagnostics));
 
@@ -78,7 +77,7 @@ test('Fase 3 e2e: descubrir → ejecutar → procedencia → RenderArtifact → 
   const layer = project.sequences[0]!.scenes[0]!.layers.find((l) => l.id === 'capa-titulo')!;
   const hash = dependencyHash({
     projectId: project.id,
-    segment: plain({ layer, fps: project.fps, width: project.width, height: project.height, text }),
+    segment: plain({ layer, fps: project.fps, width: project.width, height: project.height }),
     assets: project.assets.filter((a) => a.id === layer.assetId).map(plain),
     adapters: [plain({ pluginId: prov.pluginId, pluginVersion: prov.pluginVersion, engineVersion: prov.engineVersion, params: prov.params })],
   });
@@ -107,10 +106,10 @@ test('Fase 3 e2e: descubrir → ejecutar → procedencia → RenderArtifact → 
   const stored = JSON.parse(readFileSync(join(ctx.workDir, 'artifacts.json'), 'utf8')) as RenderArtifact[];
   assert.equal(stored[0]!.dependencyHash, hash);
 
-  // El hash es determinista y sensible al texto.
+  // El hash es sensible al texto de la capa (layer.text.content).
   const hash2 = dependencyHash({
     projectId: project.id,
-    segment: plain({ layer, fps: project.fps, width: project.width, height: project.height, text: 'otro texto' }),
+    segment: plain({ layer: { ...layer, text: { ...layer.text!, content: 'otro texto' } }, fps: project.fps, width: project.width, height: project.height }),
     assets: project.assets.filter((a) => a.id === layer.assetId).map(plain),
     adapters: [plain({ pluginId: prov.pluginId, pluginVersion: prov.pluginVersion, engineVersion: prov.engineVersion, params: prov.params })],
   });

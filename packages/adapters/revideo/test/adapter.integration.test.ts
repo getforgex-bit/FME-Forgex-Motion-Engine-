@@ -1,21 +1,21 @@
 // Integración con el motor real (FDN-032). Se marca SKIP, con el motivo, si el motor, ffmpeg o Chrome no están disponibles.
 // Chrome: define FME_PUPPETEER_CACHE_DIR o deja la caché de la verificación de la Fase 1 en examples/fase1/revideo/out/.puppeteer.
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { checkAdapterResult } from '@fme/connectors';
 import { deserialize, serialize } from '@fme/project';
 import { RevideoAdapter, newJobId } from '../src/index.ts';
+import { newWorkDir, probeWorkDir, workRoot } from './workroot.ts';
 
 const repo = fileURLToPath(new URL('../../../../', import.meta.url));
 const fixturePath = join(repo, 'examples', 'prueba-hibrida-10s', 'project.fme.json');
 const phase1Cache = join(repo, 'examples', 'fase1', 'revideo', 'out', '.puppeteer');
 const puppeteerCacheDir = process.env.FME_PUPPETEER_CACHE_DIR ?? (existsSync(phase1Cache) ? phase1Cache : undefined);
 
-const adapter = new RevideoAdapter(puppeteerCacheDir ? { puppeteerCacheDir } : {});
+const adapter = new RevideoAdapter({ probeWorkDir, ...(puppeteerCacheDir ? { puppeteerCacheDir } : {}) });
 const probe = await adapter.probe();
 const skip = !probe.available
   ? `motor Revideo no disponible: ${probe.diagnostics.map((d) => d.message).join(' | ')}`
@@ -33,10 +33,10 @@ function job(extra: Record<string, string | number | boolean> = {}) {
   return {
     projectId: 'prueba-hibrida-10s', operation: 'render.video',
     inputs: [{ uri: fixturePath, type: 'fme/project+json' }],
-    requirements: { layerId: 'capa-titulo', text: 'FME', ...extra },
+    requirements: { layerId: 'capa-titulo', ...extra },
   };
 }
-const ctx = () => ({ jobId: newJobId(), workDir: realpathSync(mkdtempSync(join(tmpdir(), 'fme-revideo-it-'))), timeoutMs: 180_000 });
+const ctx = () => ({ jobId: newJobId(), workDir: newWorkDir('it'), timeoutMs: 180_000 });
 
 test('probe lee la versión real del motor', { skip }, () => {
   assert.match(probe.engineVersion ?? '', /^0\.11\./);
@@ -74,7 +74,7 @@ test('capa inexistente → failed con diagnóstico, sin salidas', async () => {
 });
 
 test('motor ausente → engine-missing y probe no disponible', async () => {
-  const sin = new RevideoAdapter({ engineDir: join(tmpdir(), 'no-existe-fme-engine') });
+  const sin = new RevideoAdapter({ engineDir: join(workRoot, 'no-existe-fme-engine') });
   const p = await sin.probe();
   assert.equal(p.available, false);
   assert.equal(p.diagnostics[0]!.code, 'engine-missing');
@@ -86,7 +86,7 @@ test('motor ausente → engine-missing y probe no disponible', async () => {
 test('capa SVG (drawing con asset .svg) → MP4 de 210 fotogramas', { skip, timeout: 240_000 }, async () => {
   const parsed = deserialize(readFileSync(fixturePath, 'utf8'));
   assert.ok(parsed.ok);
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'fme-revideo-svg-')));
+  const dir = newWorkDir('svg');
   mkdirSync(join(dir, 'assets'));
   writeFileSync(join(dir, 'assets', 'ilustracion.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><circle cx="100" cy="100" r="80" fill="#ff6b35"/></svg>');
   const projectPath = join(dir, 'project.fme.json');
