@@ -54,10 +54,10 @@ test('lista las herramientas del contrato §3', async () => {
   ]);
 });
 
-test('project.open abre la fixture híbrida (v2)', async () => {
+test('project.open abre la fixture híbrida (v3)', async () => {
   const r = await call(client, 'project.open', { path: 'prueba-hibrida-10s/project.fme.json' });
   assert.equal(r.isError, false);
-  assert.equal(r.body.summary.schemaVersion, 2);
+  assert.equal(r.body.summary.schemaVersion, 3);
   assert.equal(r.body.summary.fps.num, 30);
   assert.equal(r.body.summary.layers, 5);
   assert.equal(r.body.project, undefined);
@@ -103,7 +103,7 @@ test('las herramientas sin implementación devuelven NOT_IMPLEMENTED', async () 
 test('project.create guarda dentro de la raíz, sin sobrescribir, y round-trip con project.open', async () => {
   const created = await call(writable, 'project.create', { id: 'p', name: 'Nuevo', width: 640, height: 360, path: 'sub/nuevo.fme.json' });
   assert.equal(created.isError, false);
-  assert.equal(created.body.project.schemaVersion, 2);
+  assert.equal(created.body.project.schemaVersion, 3);
   assert.ok(existsSync(join(scratch, 'sub', 'nuevo.fme.json')));
   const again = await call(writable, 'project.create', { id: 'p', name: 'Nuevo', width: 640, height: 360, path: 'sub/nuevo.fme.json' });
   assert.equal(again.body.error.code, 'FILE_EXISTS');

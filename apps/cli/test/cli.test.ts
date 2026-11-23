@@ -20,12 +20,12 @@ function fme(args: string[], timeout = 60_000) {
 }
 const json = (s: string) => JSON.parse(s) as any;
 
-test('project validate: híbrida v2 válida (--json y texto)', () => {
+test('project validate: híbrida v3 válida (--json y texto)', () => {
   const r = fme(['project', 'validate', hibrida, '--json']);
   assert.equal(r.code, 0);
   const body = json(r.stdout);
   assert.equal(body.valid, true);
-  assert.equal(body.summary.schemaVersion, 2);
+  assert.equal(body.summary.schemaVersion, 3);
   assert.equal(body.summary.layers, 5);
   assert.equal(body.migratedFrom, undefined);
   assert.match(fme(['project', 'validate', hibrida]).stdout, /^Válido/);
@@ -35,7 +35,7 @@ test('project validate: una v1 se migra en memoria y lo indica', () => {
   const body = json(fme(['project', 'validate', v1, '--json']).stdout);
   assert.equal(body.valid, true);
   assert.equal(body.migratedFrom, 1);
-  assert.equal(body.summary.schemaVersion, 2);
+  assert.equal(body.summary.schemaVersion, 3);
 });
 
 test('project validate: errores con código de salida 1 y rutas', () => {
@@ -60,14 +60,14 @@ test('project migrate: v0 y v1 llegan a la versión actual; --out escribe y stdo
   const out = join(scratch, 'migrado.fme.json');
   const r = fme(['project', 'migrate', v0, '--out', out, '--json']);
   assert.equal(r.code, 0);
-  assert.equal(json(readFileSync(out, 'utf8')).schemaVersion, 2);
+  assert.equal(json(readFileSync(out, 'utf8')).schemaVersion, 3);
   // El resultado migrado es un proyecto válido y su migración es idempotente.
   const again = fme(['project', 'migrate', out]);
   assert.equal(again.code, 0);
   assert.equal(again.stdout, readFileSync(out, 'utf8'));
   // La v1 de la híbrida migra a la v2 vigente salvo el texto del título.
   const viaV1 = json(fme(['project', 'migrate', v1]).stdout);
-  assert.equal(viaV1.schemaVersion, 2);
+  assert.equal(viaV1.schemaVersion, 3);
 });
 
 test('connectors list: filtros', () => {

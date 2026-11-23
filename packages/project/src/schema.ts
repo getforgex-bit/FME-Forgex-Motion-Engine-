@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { Project } from './index.ts';
 
 /** Copia local de `SCHEMA_VERSION` de index.ts (evita un ciclo de importación cuando index re-exporte este módulo); el test la mantiene sincronizada. */
-const SCHEMA_VERSION = 2 as const;
+const SCHEMA_VERSION = 3 as const;
 
 /** Fotograma entero ≥ 0 (§7: el tiempo son fotogramas enteros). */
 const frame = z.number().int().nonnegative();
@@ -118,6 +118,26 @@ export const projectSchema = z.strictObject({
   seed: z.number().int(),
   assets: z.array(assetSchema),
   sequences: z.array(sequenceSchema),
+  artifacts: z.array(renderArtifactSchema).optional(),
+}).superRefine((project, ctx) => {
+  // Validación referencial (ADR-0015): ids de artefactos únicos y renderArtifactId resoluble.
+  const known = new Set<string>();
+  (project.artifacts ?? []).forEach((a, n) => {
+    if (known.has(a.id)) {
+      ctx.addIssue({ code: 'custom', path: ['artifacts', n, 'id'], message: `id de artefacto duplicado: "${a.id}"` });
+    }
+    known.add(a.id);
+  });
+  project.sequences.forEach((seq, i) => seq.scenes.forEach((scene, j) => scene.layers.forEach((layer, k) => {
+    const ref = layer.externalProject?.renderArtifactId;
+    if (ref !== undefined && !known.has(ref)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['sequences', i, 'scenes', j, 'layers', k, 'externalProject', 'renderArtifactId'],
+        message: `renderArtifactId "${ref}" no existe en artifacts`,
+      });
+    }
+  })));
 });
 
 /** Tipo derivado del esquema; debe seguir siendo equivalente a `Project` de `index.ts`. */

@@ -7,7 +7,7 @@ import { deserialize, serialize } from "../src/serialize.ts";
 
 function proyecto(): Project {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: "p1",
     name: "Demo",
     fps: { num: 30000, den: 1001 },
@@ -84,11 +84,11 @@ test("deserialize migra la fixture v0 hasta la versión actual y es estable (FDN
   const a = deserialize(texto);
   assert.equal(a.ok, true);
   if (!a.ok) return;
-  assert.equal(a.value.schemaVersion, 2);
+  assert.equal(a.value.schemaVersion, 3);
   assert.deepEqual(a.value.fps, { num: 25, den: 1 });
   assert.equal(a.value.id, JSON.parse(texto).id);
   const salida = serialize(a.value);
-  assert.equal(JSON.parse(salida).schemaVersion, 2);
+  assert.equal(JSON.parse(salida).schemaVersion, 3);
   const b = deserialize(salida);
   assert.equal(b.ok, true);
   if (b.ok) {
@@ -98,7 +98,7 @@ test("deserialize migra la fixture v0 hasta la versión actual y es estable (FDN
 });
 
 test("deserialize: versión futura o inválida sigue dando unknown-schema-version", () => {
-  for (const v of [3, 99, -1, "2", null]) {
+  for (const v of [4, 99, -1, "3", null]) {
     const r = deserialize(JSON.stringify({ ...proyecto(), schemaVersion: v }));
     assert.equal(r.ok, false, String(v));
     if (!r.ok) assert.equal(r.errors[0]?.code, "unknown-schema-version", String(v));

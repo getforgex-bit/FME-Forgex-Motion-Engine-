@@ -49,9 +49,12 @@ test('prepara el mismo trabajo a partir de la fixture FME de schemaVersion 1 y l
     inputs: [{ type: 'fme/project+json', uri: pathToFileURL(legacyPath).href }],
   };
 
+  // La v1 no tenía catálogo de artefactos (ADR-0015): la vigente solo añade `renderArtifactId`.
+  const sinEnlace = (prepared: unknown) => JSON.parse(JSON.stringify(prepared),
+    (key, value) => (key === 'renderArtifactId' ? undefined : value));
   assert.deepEqual(
-    prepareJob(legacyJob, [dirname(legacyPath)]),
-    prepareJob(projectJob, [exampleRoot]),
+    sinEnlace(prepareJob(legacyJob, [dirname(legacyPath)])),
+    sinEnlace(prepareJob(projectJob, [exampleRoot])),
   );
 });
 

@@ -68,7 +68,7 @@ test('el plan es determinista, puro y usa el perfil efectivo en sus claves', () 
 
 test('editar el contenido real del título v2 invalida solo sus segmentos', () => {
   const project = fixture();
-  assert.equal(project.schemaVersion, 2);
+  assert.equal(project.schemaVersion, 3);
   const original = planSceneRender(project, options);
   const title = layer(project, 'capa-titulo');
   assert.ok(title.text);

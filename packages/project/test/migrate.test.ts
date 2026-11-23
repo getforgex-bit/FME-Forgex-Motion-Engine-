@@ -9,7 +9,9 @@ const fixtureText = readFileSync(new URL('./fixtures-v0/project.fme.json', impor
 
 test('migra la fixture sintética v0 y conserva activos, escenas y referencias', () => {
   const fixture = JSON.parse(fixtureText);
-  const expected = { ...fixture, schemaVersion: SCHEMA_VERSION, fps: { num: 25, den: 1 } };
+  // v2→v3 (ADR-0015) elimina los renderArtifactId, que en v0–v2 no apuntaban a ningún catálogo.
+  const expected = JSON.parse(JSON.stringify({ ...fixture, schemaVersion: SCHEMA_VERSION, fps: { num: 25, den: 1 } }),
+    (key, value) => (key === 'renderArtifactId' ? undefined : value));
   const migrated = migrateToCurrent(fixture);
 
   assert.deepEqual(migrated, { ok: true, value: expected });
