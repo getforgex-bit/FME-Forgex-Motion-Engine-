@@ -67,3 +67,4 @@ Fase 1: fijar las versiones de FreeCut, Revideo y Blender y ejecutar una prueba 
 | 2026-11-22 | Coordinación multiagente por archivos versionados (propuesta) | ADR-0006 |
 | 2026-11-22 | Red FDN: carpeta operativa local y plan versionado; A0 integrador; `develop` local (propuesta; plan aprobado) | ADR-0007 |
 | 2026-11-22 | Validación en runtime con Zod 4 (propuesta) | ADR-0008 |
+| 2026-11-23 | Relevo entre equipos: detección por latido (60 min) + declaración del usuario; A0 propone, el usuario aprueba; rama nueva desde la punta; el relevista termina; si cae A0, se pausa la integración y el usuario elige un suplente (Sol, Neon o Astra) | ADR-0013 |
