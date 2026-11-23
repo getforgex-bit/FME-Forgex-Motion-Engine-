@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-23 (integración 1 de la Tanda 1, `develop`)._
+> _Última consolidación: 2026-11-23 (integración 2, `develop`; apertura de la Tanda 3)._
 
 ## Resumen
 
@@ -17,33 +17,35 @@
 | FDN-006 | `develop`, worktrees, política de índices | CL-A0 | 001–003 | DONE (arranque) |
 | FDN-010 | Verificar Revideo | CL-A1 | 003 | DONE (6ee5826) |
 | FDN-011 | Verificar Blender 5.2 headless | CX | — | DONE (b0a7db7; A0 reprodujo el SHA-256 de píxeles) |
-| FDN-012 | Verificar FreeCut | AG | — | IN_PROGRESS |
-| FDN-013 | Sonda de medios `scripts/probe-media.mjs` | CL-A3 | 003 | READY |
+| FDN-012 | Verificar FreeCut | AG | — | BLOCKED (confirmación del usuario para clonar FreeCut, ~380–700 MB) |
+| FDN-013 | Sonda de medios `scripts/probe-media.mjs` | CL-A3 | 003 | DONE (f271d29) |
 | FDN-014 | Cierre de la Fase 1 (criterio #1) | CL-A0 | 010, 011, 012 | BACKLOG |
+| FDN-026 | `deserialize` aplica las migraciones (`migrateToCurrent`) | CL-A2 | 021, 024 | READY |
+| FDN-027 | ADR-0011: interfaz común de adaptadores y procedencia | CL-A0 | 030, 031 | DONE (b290224) |
 | FDN-020 | ADR-0008: validación con Zod 4 | CL-A0 | — | DONE (propuesta escrita) |
-| FDN-015 | `run.ps1` de Blender compatible con Windows PowerShell 5.1 | CX | 011 | READY |
-| FDN-016 | Revideo: FFmpeg del sistema en lugar del binario GPLv3 de 2018 + `npm audit` (vite) + ADR-0010 | CL-A1 | 010 | READY |
+| FDN-015 | `run.ps1` de Blender compatible con Windows PowerShell 5.1 | CX | 011 | DONE (d216597; A0 lo verificó en PS 5.1) |
+| FDN-016 | Revideo: FFmpeg del sistema en lugar del binario GPLv3 de 2018 + `npm audit` (vite) + ADR-0010 | CL-A1 | 010 | DONE (c8ba756) |
 | FDN-021 | Esquema Zod + validación + serialización de `Project` | CL-A2 | 003, 020 | DONE (b0325f9) |
 | FDN-022 | Tiempo racional y timecode sin deriva | CX | 003 | DONE (026af28) |
-| FDN-023 | Fixtures (incluida la híbrida de 10 s) + round-trip | CL-A2 | 021, 022 | READY |
-| FDN-024 | Marco de migraciones + migración de ejemplo | CX | 021 | READY |
-| FDN-025 | Cierre de la Fase 2 (criterio #2) | CL-A0 | 023, 024 | BACKLOG |
-| FDN-030 | Registro dinámico de conectores + ADR-0009 | AG | 003 | IN_PROGRESS |
-| FDN-031 | Ejecución aislada de procesos (`runtime/workers`) | CX | 003 | READY |
-| FDN-032 | Adaptador Revideo real (JobRequest→JobResult con procedencia) | CL | 010, 021, 030, 031 | BACKLOG |
+| FDN-023 | Fixtures (incluida la híbrida de 10 s) + round-trip | CL-A2 | 021, 022 | DONE (1a35a36) |
+| FDN-024 | Marco de migraciones + migración de ejemplo | CX | 021 | DONE (8cbdde3) |
+| FDN-025 | Cierre de la Fase 2 (criterio #2) | CL-A0 | 023, 024, 026 | BACKLOG (tras FDN-026) |
+| FDN-030 | Registro dinámico de conectores + ADR-0009 | AG | 003 | DONE (4ee6910) |
+| FDN-031 | Ejecución aislada de procesos (`runtime/workers`) | CX | 003 | DONE (e73f706) |
+| FDN-032 | Adaptador Revideo real (JobRequest→JobResult con procedencia) | CL-A1 | 010, 021, 030, 031 | READY |
 | FDN-033 | Cierre de la Fase 3 | CL-A0 | 032 | BACKLOG |
-| FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | BACKLOG |
+| FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | READY |
 | FDN-041 | Adaptador FreeCut (nivel A o B según la F1) | AG | 012, 030, 031 | BACKLOG |
 | FDN-042 | Rutas A/B/C + `ExternalProjectRef`/`RenderArtifact` enlazados | a decidir | 021, 032, 040, 041 | BACKLOG |
 | FDN-043 | Cierre de la Fase 4 (criterio #3) | CL-A0 | 042 | BACKLOG |
-| FDN-050 | Núcleo del router (8 pasos, modos, restricciones duras) con tarjetas simuladas | a decidir | 030 | BACKLOG |
+| FDN-050 | Núcleo del router (8 pasos, modos, restricciones duras) con tarjetas simuladas | AG | 030 | READY |
 | FDN-051 | Medición de tokens: tarjeta simple frente a avanzada | a decidir | 050 | BACKLOG |
 | FDN-052 | Fallbacks con adaptadores reales | a decidir | 050, 043 | BACKLOG |
 | FDN-053 | Cierre de la Fase 5 (criterios #4 y #5) | CL-A0 | 051, 052 | BACKLOG |
-| FDN-060 | Dirección artística: perfiles de estilo y reglas | libre (el primero que quede libre) | 021 | READY |
+| FDN-060 | Dirección artística: perfiles de estilo y reglas | libre (el primero que quede libre) | 021 | DONE (b78af00, AG) |
 | FDN-061 | Gradientes y técnicas → operaciones por backend | a decidir | 060, 032, 040 | BACKLOG |
 | FDN-062 | Cierre de la Fase 6 (criterio #6) | CL-A0 | 061 | BACKLOG |
-| FDN-070 | Caché con invalidación por dependencias | a decidir | 021, 031 | BACKLOG |
+| FDN-070 | Caché con invalidación por dependencias | CX | 021, 031 | READY |
 | FDN-071 | Render por segmentos + preview adaptativa | a decidir | 070 | BACKLOG |
 | FDN-072 | Errores: falta de VRAM, reintento seguro, backend alternativo | a decidir | 070 | BACKLOG |
 | FDN-073 | Suite técnica (temporal, estética, editabilidad, enrutamiento, recursos, seguridad, regresión) | a decidir | 043, 062, 071, 072 | BACKLOG |
@@ -113,6 +115,72 @@ Cada ficha es el contrato de la tarea: si algo no está aquí, pregúntalo antes
 - **Aceptación:** tests de alta y baja, duplicados, filtros, `unknown` y secciones; `npm run typecheck` + `npm test` en verde.
 
 ---
+
+## Fichas de la Tanda 3 (READY desde el 2026-11-23, integración 2)
+
+Base común: `develop` ≥ `b290224`. Interfaz de adaptadores en [ADR-0011](../docs/decisiones/0011-interfaz-de-adaptadores.md) (`ConnectorAdapter`, `AdapterJobResult`, `checkAdapterResult`, exportados desde `@fme/connectors`). Ejecución con `runIsolated` de `@fme/runtime-workers`. La raíz ya admite workspaces en `packages/adapters/*`, y `npm test` y el typecheck de tests los incluyen. **No edites** `package.json`, `tsconfig.json` ni `package-lock.json` de la raíz: A0 añade la referencia de tu paquete y regenera el lockfile al integrar. Para compilar tu paquete: `npx tsc -b <ruta del paquete>`.
+
+### FDN-026 · `deserialize` con migraciones (CL-A2)
+- **Rutas:** `packages/project/src/serialize.ts` y `packages/project/test/serialize.test.ts`.
+- **Hacer:** si el JSON trae un `schemaVersion` anterior al actual, `deserialize` aplica `migrateToCurrent` antes de validar. Si trae una versión futura o desconocida, mantiene el error `unknown-schema-version`. `serialize` siempre escribe la versión actual.
+- **Aceptación:** `deserialize` de `test/fixtures-v0/project.fme.json` devuelve un proyecto v1 válido; deserializar, serializar y volver a deserializar es estable; los tests existentes siguen en verde. Desbloquea FDN-025 (cierre de la F2).
+
+### FDN-032 · Adaptador Revideo (CL-A1)
+- **Rutas:** `packages/adapters/revideo/**` (workspace `@fme/adapter-revideo`, con dependencias `@fme/connectors`, `@fme/project` y `@fme/runtime-workers` en `0.0.0`) y `runtime/engines/revideo/**` (proyecto npm del motor **fuera de los workspaces**, con su propio lockfile, a partir de `examples/fase1/revideo`, incluido `ffmpeg-compat.mjs`; `node_modules/` y `out/` ignorados).
+- **Hacer:** implementar `ConnectorAdapter`, con las tarjetas a partir de `examples/fase1/revideo/card.*.json` y ajustadas a lo que haga el adaptador.
+  - Operación `render.video`: recibe un proyecto FME (`inputs[0]`, `fme/project+json`) y `requirements.layerId` (y `alpha` opcional). Renderiza una capa `text` o `svg` mapeando sus canales `x`, `y`, `opacity`, `scale` y `rotation` (con interpolación según `easing`) y su rango `startFrame`/`durationFrames`.
+  - Salida: MP4, o MOV ProRes 4444 si `alpha: true`.
+  - FFmpeg con ruta explícita (ADR-0010; variable `FME_FFMPEG_PATH` o el PATH) y diagnóstico `engine-missing` si falta.
+  - `probe()` lee la versión real del motor.
+- **Aceptación:**
+  - test unitario del mapeo de canales a la escena (sin motor);
+  - test de integración con la capa de título de `examples/prueba-hibrida-10s/project.fme.json` → 120 fotogramas a 30 FPS comprobados con `scripts/probe-media.mjs`, y `checkAdapterResult` sin incumplimientos;
+  - si el motor no está instalado, el test de integración se marca **skip** con el motivo explícito (CI no lo tiene), nunca en verde falso.
+- **Descargas:** instalar el motor en `runtime/engines/revideo` necesita confirmación del usuario. Usa la caché de npm (`--prefer-offline`) e indica el tamaño.
+
+### FDN-040 · Adaptador Blender (CX)
+- **Rutas:** `packages/adapters/blender/**` (workspace `@fme/adapter-blender`) y `runtime/engines/blender/**` (scripts `bpy` versionados, a partir de `examples/fase1/blender/render_scene.py`).
+- **Hacer:** implementar `ConnectorAdapter`. Operación `render.image-sequence`: proyecto FME + `requirements.layerId` (capa `model3d`) + `resolution` opcional.
+  - La escena se construye desde parámetros JSON pasados al script, nunca desde código Python recibido del agente. Si el asset no existe, se usa un primitivo de sustitución y se avisa en `diagnostics` (tipo `warning`).
+  - Mapeo explícito de fotogramas: FME es 0-based y relativo a la capa; Blender, 1-based.
+  - Cámara animada según los canales.
+  - Ruta del motor: `FME_BLENDER_PATH` o la ruta por defecto. `probe()` ejecuta `blender --version`.
+  - `contentSha256` = SHA-256 del RGBA decodificado (hallazgo de FDN-011).
+- **Aceptación:**
+  - la capa 3D de la fixture híbrida produce 150 PNG RGBA (`durationFrames`) a resolución de preview;
+  - `checkAdapterResult` sin incumplimientos;
+  - dos jobs iguales dan el mismo `contentSha256`;
+  - el timeout mata Blender;
+  - skip explícito si no hay Blender.
+
+### FDN-050 · Núcleo del router (AG)
+- **Rutas:** `packages/router/**` (workspace `@fme/router`; ya entra en `packages/*`; A0 añade la referencia en `tsconfig.json`).
+- **Hacer:**
+  - la secuencia de 8 pasos de `docs/arquitectura.md` §3 sobre un `ConnectorRegistry`;
+  - modos automático, manual e híbrido;
+  - restricciones duras (compatibilidad y permisos) que ninguna puntuación compensa;
+  - un `unknown` provoca `inspect` **solo** de las secciones necesarias y nunca se trata como compatible;
+  - justificación registrada (candidatos, descartes con motivo, secciones inspeccionadas y elección);
+  - de momento, sin ejecutar jobs: devuelve un plan.
+  - Fixtures: las tarjetas **reales** verificadas de `examples/fase1/revideo` y `examples/fase1/blender` más una simulada de editor.
+- **Aceptación:**
+  - «título SVG animado» → Revideo;
+  - «cámara 3D con alpha» → Blender;
+  - el modo manual con una herramienta incompatible da un error con motivo;
+  - con alpha `unknown` se inspecciona solo `technical` (criterio #5).
+  - Los tests cuentan las tarjetas simples leídas frente a las secciones avanzadas pedidas (base de FDN-051).
+
+### FDN-070 · Caché con invalidación por dependencias (CX)
+- **Rutas:** `packages/cache/**` (workspace `@fme/cache`; ya entra en `packages/*`; A0 añade la referencia).
+- **Hacer:**
+  - `dependencyHash({ projectId, segment, assets[], adapters[] })`: SHA-256 de un JSON canónico con claves ordenadas (spec §13.4);
+  - un grafo de dependencias donde `invalidate(nodeId)` devuelve **solo** los nodos dependientes;
+  - un almacén en disco bajo una raíz permitida, con rutas validadas (reutiliza la validación de `@fme/runtime-workers` si está exportada; si no, pídela con una `solicitud`) y escritura atómica;
+  - sin dependencias nuevas.
+- **Aceptación:**
+  - el hash es estable ante el orden de las claves y cambia al cambiar la versión de un adaptador;
+  - al invalidar una capa, solo se invalidan sus derivados;
+  - se rechaza una ruta fuera de la raíz.
 
 ## Fichas de la Tanda 2 (READY desde el 2026-11-23)
 

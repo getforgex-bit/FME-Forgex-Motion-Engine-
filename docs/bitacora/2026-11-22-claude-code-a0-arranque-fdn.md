@@ -45,3 +45,22 @@ La verificación de los worktrees se anota en la sección siguiente.
 | fdn/FDN-004-benchmarks | 7cdfd04 | solo BENCHMARKS.md; contrasta los datos iniciales; marca las contradicciones | fusionada (a94c03b) |
 
 Después: `npm run typecheck` OK y `npm test` 30/30 en `develop`. Nuevas tareas READY: 013, 015, 016, 023, 024, 031 y 060. Licencias registradas: zod, Revideo, FFmpeg bundled GPLv3, Chrome for Testing, Blender y FFmpeg del sistema.
+
+## 2026-11-23 · Integración 2 (A0)
+Cada fusión se hizo con `merge --no-commit` y después `npm run typecheck` + `npm test` **antes** del commit (lección de la integración 1).
+
+| Rama | Commit | Resultado tras fusionar |
+|---|---|---|
+| FDN-030 registro | 4ee6910 | test 39/39 |
+| FDN-024 migraciones | 8cbdde3 | 43/43 |
+| FDN-023 fixtures | 1a35a36 | 49/49 |
+| FDN-013 sonda de medios | f271d29 | 56/56 |
+| FDN-015 PS 5.1 | d216597 | 56/56. A0: `powershell -File run.ps1 -RunName a0-ps51` → código 0, 90 fotogramas, SHA-256 RGBA `c9706f10…450b` (idéntico) |
+| FDN-016 FFmpeg del sistema | c8ba756 | 56/56. No re-ejecutado por A0 (motor no instalado en este checkout) |
+| FDN-031 workers | e73f706 | lockfile regenerado offline; tests del worker añadidos a `npm test` → 61/61 |
+| FDN-060 art-direction | b78af00 | referencia en `tsconfig.json` + lockfile → 68/68 |
+
+Re-exportaciones en `@fme/connectors` (registro) y `@fme/project` (`migrateToCurrent`). Los paquetes compilados de project, connectors, art-direction y workers cargan bien.
+ADR-0011 (interfaz de adaptadores): `adapter.ts` + 3 tests → **71/71**. Workspaces `packages/adapters/*` preparados.
+Graphify (`god-nodes`): `parseProject` y `ConnectorRegistry` son los nodos centrales; los cambios en ellos exigen `codegraph impact`.
+Bloqueo: FDN-012 espera la confirmación del usuario para la descarga de FreeCut.

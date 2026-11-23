@@ -11,6 +11,14 @@
 | FDN-022 | CX-C2 GPT-6.2 Sol | 05:53 → 05:58 UTC | ~5 min | typecheck ✔, test 19/19 ✔ | 2 (herramientas) | GitNexus sin índice del worktree | 0 | 0 | 8 / 0 | no medido | Revisado internamente por C0 |
 | FDN-011 | CX-C1 GPT-6.2 Sol | 05:53 → 06:00 UTC | ~7 min | 2 corridas, SHA-256 de píxeles idéntico (A0 lo reprodujo) | 6 de verificación | `run.ps1` incompatible con PS 5.1 (→ FDN-015) | pequeño | 0 | 2 / 0 | no medido | Hallazgo valioso: metadatos volátiles en PNG |
 | FDN-010 | CL-A1 Sonnet 5.5 | 05:51 → ~06:02 UTC | ~11 min | `npm run verify` ×2 (la segunda limpia) ✔ | 4 | wasm vacío, fotograma extra, alpha opaco, dependencia faltante (resueltos) | 0 | 0 | 0 / 0 | no medido | Instaló `@revideo/ui` sin confirmación explícita (1,3 MB) → recordatorio |
+| FDN-030 | AG-B2 Gemini 4 Hydrogen | 05:56 → 06:07 UTC | ~11 min | typecheck ✔, test 16/16 ✔ | 0 | — | 0 | 0 | 4 / 1 | no medido | ADR-0009 sólido; semántica `unknown` correcta |
+| FDN-060 | AG-B1+B2 Hydrogen | 06:16 → 06:20 UTC | ~4 min | test 37/37 ✔ | 0 | — | 0 | 0 | 2 / 1 | no medido | Respetó el reclamo de `tsconfig.json` de Codex; determinista |
+| FDN-024 | CX-C2 Sol | 06:08 → 06:12 UTC | ~4 min | test 34/34 ✔ | 2 | Zod ausente en el worktree (restaurado offline) | 0 | 0 | 4 / 0 | no medido | — |
+| FDN-015 | CX-C1 Sol | 06:09 → 06:12 UTC | ~3 min | PS 5.1 y PS 7 ✔; hash igual (A0 lo reprodujo) | 1 | Se perdía el ExitCode en PS 5.1 (resuelto) | — | 0 | 2 / 0 | no medido | — |
+| FDN-031 | CX-C1 Sol | 06:07 → 06:21 UTC | ~14 min (con pausa) | 5/5; kill del árbol raíz/hijo/nieto | 1 | spawn UNKNOWN síncrono (resuelto) | 0 | 0 | 2 / 0 | no medido | Pidió regenerar el lockfile en lugar de tocarlo (correcto) |
+| FDN-023 | CL-A2 Sonnet 5.5 | ~06:09 → 06:10 UTC | ~2 min + arreglo | test 36/36 ✔ | 1 | Un `sed` rompió un test (lo corrigió antes del REVIEW final) | pequeño | 0 | — | no medido | Tolerancia a CRLF añadida |
+| FDN-013 | CL-A3 Haiku 5.5 | ~06:09 → 06:10 UTC | ~2 min | 7/7, total 37/37 ✔ | 1 | ProRes 12 bits | 0 | 0 | 0 / 0 | no medido | Bien acotada para Haiku |
+| FDN-016 | CL-A1 Sonnet 5.5 | 06:09 → 06:16 UTC | ~7 min | verify ✔, `npm audit` 0 | 0 | fluent-ffmpeg y lavfi con FFmpeg ≥ 7 (parche) | 0 | 0 | 0 / 0 | no medido | Pidió confirmación de la descarga (corregido respecto a FDN-010) |
 | FDN-004 | CL-A3 Haiku 5.5 | 05:51 → 05:56 UTC | ~5 min | n/a (documento) | 0 | — | 0 | 0 | 0 / 0 | no medido | Calidad alta; contradijo con fuentes la hipótesis «Sonnet ≥ Opus en terminal» |
 
 ## Tiempo de coordinación (A0)
@@ -18,9 +26,11 @@
 | Fecha | Actividad | Duración aproximada |
 |---|---|---|
 | 2026-11-23 | Revisión e integración de 5 ramas, reproducción del render de Blender y consolidación | ~15 min |
+| 2026-11-23 | Integración 2: 8 ramas, 2 workspaces nuevos (lockfile), verificación PS 5.1, ADR-0011 y fichas de la Tanda 3 | ~25 min |
 
 ## Valor de los grafos (se evalúa al cerrar cada tanda)
 
 | Tanda | Consultas | Lecturas evitadas declaradas | Valoración |
 |---|---|---|---|
+| 2 | CodeGraph ~16 (CX y AG), Graphify 3 updates + 1 `god-nodes` (A0) | ~10 archivos declarados | Graphify ya aporta: identificó `parseProject` y `ConnectorRegistry` como nodos centrales |
 | 1 (parcial) | CodeGraph 10+ (CX), A0 `affected` 1; Graphify 0 | 2 (contrato TS, `index.ts`) | Útil para localizar tests afectados; Graphify aún sin uso real (poco código) |

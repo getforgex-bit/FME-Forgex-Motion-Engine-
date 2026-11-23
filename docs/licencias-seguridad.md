@@ -32,7 +32,8 @@ Cuando se fije una versión de una herramienta, añade una fila aquí:
 | @ffmpeg-installer/win32-x64 (transitiva de Revideo) | 4.1.0 (FFmpeg N-92722, 2018) | **Binario GPLv3** | Proceso separado; **no redistribuir**; sustitución en estudio (FDN-016) | 2026-11-23 | A1 → A0 |
 | Chrome for Testing (Puppeteer, Revideo) | 157.0.8103.78 | Binario de Google | Descarga local; no se redistribuye | 2026-11-23 | A1 → A0 |
 | Blender | 5.2.3 LTS (build e13b728c6880) | GPL | Proceso separado (`blender -b -P`); no se redistribuye ni se modifica | 2026-11-23 | C1 → A0 |
-| FFmpeg (sistema, winget Gyan) | 9.0.2 full_build | GPL (build *full* con `--enable-gpl`; POR VALIDAR en FDN-016) | Proceso separado; no se redistribuye | 2026-11-23 | A0 |
+| vite (prueba Revideo) | 8.3.8 | MIT | Herramienta de build del motor Revideo; no se distribuye | 2026-11-23 | A1 → A0 |
+| FFmpeg (sistema, winget Gyan) | 9.0.2 full_build | **GPLv3** (`--enable-gpl --enable-version3`, verificado en FDN-016) | Proceso separado; no se redistribuye | 2026-11-23 | A0 |
 
 ## 2. Seguridad del enrutador y de los adaptadores
 
