@@ -12,11 +12,11 @@ _Última actualización: 2026-11-22: repositorio preparado (Fase 0)._
 | 3 | Conectores | **Hecha** (2026-11-23, E2E con job real) | Descubrimiento y job de extremo a extremo |
 | 4 | Integración real | **En curso** | Vídeo final con fuentes enlazadas |
 | 5 | Enrutador | **En curso** (núcleo con tarjetas reales) | Selección justificada y verificable |
-| 6 | Dirección artística | Pendiente | Cambios reales y reproducibles en la escena |
+| 6 | Dirección artística | **En curso** (criterio #6 ☑ en Revideo; falta Blender, FDN-061b) | Cambios reales y reproducibles en la escena |
 | 7 | Calidad | Pendiente | Prueba híbrida de 10 s superada |
 | 8 | Evolución | Pendiente | Cada pieza nueva demuestra valor concreto |
 
-Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (2/8).
+Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (3/8).
 
 ## Qué existe hoy (verificado)
 
@@ -35,7 +35,9 @@ Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-acept
   - Router: secuencia de 8 pasos, modos y restricciones duras sobre las tarjetas reales (FDN-050).
   - `schemaVersion` 2: contenido de las capas de texto (FDN-028, ADR-0012).
 - **Fase 6, adelantada:** perfiles de estilo y reglas deterministas (`@fme/art-direction`, FDN-060).
-- `npm test` 131 pass + 6 skip (integración de Revideo sin motor instalado en el checkout).
+- **Tres adaptadores reales** (Revideo, Blender y FreeCut), CLI (`apps/cli`), plan de render por segmentos, recuperación de errores y caché robusta en Windows.
+- **Criterio #6 ☑:** los gradientes cambian una métrica de píxeles de forma monótona en un render real de Revideo.
+- `npm test` 178 pass + 8 skip (integraciones sin motor en este checkout).
 - FORGEX Stack instalado y verificado en el entorno de preparación (ver la bitácora del 2026-11-22). Cada persona debe instalarlo en su máquina.
 
 ## Qué NO existe todavía

@@ -32,6 +32,12 @@
 | FDN-080 | CL-A2 Sonnet 5.5 | ~07:04 → 07:08 UTC | ~4 min | 11 pass (cliente del SDK) | 0 | — | 0 | 0 | — | no medido | No tocó la raíz; dejó listas las instrucciones para A0 |
 | FDN-032b/034b | CL-A1 Sonnet 5.5 | 07:04 → 07:09 UTC | ~5 min | 8/8 en paralelo ×3 (A0 lo reprodujo) | 1 | — | 0 | 0 | — | no medido | — |
 | FDN-040 (arreglo v2) | CX-C0 Sol | ~06:57 UTC | — | A0: Blender real 6/6 | 0 | — | — | — | — | — | Hizo el arreglo pero se quedó sin cuota antes de enviar el REVIEW |
+| FDN-041 | AG-B1 Hydrogen (+B0) | 16:45 → 16:55 UTC | ~10 min | 7/7 con FreeCut real (A0: mismo contentSha256) | 0 | — | 0 | 0 | 1 / 1 | no medido | — |
+| FDN-072 | AG-B2 Hydrogen | 16:45 → 16:52 UTC | ~7 min | 8/8 ✔ | 1 | — | 0 | 0 | 2 / 1 | no medido | Tomó una tarea libre (correcto) |
+| FDN-070b | CX-C1 Sol | 16:46 → 16:52 UTC | ~6 min | 50/50 focales + 5 suites (A0: 6/6) | 1 | — | 0 | 0 | 3 / 0 | no medido | Reprodujo el EPERM antes de arreglarlo |
+| FDN-071 | CX-C1+C2 Sol | 06:54 → 16:48 UTC | ~10 h (incluida la pausa sin cuota) | 12/12 ✔ | 1 | — | 0 | 0 | 6 / 0 | no medido | Primera tarea que sobrevivió a la falta de cuota |
+| FDN-061 | CL-A1 Sonnet 5.5 | 16:49 → 16:55 UTC | ~6 min | motor real: métrica monótona (A0: 9/9) | 0 | — | 0 | 0 | — | no medido | Cambios fuera de ficha, aditivos y declarados |
+| FDN-081 | CL-A2 Sonnet 5.5 | ~16:47 → 16:52 UTC | ~5 min | 8 + 1 skip (A0 con motor: 9/9) | 0 | — | 0 | 0 | — | no medido | — |
 | FDN-004 | CL-A3 Haiku 5.5 | 05:51 → 05:56 UTC | ~5 min | n/a (documento) | 0 | — | 0 | 0 | 0 / 0 | no medido | Calidad alta; contradijo con fuentes la hipótesis «Sonnet ≥ Opus en terminal» |
 
 ## Tiempo de coordinación (A0)
@@ -39,6 +45,7 @@
 | Fecha | Actividad | Duración aproximada |
 |---|---|---|
 | 2026-11-23 | Revisión e integración de 5 ramas, reproducción del render de Blender y consolidación | ~15 min |
+| 2026-11-23 | Integración 6: 6 ramas; verificación con FreeCut y Revideo reales; criterio #6 | ~15 min |
 | 2026-11-23 | Integración 5: 4 ramas + FDN-040 sin REVIEW (Codex sin cuota); verificación con motores reales | ~20 min |
 | 2026-11-23 | Integración 4: 6 ramas, diagnóstico de 2 fallos intermitentes (EPERM de la caché; aislamiento de tests de Revideo), verificación de FreeCut y del E2E, cierre de las F1 y F3 | ~30 min |
 | 2026-11-23 | Integración 2: 8 ramas, 2 workspaces nuevos (lockfile), verificación PS 5.1, ADR-0011 y fichas de la Tanda 3 | ~25 min |

@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-23 (integración 5)._
+> _Última consolidación: 2026-11-23 (integración 6; criterio #6 ☑)._
 
 ## Resumen
 
@@ -21,7 +21,7 @@
 | FDN-013 | Sonda de medios `scripts/probe-media.mjs` | CL-A3 | 003 | DONE (f271d29) |
 | FDN-014 | Cierre de la Fase 1 (criterio #1) | CL-A0 | 010, 011, 012 | DONE (criterio #1 ☑) |
 | FDN-026 | `deserialize` aplica las migraciones (`migrateToCurrent`) | CL-A2 | 021, 024 | DONE (652f0e2) |
-| FDN-070b | `DiskCache`: reintentar `rename` ante EPERM/EBUSY/EACCES en Windows (bug real; 1 de 5 en `npm test`) | CX | 070 | READY |
+| FDN-070b | `DiskCache`: reintentar `rename` ante EPERM/EBUSY/EACCES en Windows (bug real; 1 de 5 en `npm test`) | CX | 070 | DONE (25f6b9c; A0: 6/6 `npm test` seguidos) |
 | FDN-032b | Adaptador Revideo: usar `layer.text` (ADR-0012) en lugar de `requirements.text` | CL-A1 | 028, 032 | DONE (c9499f8) |
 | FDN-034b | Tests de integración de Revideo seguros en paralelo (tmp-workdir frente a e2e) | CL-A1 | 033, 034 | DONE (c9499f8; A0 8/8 en paralelo ×3) |
 | FDN-028 | Contenido de las capas `text` en el modelo universal (ADR-0012 + `schemaVersion` 2 + migración v1→v2) | CL-A2 | 021, 024, 026 | DONE (05a8e64) |
@@ -40,25 +40,29 @@
 | FDN-032 | Adaptador Revideo real (JobRequest→JobResult con procedencia) | CL-A1 | 010, 021, 030, 031 | DONE (a88148d; job real 6/6 verificado por A0) |
 | FDN-033 | Cierre de la Fase 3: descubrimiento → job real → procedencia, de extremo a extremo | CL-A1 (A0 valida) | 030, 032 | DONE (13606e6; Fase 3 cerrada) |
 | FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | DONE (ab6e780; A0 verificó con Blender real 6/6) |
-| FDN-041 | Adaptador FreeCut (nivel A, recomendado por FDN-012) | AG | 012, 030, 031 | READY |
-| FDN-042 | Rutas A/B/C + `ExternalProjectRef`/`RenderArtifact` enlazados | a decidir | 021, 032, 040, 041 | BACKLOG |
+| FDN-041 | Adaptador FreeCut (nivel A, recomendado por FDN-012) | AG | 012, 030, 031 | DONE (7bdca83; A0: FreeCut real 7/7) |
+| FDN-042 | Rutas A/B/C + `ExternalProjectRef`/`RenderArtifact` enlazados | a decidir | 021, 032, 040, 041 | READY (dividida en 042a/042b/042c) |
 | FDN-043 | Cierre de la Fase 4 (criterio #3) | CL-A0 | 042 | BACKLOG |
 | FDN-050 | Núcleo del router (8 pasos, modos, restricciones duras) con tarjetas simuladas | AG | 030 | DONE (3ef734e) |
 | FDN-051 | Medición de tokens: tarjeta simple frente a avanzada | CL-A3 | 050 | DONE (3366479) |
 | FDN-052 | Fallbacks con adaptadores reales | a decidir | 050, 043 | BACKLOG |
 | FDN-053 | Cierre de la Fase 5 (criterios #4 y #5) | CL-A0 | 051, 052 | BACKLOG |
 | FDN-060 | Dirección artística: perfiles de estilo y reglas | libre (el primero que quede libre) | 021 | DONE (b78af00, AG) |
-| FDN-061 | Gradientes y técnicas → operaciones por backend | CL-A1 | 060, 032, 040 | READY |
+| FDN-061 | Gradientes y técnicas → operaciones por backend | CL-A1 | 060, 032, 040 | DONE (ed40273; Revideo, A0: 9/9 con motor) |
 | FDN-062 | Cierre de la Fase 6 (criterio #6) | CL-A0 | 061 | BACKLOG |
 | FDN-070 | Caché con invalidación por dependencias | CX | 021, 031 | DONE (f3ad71f) |
-| FDN-071 | Render por segmentos + preview adaptativa | CX | 070 | IN_PROGRESS (parte C1 hecha, 7c7ce39; falta la segmentación de C2; Codex sin cuota) |
-| FDN-072 | Errores: falta de VRAM, reintento seguro, backend alternativo | libre | 070 | READY |
+| FDN-071 | Render por segmentos + preview adaptativa | CX | 070 | DONE (f6a8abb) |
+| FDN-072 | Errores: falta de VRAM, reintento seguro, backend alternativo | libre | 070 | DONE (021582e) |
 | FDN-073 | Suite técnica (temporal, estética, editabilidad, enrutamiento, recursos, seguridad, regresión) | a decidir | 043, 062, 071, 072 | BACKLOG |
 | FDN-074 | Exportación final con audio y sincronía | a decidir | 043, 071 | BACKLOG |
 | FDN-075 | Prueba híbrida de 10 s (criterios #7 y #8) | CL-A0 + todos | 073, 074 | BACKLOG |
 | FDN-080 | Servidor MCP mínimo (`apps/mcp`) | CL-A2 | 021, 030, 050 | DONE (0348125) |
-| FDN-081 | CLI (`apps/cli`) | CL-A2 | 080 | READY |
+| FDN-081 | CLI (`apps/cli`) | CL-A2 | 080 | DONE (f87d164; A0: `job run` real 9/9) |
 | FDN-090 | Protocolo de relevo entre equipos (equipo sin cuota → otro lo releva; reincorporación con nota de lo avanzado) + ADR-0013 | CL-A0 | — | DONE (ADR-0013 aceptada; `coord.mjs equipos/caida/relevar/reincorporar`) |
+| FDN-042a | FreeCut: componer pistas y overlays (vídeo de fondo + MOV ProRes alpha + secuencia PNG RGBA) y exportar | AG | 041 | READY |
+| FDN-042b | `Project` guarda los `RenderArtifact` y los enlaza (ADR-0015 + `schemaVersion` 3 + migración) | CL-A2 | 028 | READY |
+| FDN-042c | Pipeline de la ruta híbrida: router → Revideo + Blender → FreeCut → vídeo final con fuentes enlazadas | CL-A1 | 042a, 042b | BACKLOG |
+| FDN-061b | Gradientes en Blender (mapeo propuesto en `art-direction/backends/blender.ts`) con métrica de píxeles | CX | 040, 061 | READY |
 | FDN-091 | Modo ausencia del usuario (ADR-0014) | CL-A0 | 090 | DONE |
 | FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | IN_PROGRESS |
 
@@ -122,6 +126,33 @@ Cada ficha es el contrato de la tarea: si algo no está aquí, pregúntalo antes
 - **Aceptación:** tests de alta y baja, duplicados, filtros, `unknown` y secciones; `npm run typecheck` + `npm test` en verde.
 
 ---
+
+## Fichas de la Tanda 7 (READY desde el 2026-11-23, integración 6): Fase 4, integración real
+
+Objetivo de la fase: **criterio #3**, «los tres adaptadores ejecutan trabajos reales», y un vídeo final con las fuentes enlazadas. Los tres adaptadores ya existen y están verificados con motores reales. Falta **componer** sus salidas.
+
+### FDN-042a · FreeCut compone pistas y overlays (AG)
+- **Rutas:** `packages/adapters/freecut/**` y `runtime/engines/freecut/**`.
+- **Hacer:** operación `edit.compose`. Recibe un proyecto FME con varias capas de una escena (vídeo de fondo, overlay con alpha en MOV ProRes de Revideo y secuencia PNG RGBA de Blender) y los artefactos de entrada en `inputs[]`. Construye el proyecto FreeCut con una pista por capa (orden por `zIndex`, `startFrame` y duración) y exporta el MP4. Si FreeCut **no admite** alpha en alguna entrada, dilo con un diagnóstico `unsupported-alpha` y propón la alternativa (premultiplicar o componer antes con FFmpeg), **sin simular**.
+- **Aceptación:**
+  - con fixtures generadas (FFmpeg: fondo `testsrc2` + overlay `color` con alpha), el MP4 final tiene la duración y los fotogramas esperados;
+  - una métrica de píxeles demuestra que el overlay aparece **solo** en su rango;
+  - `checkAdapterResult` = [];
+  - skip con motivo sin FreeCut.
+
+### FDN-042b · Artefactos enlazados en el proyecto (CL-A2; contrato)
+- **Rutas:** `docs/decisiones/0015-artefactos-en-el-proyecto.md` (propuesta), `packages/project/src/{schema,migrate}.ts`, `packages/project/test/**` y las fixtures. El diff de `index.ts` se pide a A0 con una `solicitud`, como en FDN-028.
+- **Hacer:** `Project.artifacts?: RenderArtifact[]` (el tipo ya existe en `index.ts`) y validación referencial: cada `layer.externalProject.renderArtifactId` debe existir en `artifacts`. `schemaVersion` 3 con migración v2→v3 (conservando v0→v1→v2). Fuente del caso: FDN-033 dejó `workDir/artifacts.json` por esta carencia.
+- **Aceptación:**
+  - las fixtures v0, v1 y v2 migran a v3;
+  - un `renderArtifactId` colgante da un error con ruta;
+  - el round-trip es byte a byte;
+  - `codegraph impact parseProject` revisado con todos los consumidores (adapters, mcp, cli, art-direction, cache, render-plan y recovery) en verde.
+
+### FDN-061b · Gradientes en Blender (CX)
+- **Rutas:** `packages/adapters/blender/**`, `runtime/engines/blender/**` y, si hace falta, `packages/art-direction/src/backends/blender.ts` (avisa a A1 por mensaje si cambias el mapeo).
+- **Hacer:** aplicar `expression` e `integration` según el vocabulario propuesto por A1 (mezcla de material e intensidad de outline/Freestyle o equivalente) y medirlo en el render.
+- **Aceptación:** una métrica de píxeles monótona con la curva en 3 o más fotogramas, con Blender real; skip con motivo sin Blender.
 
 ## Fichas de la Tanda 6 (READY desde el 2026-11-23, integración 5)
 

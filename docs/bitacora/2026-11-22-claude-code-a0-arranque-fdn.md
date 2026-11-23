@@ -143,3 +143,17 @@ Graphify `god-nodes`: `planRoute` (18), `deserialize` (18), `createFmeServer` (1
   - Paso 0 en CONTINUATION, en los prompts (ANTIGRAVITY, CODEX y CLAUDE-WORKERS) y en AGENTS.md.
 - **Verificado:** `node --test scripts/coord.test.mjs` → 8/8. A0 registró la presencia real (`usuario --presente` → escalón 0).
 - **Limitación honesta:** depende de que cada coordinador registre la presencia en cada mensaje. Si lo olvida, el sistema frena: es el fallo seguro.
+
+
+## 2026-11-23 · Integración 6 (A0)
+| Rama | Commit | Verificación de A0 | Resultado |
+|---|---|---|---|
+| FDN-070b caché Windows | 25f6b9c | `npm test` 6 veces seguidas: 148/148 en todas (antes fallaba ~1 de cada 5) | fusionada |
+| FDN-071 render-plan | f6a8abb | ref + lockfile; 148 pass | fusionada |
+| FDN-072 recovery | 021582e | ref + lockfile; 156 pass | fusionada |
+| FDN-041 adaptador FreeCut | 7bdca83 | ref + lockfile; `node --test packages/adapters/freecut/test/*.test.ts` con FreeCut real → 7/7, 0 skip, 24 s; `contentSha256` `93cb5c72…` = el de AG | fusionada |
+| FDN-081 CLI | f87d164 | ref + lockfile; 171 pass | fusionada |
+| FDN-061 gradientes | ed40273 | cambios fuera de ficha aditivos (dependencia y re-exportación) aceptados; lockfile; 178 pass | fusionada |
+
+Con el motor Revideo real sobre `develop` (junction temporal, eliminada después): integración del adaptador **9/9 en paralelo** (incluidos los gradientes) y CLI **9/9** (`job run` real). **Criterio #6 ☑** (Revideo). La F6 sigue abierta hasta tener Blender (FDN-061b) y FDN-062.
+Tanda 7 abierta: Fase 4, con 042a (AG), 042b (A2) y 061b (CX). 042c (A1) queda para después.
