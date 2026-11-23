@@ -24,6 +24,9 @@
     },
     {
       "path": "apps/mcp"
+    },
+    {
+      "path": "packages/adapters/blender"
     }
   ]
 }
