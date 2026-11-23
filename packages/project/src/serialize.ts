@@ -3,6 +3,7 @@
  * sangría de 2 espacios y salto de línea final, para que el round-trip sea byte a byte estable.
  */
 import type { Project } from './index.ts';
+import { migrateToCurrent } from './migrate.ts';
 import { parseProject, type ValidationIssue } from './schema.ts';
 
 export type DeserializeResult =
@@ -32,7 +33,7 @@ export function serialize(project: Project): string {
   return `${JSON.stringify(sortKeys(parsed.value), null, 2)}\n`;
 }
 
-/** Parsea el JSON y lo valida. Un JSON mal formado da un error estructurado con código `invalid-json`. */
+/** Parsea el JSON, aplica las migraciones de versiones anteriores (FDN-024) y valida. Una versión futura o desconocida da `unknown-schema-version`. Un JSON mal formado da un error estructurado con código `invalid-json`. */
 export function deserialize(text: string): DeserializeResult {
   let raw: unknown;
   try {
@@ -40,5 +41,5 @@ export function deserialize(text: string): DeserializeResult {
   } catch (e) {
     return { ok: false, errors: [{ path: '$', code: 'invalid-json', message: (e as Error).message }] };
   }
-  return parseProject(raw);
+  return migrateToCurrent(raw);
 }

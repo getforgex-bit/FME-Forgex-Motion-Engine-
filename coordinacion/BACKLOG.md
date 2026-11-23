@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-23 (integración 2, `develop`; apertura de la Tanda 3)._
+> _Última consolidación: 2026-11-23 (integración 3; **Fase 2 cerrada**)._
 
 ## Resumen
 
@@ -17,10 +17,12 @@
 | FDN-006 | `develop`, worktrees, política de índices | CL-A0 | 001–003 | DONE (arranque) |
 | FDN-010 | Verificar Revideo | CL-A1 | 003 | DONE (6ee5826) |
 | FDN-011 | Verificar Blender 5.2 headless | CX | — | DONE (b0a7db7; A0 reprodujo el SHA-256 de píxeles) |
-| FDN-012 | Verificar FreeCut | AG | — | BLOCKED (confirmación del usuario para clonar FreeCut, ~380–700 MB) |
+| FDN-012 | Verificar FreeCut | AG | — | IN_PROGRESS (descarga autorizada por el usuario el 2026-11-23) |
 | FDN-013 | Sonda de medios `scripts/probe-media.mjs` | CL-A3 | 003 | DONE (f271d29) |
 | FDN-014 | Cierre de la Fase 1 (criterio #1) | CL-A0 | 010, 011, 012 | BACKLOG |
-| FDN-026 | `deserialize` aplica las migraciones (`migrateToCurrent`) | CL-A2 | 021, 024 | READY |
+| FDN-026 | `deserialize` aplica las migraciones (`migrateToCurrent`) | CL-A2 | 021, 024 | DONE (652f0e2) |
+| FDN-028 | Contenido de las capas `text` en el modelo universal (ADR-0012 + `schemaVersion` 2 + migración v1→v2) | CL-A2 | 021, 024, 026 | READY |
+| FDN-034 | Revideo: temporales dentro de `ctx.workDir` (no en `os.tmpdir()`) | CL-A1 | 032 | READY |
 | FDN-027 | ADR-0011: interfaz común de adaptadores y procedencia | CL-A0 | 030, 031 | DONE (b290224) |
 | FDN-020 | ADR-0008: validación con Zod 4 | CL-A0 | — | DONE (propuesta escrita) |
 | FDN-015 | `run.ps1` de Blender compatible con Windows PowerShell 5.1 | CX | 011 | DONE (d216597; A0 lo verificó en PS 5.1) |
@@ -29,24 +31,24 @@
 | FDN-022 | Tiempo racional y timecode sin deriva | CX | 003 | DONE (026af28) |
 | FDN-023 | Fixtures (incluida la híbrida de 10 s) + round-trip | CL-A2 | 021, 022 | DONE (1a35a36) |
 | FDN-024 | Marco de migraciones + migración de ejemplo | CX | 021 | DONE (8cbdde3) |
-| FDN-025 | Cierre de la Fase 2 (criterio #2) | CL-A0 | 023, 024, 026 | BACKLOG (tras FDN-026) |
+| FDN-025 | Cierre de la Fase 2 (criterio #2) | CL-A0 | 023, 024, 026 | DONE (78d6f76, criterio #2 ☑) |
 | FDN-030 | Registro dinámico de conectores + ADR-0009 | AG | 003 | DONE (4ee6910) |
 | FDN-031 | Ejecución aislada de procesos (`runtime/workers`) | CX | 003 | DONE (e73f706) |
-| FDN-032 | Adaptador Revideo real (JobRequest→JobResult con procedencia) | CL-A1 | 010, 021, 030, 031 | READY |
-| FDN-033 | Cierre de la Fase 3 | CL-A0 | 032 | BACKLOG |
-| FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | READY |
+| FDN-032 | Adaptador Revideo real (JobRequest→JobResult con procedencia) | CL-A1 | 010, 021, 030, 031 | DONE (a88148d; job real 6/6 verificado por A0) |
+| FDN-033 | Cierre de la Fase 3: descubrimiento → job real → procedencia, de extremo a extremo | CL-A1 (A0 valida) | 030, 032 | READY |
+| FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | IN_PROGRESS |
 | FDN-041 | Adaptador FreeCut (nivel A o B según la F1) | AG | 012, 030, 031 | BACKLOG |
 | FDN-042 | Rutas A/B/C + `ExternalProjectRef`/`RenderArtifact` enlazados | a decidir | 021, 032, 040, 041 | BACKLOG |
 | FDN-043 | Cierre de la Fase 4 (criterio #3) | CL-A0 | 042 | BACKLOG |
-| FDN-050 | Núcleo del router (8 pasos, modos, restricciones duras) con tarjetas simuladas | AG | 030 | READY |
+| FDN-050 | Núcleo del router (8 pasos, modos, restricciones duras) con tarjetas simuladas | AG | 030 | IN_PROGRESS |
 | FDN-051 | Medición de tokens: tarjeta simple frente a avanzada | a decidir | 050 | BACKLOG |
 | FDN-052 | Fallbacks con adaptadores reales | a decidir | 050, 043 | BACKLOG |
 | FDN-053 | Cierre de la Fase 5 (criterios #4 y #5) | CL-A0 | 051, 052 | BACKLOG |
 | FDN-060 | Dirección artística: perfiles de estilo y reglas | libre (el primero que quede libre) | 021 | DONE (b78af00, AG) |
 | FDN-061 | Gradientes y técnicas → operaciones por backend | a decidir | 060, 032, 040 | BACKLOG |
 | FDN-062 | Cierre de la Fase 6 (criterio #6) | CL-A0 | 061 | BACKLOG |
-| FDN-070 | Caché con invalidación por dependencias | CX | 021, 031 | READY |
-| FDN-071 | Render por segmentos + preview adaptativa | a decidir | 070 | BACKLOG |
+| FDN-070 | Caché con invalidación por dependencias | CX | 021, 031 | DONE (f3ad71f) |
+| FDN-071 | Render por segmentos + preview adaptativa | CX | 070 | READY |
 | FDN-072 | Errores: falta de VRAM, reintento seguro, backend alternativo | a decidir | 070 | BACKLOG |
 | FDN-073 | Suite técnica (temporal, estética, editabilidad, enrutamiento, recursos, seguridad, regresión) | a decidir | 043, 062, 071, 072 | BACKLOG |
 | FDN-074 | Exportación final con audio y sincronía | a decidir | 043, 071 | BACKLOG |
@@ -115,6 +117,50 @@ Cada ficha es el contrato de la tarea: si algo no está aquí, pregúntalo antes
 - **Aceptación:** tests de alta y baja, duplicados, filtros, `unknown` y secciones; `npm run typecheck` + `npm test` en verde.
 
 ---
+
+## Fichas de la Tanda 4 (READY desde el 2026-11-23, integración 3)
+
+### FDN-033 · Cierre de la Fase 3, de extremo a extremo (CL-A1; A0 valida y cierra)
+- **Rutas:** `packages/adapters/revideo/test/e2e.integration.test.ts` (y lo que necesites en `packages/adapters/revideo/src/**`).
+- **Hacer:** un test que recorre el flujo completo:
+  1. crea un `ConnectorRegistry` y registra las tarjetas del adaptador;
+  2. lo descubre con `listSimple({ capability: 'render.video', accepts: 'fme/project+json' })`;
+  3. si hace falta alpha, `inspect(id, ['technical'])` (solo esa sección);
+  4. ejecuta el job con la fixture híbrida (capa de título);
+  5. comprueba `checkAdapterResult`;
+  6. convierte la procedencia en un `RenderArtifact` de `@fme/project`, con `dependencyHash` calculado con `dependencyHash` de `@fme/cache`;
+  7. enlaza su id en `layer.externalProject.renderArtifactId` y verifica que el proyecto resultante pasa `parseProject`.
+  - Si `Project` no tiene dónde guardar los `RenderArtifact`, **no lo inventes**: guárdalo junto al proyecto en `workDir/artifacts.json` y anótalo para FDN-042.
+- **Aceptación:** test en verde con el motor real y skip con motivo sin él. Informe REVIEW con el comando y el tiempo.
+
+### FDN-034 · Temporales de Revideo dentro de `workDir` (CL-A1)
+- **Rutas:** `packages/adapters/revideo/src/**` y `runtime/engines/revideo/**`.
+- **Hacer:** que Revideo, Vite y Puppeteer escriban sus temporales en `ctx.workDir` (variables `TMP`/`TEMP`/`TMPDIR` del entorno explícito, `outDir` o la opción equivalente). Comprobar con un test que `os.tmpdir()` no gana entradas nuevas durante un job.
+- **Aceptación:** test en verde con el motor real; ADR-0011 punto 3 cumplido.
+
+### FDN-028 · Contenido de las capas de texto (CL-A2; contrato)
+- **Contexto:** la prueba híbrida exige tipografía cinética (6–10 s), pero `Layer` no tiene dónde guardar el texto. FDN-032 usó `requirements.text` como apaño.
+- **Rutas:** `docs/decisiones/0012-contenido-de-capas-de-texto.md` (propuesta), `packages/project/src/schema.ts`, `packages/project/src/migrate.ts` (migración v1→v2; conserva la v0→v1), `packages/project/test/**` (incluye actualizar las fixtures a v2 con su versión v1 conservada como fixture de migración) y `examples/prueba-hibrida-10s/project.fme.json`. **Pide a A0** el cambio en `index.ts` (tipo `Layer` y `SCHEMA_VERSION`) con una `solicitud` que incluya el diff exacto: `index.ts` es de A0.
+- **Propuesta de partida** (el ADR puede mejorarla): `text?: { content: string; fontFamily?: string; fontSize?: number; color?: string }`, solo válido si `kind === 'text'`.
+- **Aceptación:**
+  - las fixtures v0 y v1 se migran a v2 y validan;
+  - una capa no `text` con `text` se rechaza;
+  - el round-trip sigue siendo byte a byte;
+  - `docs/contratos.md` se actualiza vía A0.
+  - Después de integrarla, FDN-032b hará que el adaptador use `layer.text` (A1).
+
+### FDN-071 · Render por segmentos + preview adaptativa (CX)
+- **Rutas:** `packages/render-plan/**` (workspace `@fme/render-plan`; A0 añade la referencia y regenera el lockfile).
+- **Hacer:**
+  - dividir una escena del `Project` en segmentos por capa y rango de fotogramas;
+  - calcular la clave de cada segmento con `dependencyHash` de `@fme/cache`;
+  - decidir qué segmentos hay que re-renderizar tras un cambio, usando `DependencyGraph`;
+  - perfiles de preview: resolución y muestras reducidas según un presupuesto de VRAM declarado (referencia: 4 GB).
+  - Sin ejecutar motores: devuelve un plan.
+- **Aceptación:**
+  - con la fixture híbrida, cambiar la capa de título invalida solo sus segmentos;
+  - el perfil de preview respeta el presupuesto;
+  - el plan es determinista.
 
 ## Fichas de la Tanda 3 (READY desde el 2026-11-23, integración 2)
 

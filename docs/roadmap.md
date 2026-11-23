@@ -41,13 +41,13 @@ Orden de construcción (spec §19.1): **verificar software → archivo universal
 ### Fase 2: Modelo universal
 **Objetivo:** que `Project` sea la fuente de verdad persistente.
 
-- [ ] Esquema JSON (generado o escrito) a partir de los tipos de `packages/project`.
-- [ ] Validación en runtime (elegir la librería mediante ADR; candidatas: Zod o un validador de JSON Schema).
-- [ ] Serialización/deserialización con `schemaVersion` y una primera migración de ejemplo.
-- [ ] Fixtures de proyecto (incluido el de la prueba híbrida) y tests de ida y vuelta.
-- [ ] Tiempo en fotogramas enteros con FPS racional; tests de no deriva (p. ej. 30000/1001).
-- **Cierre:** guardar/abrir sin perder estado (criterio #2).
-- **Métrica:** el 100 % de las fixtures pasan el round-trip y la validación.
+- [x] Esquema JSON (generado o escrito) a partir de los tipos de `packages/project`. → `projectJsonSchema()` generado desde Zod (FDN-021).
+- [x] Validación en runtime (elegir la librería mediante ADR; candidatas: Zod o un validador de JSON Schema). → Zod 4.6.7, ADR-0008, `parseProject` estricto (FDN-021).
+- [x] Serialización/deserialización con `schemaVersion` y una primera migración de ejemplo. → `serialize`/`deserialize` deterministas; `migrateToCurrent` v0→v1 conectado a `deserialize` (FDN-021, FDN-024, FDN-026).
+- [x] Fixtures de proyecto (incluido el de la prueba híbrida) y tests de ida y vuelta. → `examples/prueba-hibrida-10s/project.fme.json`, `minima`, `ntsc-2997` y `fixtures-v0` (FDN-023).
+- [x] Tiempo en fotogramas enteros con FPS racional; tests de no deriva (p. ej. 30000/1001). → `time.ts`, 1 h de fotogramas a 5 tasas sin error, timecode drop-frame (FDN-022).
+- **Cierre:** guardar/abrir sin perder estado (criterio #2). ✅ **Cerrada el 2026-11-23** (FDN-025; evidencia en la bitácora de A0).
+- **Métrica:** el 100 % de las fixtures pasan el round-trip y la validación. → 4/4 fixtures; `node --test packages/project/test/*.test.ts` 36/36.
 
 ### Fase 3: Conectores
 **Objetivo:** contrato 0.1 operativo con registro y un primer adaptador.

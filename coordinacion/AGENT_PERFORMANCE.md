@@ -19,6 +19,9 @@
 | FDN-023 | CL-A2 Sonnet 5.5 | ~06:09 → 06:10 UTC | ~2 min + arreglo | test 36/36 ✔ | 1 | Un `sed` rompió un test (lo corrigió antes del REVIEW final) | pequeño | 0 | — | no medido | Tolerancia a CRLF añadida |
 | FDN-013 | CL-A3 Haiku 5.5 | ~06:09 → 06:10 UTC | ~2 min | 7/7, total 37/37 ✔ | 1 | ProRes 12 bits | 0 | 0 | 0 / 0 | no medido | Bien acotada para Haiku |
 | FDN-016 | CL-A1 Sonnet 5.5 | 06:09 → 06:16 UTC | ~7 min | verify ✔, `npm audit` 0 | 0 | fluent-ffmpeg y lavfi con FFmpeg ≥ 7 (parche) | 0 | 0 | 0 / 0 | no medido | Pidió confirmación de la descarga (corregido respecto a FDN-010) |
+| FDN-026 | CL-A2 Sonnet 5.5 | 06:31 → 06:32 UTC | ~1 min | test 73/73 ✔ | 0 | — | 0 | 0 | 1 (impact) / 0 | no medido | Pequeña y precisa |
+| FDN-032 | CL-A1 Sonnet 5.5 | 06:31 → 06:38 UTC | ~7 min | 86/86, 6 con el motor real (A0: 6/6 en 28 s) | 0 | — | 0 | 0 | — | no medido | Interpretaciones de contrato bien señaladas (`text`, `easing`) |
+| FDN-070 | CX-C2 Sol | 06:32 → 06:39 UTC | ~7 min | 79/79 ✔ | 1 (índice desactualizado) | — | 0 | 0 | 6 / 0 | no medido | Pidió el validador compartido en vez de importar código interno (correcto) |
 | FDN-004 | CL-A3 Haiku 5.5 | 05:51 → 05:56 UTC | ~5 min | n/a (documento) | 0 | — | 0 | 0 | 0 / 0 | no medido | Calidad alta; contradijo con fuentes la hipótesis «Sonnet ≥ Opus en terminal» |
 
 ## Tiempo de coordinación (A0)

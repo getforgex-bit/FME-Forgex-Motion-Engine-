@@ -64,3 +64,16 @@ Re-exportaciones en `@fme/connectors` (registro) y `@fme/project` (`migrateToCur
 ADR-0011 (interfaz de adaptadores): `adapter.ts` + 3 tests → **71/71**. Workspaces `packages/adapters/*` preparados.
 Graphify (`god-nodes`): `parseProject` y `ConnectorRegistry` son los nodos centrales; los cambios en ellos exigen `codegraph impact`.
 Bloqueo: FDN-012 espera la confirmación del usuario para la descarga de FreeCut.
+
+## 2026-11-23 · Integración 3 y cierre de la Fase 2 (A0)
+| Rama | Commit | Verificación de A0 | Resultado |
+|---|---|---|---|
+| FDN-026 deserialize + migraciones | 652f0e2 | `node --test packages/project/test/*.test.ts` → 36/36. Con el paquete compilado: `deserialize` de `fixtures-v0` → v1 y estable; la fixture híbrida hace round-trip byte a byte | fusionada |
+| FDN-032 adaptador Revideo | a88148d | En `develop`: 84 pass + 4 skip (sin motor instalado; skip con motivo). **Job real:** `node --test packages/adapters/revideo/test/adapter.integration.test.ts` en el worktree de A1 (con motor) → **6/6 en 28 s** (título de la fixture híbrida → 120 fotogramas; MOV alpha; capa SVG → 210 fotogramas; `checkAdapterResult` = []) | fusionada |
+| FDN-070 caché | f3ad71f | test 92/92 + 4 skip | fusionada |
+
+**Fase 2 CERRADA (FDN-025):** criterio #2 ☑. Evidencia: los tests anteriores. Roadmap y pruebas-aceptacion actualizados.
+Hallazgos que pasan al backlog:
+- la capa `text` no tiene campo de contenido (A1 usa `requirements.text`) → FDN-028 (ADR + schemaVersion 2);
+- Revideo escribe temporales en `os.tmpdir()`, fuera de `workDir` → FDN-034;
+- validador de rutas compartido (solicitud de C2) → se pospone: el almacén de la caché valida su propia raíz y rechaza enlaces, y basta por ahora.

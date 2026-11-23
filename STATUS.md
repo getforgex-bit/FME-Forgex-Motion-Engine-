@@ -7,30 +7,32 @@ _Última actualización: 2026-11-22: repositorio preparado (Fase 0)._
 | Fase | Nombre | Estado | Condición de cierre |
 |---|---|---|---|
 | 0 | Especificar | **Hecha** (pendiente de la aprobación formal del usuario) | Especificación FME 0.1 aprobada |
-| 1 | Verificar software | **Siguiente** | Tres pruebas individuales repetibles |
-| 2 | Modelo universal | Pendiente | Guardar/abrir sin perder estado |
-| 3 | Conectores | Pendiente | Descubrimiento y job de extremo a extremo |
+| 1 | Verificar software | **En curso** (2/3: Revideo y Blender; falta FreeCut) | Tres pruebas individuales repetibles |
+| 2 | Modelo universal | **Hecha** (2026-11-23, criterio #2) | Guardar/abrir sin perder estado |
+| 3 | Conectores | **En curso** | Descubrimiento y job de extremo a extremo |
 | 4 | Integración real | Pendiente | Vídeo final con fuentes enlazadas |
 | 5 | Enrutador | Pendiente | Selección justificada y verificable |
 | 6 | Dirección artística | Pendiente | Cambios reales y reproducibles en la escena |
 | 7 | Calidad | Pendiente | Prueba híbrida de 10 s superada |
 | 8 | Evolución | Pendiente | Cada pieza nueva demuestra valor concreto |
 
-Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (0/8).
+Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (1/8).
 
 ## Qué existe hoy (verificado)
 
 - Documentación completa derivada de la spec v0.1.
 - Contratos TypeScript **propuestos** (`@fme/project`, `@fme/connectors`): `npm run typecheck` en verde.
 - **Fase 1, 2 de 3:** Revideo 0.11.0 y Blender 5.2.3 verificados con pruebas repetibles (FDN-010 y FDN-011; ver el catálogo).
-- **Fase 2, casi cerrada:** esquema, validación, serialización determinista, tiempo racional, migraciones y fixtures (incluida la híbrida de 10 s). Falta conectar las migraciones a `deserialize` (FDN-026).
+- **Fase 2 CERRADA (2026-11-23, criterio #2):** esquema, validación, serialización determinista, tiempo racional, migraciones conectadas a `deserialize` y fixtures (incluida la híbrida de 10 s).
 - **Fase 3, en curso:**
   - registro de conectores (FDN-030);
   - ejecución aislada de procesos con kill del árbol en Windows (FDN-031);
   - interfaz común de adaptadores (ADR-0011).
-  - Los adaptadores de Revideo y Blender están en desarrollo.
+  - **Adaptador Revideo con job real** (FDN-032; 120 fotogramas desde la fixture híbrida, procedencia con SHA-256).
+  - Caché por dependencias (FDN-070).
+  - Adaptador Blender en desarrollo; falta la prueba E2E de cierre (FDN-033).
 - **Fase 6, adelantada:** perfiles de estilo y reglas deterministas (`@fme/art-direction`, FDN-060).
-- `npm test` 71/71.
+- `npm test` 92 pass + 4 skip (integración de Revideo sin motor instalado en el checkout).
 - FORGEX Stack instalado y verificado en el entorno de preparación (ver la bitácora del 2026-11-22). Cada persona debe instalarlo en su máquina.
 
 ## Qué NO existe todavía

@@ -54,6 +54,9 @@ export type ExternalProjectRef = {
   renderArtifactId?: string;
 };
 
+/** Contenido de una capa `text` (ADR-0012). */
+export type TextContent = { content: string; fontFamily?: string; fontSize?: number; color?: string };
+
 export type Layer = {
   id: string;
   kind: AssetType | 'text' | 'group';
@@ -66,6 +69,8 @@ export type Layer = {
   guide3DLayerId?: string;
   channels: Partial<Record<Channel, Curve>>;
   externalProject?: ExternalProjectRef;
+  /** Solo válido si `kind === 'text'` (ADR-0012). */
+  text?: TextContent;
 };
 
 export type Scene = { id: string; durationFrames: number; layers: Layer[] };
@@ -88,7 +93,7 @@ export type RenderArtifact = {
 /** FPS racional, p. ej. { num: 30000, den: 1001 } = 29,97 FPS. */
 export type Fps = { num: number; den: number };
 
-export const SCHEMA_VERSION = 1 as const;
+export const SCHEMA_VERSION = 2 as const;
 
 export type Project = {
   schemaVersion: typeof SCHEMA_VERSION;

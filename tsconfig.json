@@ -12,6 +12,12 @@
     },
     {
       "path": "packages/art-direction"
+    },
+    {
+      "path": "packages/adapters/revideo"
+    },
+    {
+      "path": "packages/cache"
     }
   ]
 }

@@ -6,6 +6,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 ## [Unreleased]
 
 ### Added
+- `@fme/adapter-revideo`: primer adaptador real (ADR-0011), motor aislado en `runtime/engines/revideo` (FDN-032).
+- `@fme/cache`: `dependencyHash`, `DependencyGraph` y `DiskCache` (FDN-070).
+- `deserialize` aplica las migraciones; **Fase 2 cerrada** (FDN-025, FDN-026).
 - `@fme/connectors`: registro dinámico con semántica `yes`/`no`/`unknown` (FDN-030, ADR-0009) e interfaz común de adaptadores con procedencia (ADR-0011).
 - `@fme/runtime-workers`: `runIsolated`, ejecución sin shell con timeout que mata el árbol de procesos en Windows (FDN-031).
 - `@fme/art-direction`: perfiles de estilo y reglas de animación deterministas (FDN-060).
