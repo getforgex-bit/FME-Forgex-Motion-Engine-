@@ -3,6 +3,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { SCHEMA_VERSION } from "../src/index.ts";
 
-test("el contrato de proyecto expone schemaVersion 2", () => {
-  assert.equal(SCHEMA_VERSION, 2);
+test("el contrato de proyecto expone schemaVersion 3", () => {
+  assert.equal(SCHEMA_VERSION, 3);
 });

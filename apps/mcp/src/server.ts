@@ -17,7 +17,7 @@ import {
   type ConnectorRegistry,
   type JobRequest,
 } from '@fme/connectors';
-import { deserialize, parseProject, serialize, type Project } from '@fme/project';
+import { SCHEMA_VERSION, deserialize, parseProject, serialize, type Project } from '@fme/project';
 import { planRoute, type RouteOptions, type RouteTask } from '@fme/router';
 import { PathError, resolveInRoot } from './paths.ts';
 
@@ -99,7 +99,7 @@ export function createFmeServer(options: FmeServerOptions): McpServer {
     async (args) => {
       try {
         const parsed = parseProject({
-          schemaVersion: 2,
+          schemaVersion: SCHEMA_VERSION,
           id: args.id,
           name: args.name,
           fps: args.fps,

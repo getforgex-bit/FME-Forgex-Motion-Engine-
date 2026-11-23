@@ -18,7 +18,7 @@ const projectAsignableAZod = (p: Project): ProjectFromSchema => p;
 
 function proyectoValido(): Project {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: "p1",
     name: "Demo",
     fps: { num: 30000, den: 1001 },
@@ -62,7 +62,7 @@ function clone(): any {
 test("los tipos de Zod e index.ts son equivalentes y SCHEMA_VERSION coincide", () => {
   assert.equal(tiposEquivalentes, true);
   assert.equal(typeof projectAsignableAZod, "function");
-  assert.equal(SCHEMA_VERSION, 2);
+  assert.equal(SCHEMA_VERSION, 3);
   assert.equal(parseProject(proyectoValido()).ok, true);
 });
 
@@ -78,7 +78,7 @@ test("errores con ruta y mensaje", () => {
 });
 
 test("schemaVersion desconocido da un error estructurado", () => {
-  for (const v of [3, 1, 0, "2", null]) {
+  for (const v of [4, 2, 1, 0, "3", null]) {
     const p = clone();
     p.schemaVersion = v;
     const r = parseProject(p);
@@ -154,4 +154,41 @@ test("text: content no vacío, fontSize > 0, claves desconocidas rechazadas", ()
     capa.text = text;
     assert.equal(parseProject(p).ok, false, JSON.stringify(text));
   }
+});
+
+function conArtefacto(): any {
+  const p = clone();
+  p.artifacts = [{ id: "r1", uri: "renders/a.mp4", type: "video/mp4", dependencyHash: "abc", producedBy: { pluginId: "revideo", pluginVersion: "0.0.0" } }];
+  return p;
+}
+
+test("artefactos: renderArtifactId debe existir en artifacts (ADR-0015)", () => {
+  const ok = conArtefacto();
+  ok.sequences[0].scenes[0].layers[0].externalProject.renderArtifactId = "r1";
+  assert.equal(parseProject(ok).ok, true);
+
+  const colgante = conArtefacto();
+  colgante.sequences[0].scenes[0].layers[0].externalProject.renderArtifactId = "nadie";
+  const r = parseProject(colgante);
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.equal(r.errors[0]?.path, "sequences[0].scenes[0].layers[0].externalProject.renderArtifactId");
+
+  const sinCatalogo = clone();
+  sinCatalogo.sequences[0].scenes[0].layers[0].externalProject.renderArtifactId = "r1";
+  assert.equal(parseProject(sinCatalogo).ok, false, "sin artifacts, cualquier id está colgante");
+  assert.equal(parseProject(clone()).ok, true, "sin referencias, artifacts es opcional");
+});
+
+test("artefactos: ids únicos y forma válida", () => {
+  const dup = conArtefacto();
+  dup.artifacts.push({ ...dup.artifacts[0] });
+  const r = parseProject(dup);
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.equal(r.errors[0]?.path, "artifacts[1].id");
+  const mal = conArtefacto();
+  mal.artifacts[0].dependencyHash = "";
+  assert.equal(parseProject(mal).ok, false);
+  const extra = conArtefacto();
+  extra.artifacts[0].otro = 1;
+  assert.equal(parseProject(extra).ok, false);
 });

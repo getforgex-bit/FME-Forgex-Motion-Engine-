@@ -1,4 +1,32 @@
 {
+  "artifacts": [
+    {
+      "config": {
+        "alpha": true,
+        "samples": 32
+      },
+      "dependencyHash": "0000000000000000000000000000000000000000000000000000000000000001",
+      "id": "render-3d",
+      "producedBy": {
+        "pluginId": "blender",
+        "pluginVersion": "0.0.0"
+      },
+      "seed": 2026,
+      "type": "image/png-sequence",
+      "uri": "renders/capa-3d/%04d.png"
+    },
+    {
+      "dependencyHash": "0000000000000000000000000000000000000000000000000000000000000002",
+      "id": "render-titulo",
+      "producedBy": {
+        "pluginId": "revideo",
+        "pluginVersion": "0.0.0"
+      },
+      "seed": 2026,
+      "type": "video/quicktime",
+      "uri": "renders/capa-titulo.mov"
+    }
+  ],
   "assets": [
     {
       "id": "fondo",
@@ -28,7 +56,7 @@
   "height": 1080,
   "id": "prueba-hibrida-10s",
   "name": "Prueba híbrida de 10 s",
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "seed": 2026,
   "sequences": [
     {
@@ -258,6 +286,7 @@
               "durationFrames": 120,
               "externalProject": {
                 "pluginId": "revideo",
+                "renderArtifactId": "render-titulo",
                 "uri": "adapters/revideo/titulo.tsx"
               },
               "guide3DLayerId": "capa-3d",

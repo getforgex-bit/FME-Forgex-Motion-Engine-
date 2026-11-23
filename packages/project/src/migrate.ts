@@ -24,10 +24,35 @@ function migrateV1ToV2(project: Readonly<Record<string, unknown>>): MigrationRes
   return { ok: true, value: { ...project, schemaVersion: 2 } };
 }
 
+/**
+ * v2 → v3 (ADR-0015): `Project.artifacts` es opcional. En v2 no existía el catálogo, así que cualquier
+ * `renderArtifactId` apuntaba a nada: se elimina para que el resultado cumpla la validación referencial.
+ */
+function migrateV2ToV3(project: Readonly<Record<string, unknown>>): MigrationResult {
+  const clean = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(clean);
+    if (typeof value === 'object' && value !== null) {
+      const out: Record<string, unknown> = {};
+      for (const [key, v] of Object.entries(value)) {
+        if (key === 'externalProject' && typeof v === 'object' && v !== null && !Array.isArray(v)) {
+          const { renderArtifactId: _dropped, ...rest } = v as Record<string, unknown>;
+          out[key] = rest;
+        } else {
+          out[key] = clean(v);
+        }
+      }
+      return out;
+    }
+    return value;
+  };
+  return { ok: true, value: { ...project, sequences: clean(project.sequences), schemaVersion: 3 } };
+}
+
 // Cada clave indica la versión de origen. Cada paso debe avanzar exactamente una versión.
 const migrations: ReadonlyMap<number, Migration> = new Map([
   [0, migrateV0ToV1],
   [1, migrateV1ToV2],
+  [2, migrateV2ToV3],
 ]);
 
 function hasSchemaVersion(value: unknown): value is Record<string, unknown> {

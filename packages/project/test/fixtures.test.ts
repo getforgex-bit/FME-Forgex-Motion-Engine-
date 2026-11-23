@@ -63,21 +63,27 @@ test("29,97: la duración en segundos es exacta (30000 fotogramas = 1001 s)", ()
   assert.equal(framesToSeconds(frames, p.fps), 1001);
 });
 
-test("híbrida v2: el título lleva su texto real (ADR-0012)", () => {
+test("híbrida v3: el título lleva su texto real (ADR-0012) y los artefactos están enlazados (ADR-0015)", () => {
   const p = cargar(hibrida);
-  const titulo = p.sequences[0]!.scenes[0]!.layers.find((l) => l.id === "capa-titulo")!;
+  const capas = p.sequences[0]!.scenes[0]!.layers;
+  const titulo = capas.find((l) => l.id === "capa-titulo")!;
   assert.equal(titulo.kind, "text");
   assert.equal(titulo.text?.content, "Forgex Motion Engine");
+  assert.deepEqual(p.artifacts?.map((a) => a.id), ["render-3d", "render-titulo"]);
+  assert.equal(capas.find((l) => l.id === "capa-3d")!.externalProject?.renderArtifactId, "render-3d");
+  assert.equal(titulo.externalProject?.renderArtifactId, "render-titulo");
+  assert.equal(p.artifacts?.[0]?.producedBy.pluginId, "blender");
 });
 
-// Fixtures de migración: v0 (sintética) y v1 se migran a v2 y validan; las v1 equivalen a las v2 vigentes.
+// Fixtures de migración: v0 (sintética), v1 y v2 se migran a v3 y validan; las v1 y v2 equivalen a las vigentes.
 const v1 = join(import.meta.dirname, "fixtures-v1");
+const v2 = join(import.meta.dirname, "fixtures-v2");
 const v0 = join(import.meta.dirname, "fixtures-v0", "project.fme.json");
 
-for (const ruta of [v0, ...readdirSync(v1).map((f) => join(v1, f))]) {
-  test(`migra a v2 y valida: ${ruta.split(/[\/]/).slice(-2).join("/")}`, () => {
+for (const ruta of [v0, ...readdirSync(v1).map((f) => join(v1, f)), ...readdirSync(v2).map((f) => join(v2, f))]) {
+  test(`migra a v3 y valida: ${ruta.split(/[\/]/).slice(-2).join("/")}`, () => {
     const p = cargar(ruta);
-    assert.equal(p.schemaVersion, 2);
+    assert.equal(p.schemaVersion, 3);
     assert.equal(serialize(cargar_texto(serialize(p))), serialize(p), "estable tras migrar");
   });
 }
@@ -88,15 +94,32 @@ function cargar_texto(texto: string): Project {
   return r.value;
 }
 
-test("las fixtures v1 mínima y 29,97 migran exactamente a las v2 vigentes", () => {
-  for (const f of ["minima.fme.json", "ntsc-2997.fme.json"]) {
-    assert.equal(serialize(cargar(join(v1, f))), leer(join(dir, f)), f);
+test("las fixtures v1 y v2 mínima y 29,97 migran exactamente a las v3 vigentes", () => {
+  for (const dirMigracion of [v1, v2]) {
+    for (const f of ["minima.fme.json", "ntsc-2997.fme.json"]) {
+      assert.equal(serialize(cargar(join(dirMigracion, f))), leer(join(dir, f)), `${dirMigracion}/${f}`);
+    }
   }
 });
 
-test("la híbrida v1 migra a la v2 salvo el texto del título", () => {
-  const migrada = cargar(join(v1, "hibrida.fme.json"));
-  const vigente = cargar(hibrida);
-  delete vigente.sequences[0]!.scenes[0]!.layers.find((l) => l.id === "capa-titulo")!.text;
-  assert.deepEqual(migrada, vigente);
+/** La híbrida vigente sin lo que añadieron las versiones posteriores a la v1 (texto) y a la v2 (artefactos y su enlace). */
+function hibridaSin(quitar: { texto: boolean }): Project {
+  const p = cargar(hibrida);
+  delete p.artifacts;
+  for (const capa of p.sequences[0]!.scenes[0]!.layers) {
+    if (capa.externalProject) delete capa.externalProject.renderArtifactId;
+    if (quitar.texto) delete capa.text;
+  }
+  return p;
+}
+
+test("la híbrida v2 migra a la v3 salvo los artefactos y su enlace (el id colgante se elimina)", () => {
+  const v2Texto = JSON.parse(readFileSync(join(v2, "hibrida.fme.json"), "utf8"));
+  const colgante = v2Texto.sequences[0].scenes[0].layers.find((l: any) => l.id === "capa-3d").externalProject.renderArtifactId;
+  assert.equal(colgante, "render-3d", "la fixture v2 conserva el puntero que no apuntaba a nada");
+  assert.deepEqual(cargar(join(v2, "hibrida.fme.json")), hibridaSin({ texto: false }));
+});
+
+test("la híbrida v1 migra a la v3 salvo el texto, los artefactos y su enlace", () => {
+  assert.deepEqual(cargar(join(v1, "hibrida.fme.json")), hibridaSin({ texto: true }));
 });

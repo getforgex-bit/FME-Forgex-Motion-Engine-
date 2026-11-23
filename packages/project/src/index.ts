@@ -93,7 +93,7 @@ export type RenderArtifact = {
 /** FPS racional, p. ej. { num: 30000, den: 1001 } = 29,97 FPS. */
 export type Fps = { num: number; den: number };
 
-export const SCHEMA_VERSION = 2 as const;
+export const SCHEMA_VERSION = 3 as const;
 
 export type Project = {
   schemaVersion: typeof SCHEMA_VERSION;
@@ -105,6 +105,8 @@ export type Project = {
   seed: number;
   assets: Asset[];
   sequences: Sequence[];
+  /** Catálogo de artefactos generados; `renderArtifactId` de `ExternalProjectRef` debe existir aquí (ADR-0015). */
+  artifacts?: RenderArtifact[];
 };
 
 // API pública (re-exportaciones añadidas por A0 al integrar FDN-021 y FDN-022).
