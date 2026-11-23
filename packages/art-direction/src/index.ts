@@ -66,3 +66,6 @@ export {
   applyArtDirection,
 } from './apply.ts';
 export type { ApplyArtDirectionOptions } from './apply.ts';
+
+// Traducción de gradientes y técnicas a operaciones por backend (FDN-061).
+export * from './backends/index.ts';
