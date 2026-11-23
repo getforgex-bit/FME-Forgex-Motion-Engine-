@@ -12,6 +12,7 @@
     "@fme/cache": "0.0.0",
     "@fme/connectors": "0.0.0",
     "@fme/project": "0.0.0",
+    "@fme/render-plan": "0.0.0",
     "@fme/router": "0.0.0",
     "@fme/runtime-workers": "0.0.0"
   }
