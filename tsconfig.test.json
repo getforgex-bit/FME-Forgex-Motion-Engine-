@@ -5,7 +5,12 @@
     "composite": false,
     "declaration": false,
     "allowImportingTsExtensions": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["packages/*/test/**/*.ts"]
+  "include": [
+    "packages/*/test/**/*.ts",
+    "runtime/*/test/**/*.ts"
+  ]
 }

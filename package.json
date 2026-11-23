@@ -5,7 +5,8 @@
   "description": "Forgex Motion Engine: motor audiovisual procedural, modular y AI-first",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "runtime/workers"
   ],
   "engines": {
     "node": "^22.18.0 || >=24.11.0"
@@ -13,7 +14,7 @@
   "scripts": {
     "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "check:memory": "node scripts/check-memory.mjs",
-    "test": "node --test scripts/*.test.mjs \"packages/*/test/**/*.test.ts\"",
+    "test": "node --test scripts/*.test.mjs \"packages/*/test/**/*.test.ts\" \"runtime/*/test/**/*.test.ts\"",
     "coord": "node scripts/coord.mjs"
   },
   "devDependencies": {
