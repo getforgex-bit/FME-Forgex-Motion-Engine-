@@ -1,0 +1,11 @@
+# @fme/render-plan
+
+`planSceneRender(project, options)` devuelve un plan de previsualización para una escena de un `Project` validado. Recibe `sequenceId`, `sceneId`, `segmentFrames` y `vramBudgetMiB`. El plan se puede serializar y la función no ejecuta motores ni modifica el proyecto.
+
+Cada segmento cubre `[startFrame, endFrameExclusive)` en coordenadas de escena, con el comienzo de la capa como origen de la división. Se recorta en el último fotograma de la escena y se omiten las capas sin fotogramas dentro de ella. El identificador depende del proyecto, la secuencia, la escena, la capa y la ventana. La clave SHA-256 incluye la capa, el FPS racional, la semilla, la versión de esquema, el perfil efectivo, el asset referenciado y los adaptadores configurados para esa capa. En una capa de texto sin contenido ni parámetro de texto se incorpora el nombre del proyecto como respaldo. Para referenciar contenido externo cambiante, registra su huella en `Asset.hash` o suministra un identificador de revisión en `layerInputs[layerId].parameters`.
+
+Una capa con la técnica `2d-guided-by-3d` y `guide3DLayerId` depende de los segmentos superpuestos de su guía en la misma escena. Esos segmentos aportan sus propias claves. Las guías activas faltantes y las dependencias cíclicas se informan con un error.
+
+`affectedSegments(plan, changes)` recibe cambios `{ kind: 'layer' | 'asset' | 'adapter', id: string }` y devuelve los segmentos afectados en orden del plan. Usa el plan nuevo para planificar un render tras editar un proyecto. Si cambia la topología de las ventanas, conserva también los identificadores del plan anterior para reconocer las salidas que ya no figuran en el nuevo. Las versiones de adaptadores y los parámetros que modifican su salida se suministran por capa en `layerInputs`.
+
+`selectPreviewProfile` limita el lado largo a la mitad y conserva la proporción al píxel más cercano. Prioriza resolución y luego elige 1, 2, 4 u 8 muestras. Su estimación suma 256 MiB de base y `64 + 16 × muestras` bytes por píxel. Si no cabe ni un píxel con una muestra, devuelve un error. El presupuesto se aplica a la estimación. El consumo real depende del motor, la geometría, las texturas y los procesos simultáneos.

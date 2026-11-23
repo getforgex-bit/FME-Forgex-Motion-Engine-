@@ -27,6 +27,9 @@
     },
     {
       "path": "packages/adapters/blender"
+    },
+    {
+      "path": "packages/render-plan"
     }
   ]
 }
