@@ -7,7 +7,8 @@
   "workspaces": [
     "packages/*",
     "packages/adapters/*",
-    "runtime/workers"
+    "runtime/workers",
+    "apps/*"
   ],
   "engines": {
     "node": "^22.18.0 || >=24.11.0"
@@ -15,7 +16,7 @@
   "scripts": {
     "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "check:memory": "node scripts/check-memory.mjs",
-    "test": "node --test scripts/*.test.mjs \"packages/*/test/**/*.test.ts\" \"packages/adapters/*/test/**/*.test.ts\" \"runtime/*/test/**/*.test.ts\"",
+    "test": "node --test scripts/*.test.mjs \"packages/*/test/**/*.test.ts\" \"packages/adapters/*/test/**/*.test.ts\" \"runtime/*/test/**/*.test.ts\" \"apps/*/test/**/*.test.ts\"",
     "coord": "node scripts/coord.mjs"
   },
   "devDependencies": {

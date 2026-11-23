@@ -1,0 +1,271 @@
+/**
+ * Servidor MCP mínimo de FME (FDN-080, spec §10). Es un adaptador de la API existente
+ * (`@fme/project`, `ConnectorRegistry`, `@fme/router` y los adaptadores registrados), no un segundo sistema.
+ * Las herramientas sin implementación devuelven un error estructurado `NOT_IMPLEMENTED`; no se simulan.
+ */
+import { randomUUID } from 'node:crypto';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+import {
+  ADVANCED_SECTIONS,
+  ConnectorRegistryError,
+  checkAdapterResult,
+  type ConnectorAdapter,
+  type ConnectorFilter,
+  type ConnectorRegistry,
+  type JobRequest,
+} from '@fme/connectors';
+import { deserialize, parseProject, serialize, type Project } from '@fme/project';
+import { planRoute, type RouteOptions, type RouteTask } from '@fme/router';
+import { PathError, resolveInRoot } from './paths.ts';
+
+export type FmeServerOptions = {
+  /** Raíz permitida: todo proyecto y todo directorio de job queda dentro. */
+  root: string;
+  registry: ConnectorRegistry;
+  /** Adaptadores ejecutables por `job.run`, por id de conector. Deben estar también en `registry`. */
+  adapters?: ReadonlyMap<string, ConnectorAdapter>;
+  /** Tope de tiempo por job en ms (por defecto 600 000; el valor por defecto de cada job es 120 000). */
+  jobTimeoutMs?: number;
+  name?: string;
+  version?: string;
+};
+
+type ToolResult = { content: { type: 'text'; text: string }[]; isError?: true };
+
+export type StructuredError = { error: { code: string; message: string; details?: unknown } };
+
+function ok(value: unknown): ToolResult {
+  return { content: [{ type: 'text', text: JSON.stringify(value, null, 2) }] };
+}
+
+function fail(code: string, message: string, details?: unknown): ToolResult {
+  const body: StructuredError = { error: { code, message, ...(details !== undefined ? { details } : {}) } };
+  return { content: [{ type: 'text', text: JSON.stringify(body, null, 2) }], isError: true };
+}
+
+/** Convierte cualquier excepción conocida en un error estructurado. */
+function fromThrown(e: unknown): ToolResult {
+  if (e instanceof PathError) return fail(e.code, e.message);
+  if (e instanceof ConnectorRegistryError) return fail(e.code, e.message);
+  const err = e as NodeJS.ErrnoException;
+  if (err?.code === 'ENOENT') return fail('FILE_NOT_FOUND', 'El archivo no existe.');
+  if (err?.code === 'EEXIST') return fail('FILE_EXISTS', 'El archivo ya existe; no se sobrescribe.');
+  return fail('INTERNAL_ERROR', e instanceof Error ? e.message : String(e));
+}
+
+function summarize(p: Project) {
+  const layers = p.sequences.flatMap((s) => s.scenes.flatMap((sc) => sc.layers));
+  return {
+    id: p.id,
+    name: p.name,
+    schemaVersion: p.schemaVersion,
+    fps: p.fps,
+    size: { width: p.width, height: p.height },
+    assets: p.assets.length,
+    sequences: p.sequences.length,
+    scenes: p.sequences.reduce((n, s) => n + s.scenes.length, 0),
+    layers: layers.length,
+  };
+}
+
+const NOT_IMPLEMENTED = {
+  'preview.render': 'La previsualización depende del render por segmentos (FDN-071) y aún no está conectada.',
+  'preview.inspect': 'La inspección de resultados depende de preview.render y aún no existe.',
+  'project.export': 'La exportación final con audio (FDN-074) aún no existe.',
+} as const;
+
+export function createFmeServer(options: FmeServerOptions): McpServer {
+  const { root, registry } = options;
+  const adapters = options.adapters ?? new Map<string, ConnectorAdapter>();
+  const server = new McpServer({ name: options.name ?? 'fme', version: options.version ?? '0.0.0' });
+
+  server.registerTool(
+    'project.create',
+    {
+      description: 'Crea un proyecto universal vacío (schemaVersion actual). Con `path` lo guarda dentro de la raíz sin sobrescribir.',
+      inputSchema: {
+        id: z.string().min(1),
+        name: z.string(),
+        width: z.number().int().positive(),
+        height: z.number().int().positive(),
+        fps: z.strictObject({ num: z.number().int().positive(), den: z.number().int().positive() }).default({ num: 30, den: 1 }),
+        seed: z.number().int().default(0),
+        path: z.string().optional(),
+      },
+    },
+    async (args) => {
+      try {
+        const parsed = parseProject({
+          schemaVersion: 2,
+          id: args.id,
+          name: args.name,
+          fps: args.fps,
+          width: args.width,
+          height: args.height,
+          seed: args.seed,
+          assets: [],
+          sequences: [],
+        });
+        if (!parsed.ok) return fail('INVALID_PROJECT', 'El proyecto no es válido.', parsed.errors);
+        let saved: string | undefined;
+        if (args.path !== undefined) {
+          const file = resolveInRoot(root, args.path);
+          mkdirSync(dirname(file), { recursive: true });
+          writeFileSync(file, serialize(parsed.value), { flag: 'wx' });
+          saved = relative(resolve(root), file);
+        }
+        return ok({ project: parsed.value, summary: summarize(parsed.value), ...(saved !== undefined ? { savedAs: saved } : {}) });
+      } catch (e) {
+        return fromThrown(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    'project.open',
+    {
+      description: 'Abre un proyecto de la raíz (migrando versiones anteriores) y devuelve el resumen y, opcionalmente, el proyecto completo.',
+      inputSchema: { path: z.string(), includeProject: z.boolean().default(false) },
+    },
+    async (args) => {
+      try {
+        const file = resolveInRoot(root, args.path);
+        const result = deserialize(readFileSync(file, 'utf8').replace(/\r\n/g, '\n'));
+        if (!result.ok) {
+          const unknownVersion = result.errors.some((e) => e.code === 'unknown-schema-version');
+          return fail(unknownVersion ? 'UNKNOWN_SCHEMA_VERSION' : 'INVALID_PROJECT', 'No se pudo abrir el proyecto.', result.errors);
+        }
+        return ok({ summary: summarize(result.value), ...(args.includeProject ? { project: result.value } : {}) });
+      } catch (e) {
+        return fromThrown(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    'connectors.list',
+    {
+      description: 'Lista las tarjetas simples de los conectores registrados, con filtros opcionales. `unknown` nunca cuenta como `yes`: marca «requiere inspección».',
+      inputSchema: {
+        capability: z.string().optional(),
+        accepts: z.string().optional(),
+        produces: z.string().optional(),
+        executor: z.enum(['cli', 'api', 'library', 'mcp']).optional(),
+      },
+    },
+    async (args) => {
+      try {
+        const filter: ConnectorFilter = {};
+        if (args.capability !== undefined) filter.capability = args.capability;
+        if (args.accepts !== undefined) filter.accepts = args.accepts;
+        if (args.produces !== undefined) filter.produces = args.produces;
+        if (args.executor !== undefined) filter.executor = args.executor;
+        return ok({ connectors: registry.listSimple(filter) });
+      } catch (e) {
+        return fromThrown(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    'connectors.inspect',
+    {
+      description: 'Devuelve solo las secciones pedidas de la tarjeta avanzada de un conector.',
+      inputSchema: { id: z.string().min(1), sections: z.array(z.enum(ADVANCED_SECTIONS)).min(1) },
+    },
+    async (args) => {
+      try {
+        return ok(registry.inspect(args.id, args.sections));
+      } catch (e) {
+        return fromThrown(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    'route.plan',
+    {
+      description: 'Planifica (sin ejecutar) qué conector debe realizar una tarea, con el enrutador de 8 pasos y su justificación.',
+      inputSchema: {
+        task: z.strictObject({
+          id: z.string().optional(),
+          operation: z.string().min(1),
+          requiredCapabilities: z.array(z.string()).optional(),
+          requiredAccepts: z.array(z.string()).optional(),
+          requiredProduces: z.array(z.string()).optional(),
+          requiredEditability: z.array(z.enum(['native', 'linked', 'baked', 'unknown'])).optional(),
+          availableConnectorIds: z.array(z.string()).optional(),
+        }),
+        options: z
+          .strictObject({
+            mode: z.enum(['auto', 'manual', 'hybrid']).optional(),
+            manualConnectorId: z.string().optional(),
+            preferredConnectorIds: z.array(z.string()).optional(),
+            excludedConnectorIds: z.array(z.string()).optional(),
+          })
+          .optional(),
+      },
+    },
+    async (args) => {
+      try {
+        return ok(planRoute(registry, args.task as RouteTask, (args.options ?? {}) as RouteOptions));
+      } catch (e) {
+        return fromThrown(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    'job.run',
+    {
+      description: 'Ejecuta un job con el adaptador registrado del conector indicado. Las entradas deben estar dentro de la raíz; la salida se escribe en un directorio propio del job.',
+      inputSchema: {
+        connectorId: z.string().min(1),
+        job: z.strictObject({
+          projectId: z.string().min(1),
+          operation: z.string().min(1),
+          inputs: z.array(z.strictObject({ uri: z.string().min(1), type: z.string().min(1) })),
+          requirements: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
+          seed: z.number().int().optional(),
+        }),
+        timeoutMs: z.number().int().positive().optional(),
+      },
+    },
+    async (args) => {
+      try {
+        const adapter = adapters.get(args.connectorId);
+        if (adapter === undefined || !registry.has(args.connectorId)) {
+          return fail('ADAPTER_NOT_AVAILABLE', `No hay un adaptador ejecutable registrado para «${args.connectorId}».`);
+        }
+        const inputs = args.job.inputs.map((i) => ({ uri: resolveInRoot(root, i.uri), type: i.type }));
+        const job: JobRequest = {
+          projectId: args.job.projectId,
+          operation: args.job.operation,
+          inputs,
+          requirements: args.job.requirements,
+          ...(args.job.seed !== undefined ? { seed: args.job.seed } : {}),
+        };
+        const jobId = randomUUID();
+        const workDir = resolveInRoot(root, `.fme-jobs/${jobId}`);
+        mkdirSync(workDir, { recursive: true });
+        const cap = options.jobTimeoutMs ?? 600_000;
+        const timeoutMs = Math.min(args.timeoutMs ?? 120_000, cap);
+        const result = await adapter.run(job, { jobId, workDir, timeoutMs });
+        return ok({ result, conformance: checkAdapterResult(result, adapter) });
+      } catch (e) {
+        return fromThrown(e);
+      }
+    },
+  );
+
+  for (const [name, reason] of Object.entries(NOT_IMPLEMENTED)) {
+    server.registerTool(name, { description: `No implementada todavía. ${reason}`, inputSchema: {} }, async () =>
+      fail('NOT_IMPLEMENTED', reason, { tool: name }),
+    );
+  }
+
+  return server;
+}

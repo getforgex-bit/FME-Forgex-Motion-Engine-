@@ -12,6 +12,7 @@
   "include": [
     "packages/*/test/**/*.ts",
     "packages/adapters/*/test/**/*.ts",
-    "runtime/*/test/**/*.ts"
+    "runtime/*/test/**/*.ts",
+    "apps/*/test/**/*.ts"
   ]
 }
