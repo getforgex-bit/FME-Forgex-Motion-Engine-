@@ -1,12 +1,14 @@
 /**
  * Mapeo determinista de una escena de `@fme/project` (v1 migrado o v2) a la especificación
  * de job del motor CLI de FreeCut (`runtime/engines/freecut/cli.mjs`), tanto para
- * `edit.export` (FDN-041) como para composición multipista `edit.compose` (FDN-042a).
+ * `edit.export` (FDN-041), composición multipista `edit.compose` (FDN-042a) y
+ * pistas de audio / sincronía 48 kHz (FDN-074a).
  */
 import { statSync, realpathSync } from 'node:fs';
 import { basename, dirname, extname, isAbsolute, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Layer, Project, Scene } from '@fme/project';
+import { DEFAULT_AUDIO_SAMPLE_RATE } from './audio-sync.ts';
 
 export type FreeCutMediaLayer = {
   id: string;
@@ -16,6 +18,8 @@ export type FreeCutMediaLayer = {
   durationFrames: number;
   sourceInFrame: number;
   zIndex: number;
+  /** Ganancia lineal FME (`>= 0`, `1.0` = 0 dB); `cli.mjs` la convierte a dB para FreeCut. */
+  volume?: number;
   opacity?: number;
   preserveAlpha?: boolean;
   blendMode?: string;
@@ -45,6 +49,7 @@ export type FreeCutEngineJob = {
   width: number;
   height: number;
   fps: number;
+  audioSampleRate: number;
   durationFrames: number;
   layers: FreeCutLayerSpec[];
 };
@@ -205,6 +210,17 @@ function validateLayerTiming(layer: Layer): void {
   }
 }
 
+export function resolveAudioSampleRate(audioSampleRate: number | undefined): number {
+  const rate = audioSampleRate ?? DEFAULT_AUDIO_SAMPLE_RATE;
+  if (!Number.isInteger(rate) || rate !== DEFAULT_AUDIO_SAMPLE_RATE) {
+    throw new MappingError(
+      'bad-requirements',
+      `audioSampleRate no soportado por FreeCut MP4 (${String(rate)}); el pipeline nativo fija ${DEFAULT_AUDIO_SAMPLE_RATE} Hz.`,
+    );
+  }
+  return rate;
+}
+
 function validateProjectAndScene(project: Project, sceneId: string): { fps: number; scene: Scene } {
   if (!sceneId) {
     throw new MappingError('bad-requirements', 'requirements.sceneId (string) es obligatorio.');
@@ -244,7 +260,8 @@ function buildTextLayerSpec(layer: Layer, fallbackName: string): FreeCutTextLaye
 
 function inferMimeType(filePath: string, declaredType?: string): string {
   if (declaredType && declaredType !== 'application/octet-stream') {
-    return declaredType.toLowerCase();
+    const lower = declaredType.toLowerCase();
+    return lower === 'audio/x-wav' || lower === 'audio/wave' ? 'audio/wav' : lower;
   }
   const ext = extname(filePath).toLowerCase();
   switch (ext) {
@@ -311,14 +328,28 @@ function readLayerOpacity(layer: Layer): number | undefined {
   return Math.max(0, Math.min(1, val));
 }
 
+function readLayerVolume(layer: Layer): number | undefined {
+  const val = layer.channels.volume?.defaultValue;
+  if (val === undefined) return undefined;
+  if (typeof val !== 'number' || !Number.isFinite(val) || val < 0) {
+    throw new MappingError(
+      'bad-layer',
+      `La capa «${layer.id}» tiene volume inválido: ${String(val)} (debe ser número finito >= 0).`,
+    );
+  }
+  return val;
+}
+
 export type BuildFreeCutJobOptions = {
   sceneId: string;
   projectDir: string;
+  audioSampleRate?: number;
 };
 
 /** Mapea un `Project` FME y su `sceneId` a un `FreeCutEngineJob` determinista validando assets y rutas. */
 export function buildFreeCutJob(project: Project, options: BuildFreeCutJobOptions): FreeCutEngineJob {
   const { sceneId, projectDir } = options;
+  const audioSampleRate = resolveAudioSampleRate(options.audioSampleRate);
   const { fps, scene } = validateProjectAndScene(project, sceneId);
 
   const mapped: FreeCutLayerSpec[] = [];
@@ -345,6 +376,8 @@ export function buildFreeCutJob(project: Project, options: BuildFreeCutJobOption
         );
       }
       const mediaPath = resolveContainedAssetPath(projectDir, asset.uri, layer.id);
+      const volume =
+        layer.kind === 'audio' || layer.kind === 'video' ? readLayerVolume(layer) : undefined;
       mapped.push({
         id: layer.id,
         kind: layer.kind,
@@ -353,6 +386,7 @@ export function buildFreeCutJob(project: Project, options: BuildFreeCutJobOption
         durationFrames: layer.durationFrames,
         sourceInFrame: layer.sourceInFrame ?? 0,
         zIndex: layer.zIndex,
+        ...(volume !== undefined ? { volume } : {}),
       });
       continue;
     }
@@ -382,6 +416,7 @@ export function buildFreeCutJob(project: Project, options: BuildFreeCutJobOption
     width: project.width,
     height: project.height,
     fps,
+    audioSampleRate,
     durationFrames: scene.durationFrames,
     layers: mapped,
   };
@@ -396,7 +431,8 @@ export type ComposeInputArtifact = {
 export type BuildFreeCutComposeJobOptions = {
   sceneId: string;
   projectDir: string;
-  /** Artefactos externos suministrados en `job.inputs.slice(1)` (overlays, renders previos). */
+  audioSampleRate?: number;
+  /** Artefactos externos suministrados en `job.inputs.slice(1)` (overlays, pistas WAV, renders previos). */
   inputs?: readonly ComposeInputArtifact[];
   /** Mapa explícito `layerId -> uri` (p. ej. desde `requirements['input.<layerId>']` o `requirements.layerInputs`). */
   layerInputMap?: Readonly<Record<string, string>>;
@@ -470,26 +506,18 @@ function matchComposeInputForLayer(
 }
 
 /**
- * Mapea una escena multipista para `edit.compose` (FDN-042a).
- *
- * Resolución determinista de artefactos por capa:
- * 1. `layerInputMap[layer.id]` (`requirements['input.<layerId>']` o `requirements.layerInputs`).
- * 2. `inputs[k].layerId === layer.id`.
- * 3. Coincidencia por `asset.uri` o `externalProject.uri`.
- * 4. Coincidencia por nombre base (`layer.id`, `assetId` o `externalProject.renderArtifactId`).
- * 5. Para capas no nativas (`svg`, `drawing`, `model3d`) sin emparejamiento previo, asignación
- *    determinista en orden de `zIndex` sobre los artefactos restantes en `inputs[]`.
+ * Mapea una escena multipista para `edit.compose` (FDN-042a / FDN-074a).
  */
 export function buildFreeCutComposeJob(
   project: Project,
   options: BuildFreeCutComposeJobOptions,
 ): FreeCutEngineJob {
   const { sceneId, projectDir } = options;
+  const audioSampleRate = resolveAudioSampleRate(options.audioSampleRate);
   const { fps, scene } = validateProjectAndScene(project, sceneId);
   const inputs = options.inputs ?? [];
   const usedIndices = new Set<number>();
 
-  // Raíces permitidas: `allowedInputRoots` si se indica, o `projectDir` + carpetas de `inputs[]` entregados.
   const effectiveAllowedRoots: string[] =
     options.allowedInputRoots !== undefined
       ? [...options.allowedInputRoots]
@@ -508,7 +536,6 @@ export function buildFreeCutComposeJob(
     }
   }
 
-  // Primera pasada en orden ascendente de zIndex para emparejamiento explícito/por nombre
   const orderedLayers = [...scene.layers].sort(
     (a, b) => a.zIndex - b.zIndex || a.startFrame - b.startFrame || a.id.localeCompare(b.id),
   );
@@ -529,7 +556,6 @@ export function buildFreeCutComposeJob(
     }
   }
 
-  // Segunda pasada: capas rendered-external ('svg' | 'drawing' | 'model3d') toman por orden los inputs sobrantes
   for (const layer of orderedLayers) {
     if (
       layer.kind !== 'svg' &&
@@ -580,7 +606,9 @@ export function buildFreeCutComposeJob(
         );
       }
 
-      const explicitOpacity = readLayerOpacity(layer);
+      const volume =
+        kind === 'audio' || kind === 'video' ? readLayerVolume(layer) : undefined;
+      const explicitOpacity = kind === 'audio' ? undefined : readLayerOpacity(layer);
       const isImageOverlay = kind === 'image' && layer.zIndex > 0;
       const preserveAlpha =
         kind === 'image' && mimeType === 'image/png' && (layer.zIndex > 0 || explicitOpacity === 1);
@@ -598,10 +626,10 @@ export function buildFreeCutComposeJob(
         sourceInFrame: layer.sourceInFrame ?? 0,
         zIndex: layer.zIndex,
         mimeType,
+        ...(volume !== undefined ? { volume } : {}),
         ...(isImageOverlay || preserveAlpha ? { preserveAlpha: true } : {}),
         ...(opacity !== undefined ? { opacity } : {}),
-        width: project.width,
-        height: project.height,
+        ...(kind !== 'audio' ? { width: project.width, height: project.height } : {}),
       });
       continue;
     }
@@ -622,7 +650,9 @@ export function buildFreeCutComposeJob(
       }
       const mediaPath = resolveContainedAssetPath(projectDir, asset.uri, layer.id);
       const mimeType = inferMimeType(mediaPath);
-      const explicitOpacity = readLayerOpacity(layer);
+      const volume =
+        layer.kind === 'audio' || layer.kind === 'video' ? readLayerVolume(layer) : undefined;
+      const explicitOpacity = layer.kind === 'audio' ? undefined : readLayerOpacity(layer);
       const preserveAlpha =
         layer.kind === 'image' &&
         mimeType === 'image/png' &&
@@ -641,6 +671,7 @@ export function buildFreeCutComposeJob(
         sourceInFrame: layer.sourceInFrame ?? 0,
         zIndex: layer.zIndex,
         mimeType,
+        ...(volume !== undefined ? { volume } : {}),
         ...(preserveAlpha ? { preserveAlpha: true } : {}),
         ...(opacity !== undefined ? { opacity } : {}),
         ...(layer.kind !== 'audio' ? { width: project.width, height: project.height } : {}),
@@ -676,6 +707,7 @@ export function buildFreeCutComposeJob(
     width: project.width,
     height: project.height,
     fps,
+    audioSampleRate,
     durationFrames: scene.durationFrames,
     layers: mapped,
   };
@@ -688,6 +720,7 @@ export type DirectClipJobOptions = {
   height: number;
   fps: number;
   durationFrames: number;
+  audioSampleRate?: number;
   projectName?: string;
   sceneId?: string;
 };
@@ -695,6 +728,7 @@ export type DirectClipJobOptions = {
 /** Construye un `FreeCutEngineJob` a partir de un clip único contenido en `projectDir`. */
 export function buildDirectClipJob(options: DirectClipJobOptions): FreeCutEngineJob {
   const mediaPath = resolveContainedAssetPath(options.projectDir, options.clipPath, 'clip');
+  const audioSampleRate = resolveAudioSampleRate(options.audioSampleRate);
   const sceneId = options.sceneId ?? 'direct-clip';
   return {
     projectId: sceneId,
@@ -703,6 +737,7 @@ export function buildDirectClipJob(options: DirectClipJobOptions): FreeCutEngine
     width: options.width,
     height: options.height,
     fps: options.fps,
+    audioSampleRate,
     durationFrames: options.durationFrames,
     layers: [
       {

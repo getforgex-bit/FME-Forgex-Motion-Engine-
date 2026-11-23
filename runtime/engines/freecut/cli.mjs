@@ -6,6 +6,15 @@ import { pathToFileURL } from 'node:url';
 
 const DEFAULT_FREECUT_DIR =
   process.env.FME_FREECUT_DIR ?? 'C:\\Users\\bogex\\Documents\\Forgex\\FME-ext\\freecut';
+const DEFAULT_AUDIO_SAMPLE_RATE = 48000;
+
+function linearGainToDb(gain) {
+  if (typeof gain !== 'number' || !Number.isFinite(gain)) return 0;
+  if (gain <= 0) return -60;
+  const db = 20 * Math.log10(gain);
+  if (Math.abs(db) < 1e-6) return 0;
+  return Math.max(-60, Math.min(12, Number(db.toFixed(4))));
+}
 
 function parseArgs(argv) {
   const args = {};
@@ -122,6 +131,14 @@ async function runJob(args) {
 
   if (!fs.existsSync(jobFile)) fail('bad-input', `No existe el archivo de job: ${jobFile}`);
   const spec = JSON.parse(fs.readFileSync(jobFile, 'utf8'));
+  const audioSampleRate =
+    spec.audioSampleRate === undefined ? DEFAULT_AUDIO_SAMPLE_RATE : Number(spec.audioSampleRate);
+  if (!Number.isInteger(audioSampleRate) || audioSampleRate !== DEFAULT_AUDIO_SAMPLE_RATE) {
+    fail(
+      'bad-requirements',
+      `FreeCut solo soporta exportación MP4 a ${DEFAULT_AUDIO_SAMPLE_RATE} Hz (recibido: ${spec.audioSampleRate}).`,
+    );
+  }
 
   const workspaceDir = path.join(workDir, 'freecut-workspace');
   fs.mkdirSync(workspaceDir, { recursive: true });
@@ -178,6 +195,7 @@ async function runJob(args) {
 
     // Importa cada archivo de media único una sola vez dentro del workspace aislado.
     const mediaIdByPath = new Map();
+    const hasAudioCompanionByMediaId = new Map();
     let mediaIndex = 0;
     for (const layer of spec.layers) {
       if (layer.kind !== 'video' && layer.kind !== 'audio' && layer.kind !== 'image') continue;
@@ -195,7 +213,15 @@ async function runJob(args) {
       );
       await commitStagedMedia(staged, probe, { workspace: workspaceDir, projectId });
       mediaIdByPath.set(layer.mediaPath, mediaId);
+      hasAudioCompanionByMediaId.set(
+        mediaId,
+        probe?.metadata?.type === 'video' && Boolean(probe?.metadata?.audioCodec),
+      );
     }
+
+    const hasVideoWithEmbeddedAudio = spec.layers.some(
+      (l) => l.kind === 'video' && hasAudioCompanionByMediaId.get(mediaIdByPath.get(l.mediaPath)),
+    );
 
     // Construye pistas visuales en orden ascendente de zIndex (order 0 = fondo, -1/-2... = arriba).
     const ops = [];
@@ -218,12 +244,14 @@ async function runJob(args) {
       }
     });
 
+    // Si algún clip de vídeo tiene audio embebido, placeVideoClip coloca su compañero en track-2;
+    // las capas audio externas deben usar pistas dedicadas (addTrack) para evitar colisión/silenciado.
     const audioZIndices = [
       ...new Set(spec.layers.filter((l) => l.kind === 'audio').map((l) => l.zIndex)),
     ].sort((a, b) => a - b);
     const audioTrackRefByZ = new Map();
     audioZIndices.forEach((z, idx) => {
-      if (idx === 0) {
+      if (idx === 0 && !hasVideoWithEmbeddedAudio) {
         audioTrackRefByZ.set(z, 'track-2');
       } else {
         const callerId = `audioTrackZ_${idx}`;
@@ -262,9 +290,21 @@ async function runJob(args) {
       ops.push(clipOp);
 
       const itemUpdates = {};
+      const companionAudioUpdates = {};
       if (layer.sourceInFrame > 0 && (layer.kind === 'video' || layer.kind === 'audio')) {
         itemUpdates.sourceStart = layer.sourceInFrame;
         itemUpdates.sourceEnd = layer.sourceInFrame + layer.durationFrames;
+        if (layer.kind === 'video') {
+          companionAudioUpdates.sourceStart = layer.sourceInFrame;
+          companionAudioUpdates.sourceEnd = layer.sourceInFrame + layer.durationFrames;
+        }
+      }
+      if (layer.volume !== undefined && (layer.kind === 'audio' || layer.kind === 'video')) {
+        const volumeDb = linearGainToDb(layer.volume);
+        itemUpdates.volume = volumeDb;
+        if (layer.kind === 'video') {
+          companionAudioUpdates.volume = volumeDb;
+        }
       }
 
       if (layer.kind !== 'audio') {
@@ -292,6 +332,17 @@ async function runJob(args) {
           op: 'updateItem',
           id: { $ref: `${callerId}#/detail/created/0/id` },
           updates: itemUpdates,
+        });
+      }
+      if (
+        layer.kind === 'video' &&
+        hasAudioCompanionByMediaId.get(mediaId) &&
+        Object.keys(companionAudioUpdates).length > 0
+      ) {
+        ops.push({
+          op: 'updateItem',
+          id: { $ref: `${callerId}#/detail/created/1/id` },
+          updates: companionAudioUpdates,
         });
       }
     });
@@ -325,6 +376,7 @@ async function runJob(args) {
       'out-sec': String(spec.durationFrames / spec.fps),
     };
     const prepared = prepareJob(workspaceDir, jobArgs, harness.mediaUrlOf);
+    prepared.settings = { ...prepared.settings, sampleRate: audioSampleRate };
     const renderSummary = await renderJob(session.page, prepared, {
       allowMissingMedia: false,
       downloadTimeoutMs: 0,
@@ -335,6 +387,7 @@ async function runJob(args) {
         ok: true,
         browser: browserChoice.label,
         engineVersion: readEngineVersion(freecutDir),
+        audioSampleRate,
         outputPath: renderSummary.outputPath,
         fileSize: renderSummary.fileSize,
         durationSeconds: renderSummary.durationSeconds,

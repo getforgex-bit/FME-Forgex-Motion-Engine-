@@ -32,6 +32,7 @@ import {
   MappingError,
   buildFreeCutComposeJob,
   buildFreeCutJob,
+  resolveAudioSampleRate,
 } from './mapping.ts';
 import type {
   ComposeInputArtifact,
@@ -490,6 +491,22 @@ export class FreeCutAdapter implements ConnectorAdapter {
       return fail('bad-requirements', 'requirements.sceneId (string) es obligatorio.');
     }
 
+    const rawSampleRate = job.requirements.audioSampleRate;
+    if (rawSampleRate !== undefined && typeof rawSampleRate !== 'number') {
+      return fail(
+        'bad-requirements',
+        `requirements.audioSampleRate debe ser un número entero (48000); recibido ${typeof rawSampleRate}.`,
+      );
+    }
+
+    let audioSampleRate: number;
+    try {
+      audioSampleRate = resolveAudioSampleRate(rawSampleRate);
+    } catch (err) {
+      if (err instanceof MappingError) return fail(err.code, err.message);
+      return fail('bad-requirements', err instanceof Error ? err.message : String(err));
+    }
+
     let projectPath: string;
     try {
       projectPath = realpathSync(toPath(input.uri));
@@ -517,6 +534,7 @@ export class FreeCutAdapter implements ConnectorAdapter {
         engineJob = buildFreeCutComposeJob(parsed.value, {
           sceneId,
           projectDir: dirname(projectPath),
+          audioSampleRate,
           inputs: composeInputs,
           layerInputMap,
         });
@@ -524,6 +542,7 @@ export class FreeCutAdapter implements ConnectorAdapter {
         engineJob = buildFreeCutJob(parsed.value, {
           sceneId,
           projectDir: dirname(projectPath),
+          audioSampleRate,
         });
       }
     } catch (err) {
@@ -655,6 +674,7 @@ export class FreeCutAdapter implements ConnectorAdapter {
         width: engineJob.width,
         height: engineJob.height,
         fps: engineJob.fps,
+        audioSampleRate: engineJob.audioSampleRate,
         frames: engineJob.durationFrames,
         layerCount: engineJob.layers.length,
       },

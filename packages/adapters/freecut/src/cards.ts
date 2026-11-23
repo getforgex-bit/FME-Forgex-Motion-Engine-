@@ -1,8 +1,9 @@
 import type { CardAdvanced, CardSimple } from '@fme/connectors';
+import { DEFAULT_AUDIO_SAMPLE_RATE } from './audio-sync.ts';
 
 export const ADAPTER_VERSION = '0.0.0';
 
-/** Tarjeta simple de FreeCut (FDN-012 / FDN-041 / FDN-042a). */
+/** Tarjeta simple de FreeCut (FDN-012 / FDN-041 / FDN-042a / FDN-074a). */
 export const simple: CardSimple = {
   id: 'adapter.freecut',
   name: 'FreeCut',
@@ -23,6 +24,7 @@ export const simple: CardSimple = {
     'audio/mpeg',
     'audio/aac',
     'audio/wav',
+    'audio/x-wav',
     'image/png',
   ],
   produces: ['video/mp4'],
@@ -30,11 +32,12 @@ export const simple: CardSimple = {
 };
 
 /**
- * Tarjeta avanzada fiel a los hallazgos verificados localmente en FDN-012 y FDN-042a.
+ * Tarjeta avanzada fiel a los hallazgos verificados localmente en FDN-012, FDN-042a y FDN-074a.
  *
  * Distingue `alpha: 'no'` (exportación MP4 yuv420p sin canal alfa) de los formatos
  * de entrada con alpha verificados en composición (`alphaInputWebm`, `alphaInputProRes4444`,
- * `alphaInputPng` con opacidad < 1 para evitar oclusión de pistas, y `pngSequenceInput: 'no'`).
+ * `alphaInputPng` con opacidad < 1 para evitar oclusión de pistas, y `pngSequenceInput: 'no'`),
+ * así como el pipeline de audio fijado a 48 kHz AAC estéreo (`audioSampleRate48k`, `wavAudioInput`, `avSyncVerified`).
  */
 export const advanced: CardAdvanced = {
   pluginId: 'adapter.freecut',
@@ -48,6 +51,9 @@ export const advanced: CardAdvanced = {
     depth: 'no',
     keyframes: 'unknown',
     audio: 'yes',
+    audioSampleRate48k: 'yes',
+    wavAudioInput: 'yes',
+    avSyncVerified: 'yes',
     mp4Export: 'yes',
     h264Export: 'yes',
     aacAudioExport: 'yes',
@@ -66,6 +72,7 @@ export const advanced: CardAdvanced = {
     verifiedHeight: 720,
     verifiedFps: 30,
     verifiedFrames: 150,
+    verifiedAudioSampleRate: DEFAULT_AUDIO_SAMPLE_RATE,
     minFps: 1,
     maxFps: 240,
     pngAlphaOpacityWorkaround: 0.999,
