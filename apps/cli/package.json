@@ -1,0 +1,19 @@
+{
+  "name": "@fme/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "fme": "./dist/main.js"
+  },
+  "dependencies": {
+    "@fme/adapter-revideo": "0.0.0",
+    "@fme/connectors": "0.0.0",
+    "@fme/project": "0.0.0",
+    "@fme/router": "0.0.0"
+  }
+}
