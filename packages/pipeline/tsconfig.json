@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "types": ["node"],
+    "rewriteRelativeImportExtensions": true
+  },
+  "references": [
+    { "path": "../project" },
+    { "path": "../connectors" },
+    { "path": "../cache" },
+    { "path": "../router" },
+    { "path": "../adapters/revideo" },
+    { "path": "../adapters/blender" },
+    { "path": "../adapters/freecut" },
+    { "path": "../../runtime/workers" }
+  ],
+  "include": ["src"]
+}

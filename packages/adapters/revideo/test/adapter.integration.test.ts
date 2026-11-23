@@ -96,4 +96,14 @@ test('capa SVG (drawing con asset .svg) → MP4 de 210 fotogramas', { skip, time
   assert.deepEqual(checkAdapterResult(result, adapter), []);
   const media = await probeMediaModule.probeMedia(fileURLToPath(result.outputs[0]!.uri), { ffprobe });
   assert.equal(media.frames, 210);
+  // Regresión (FDN-042c): antes el SVG se renderizaba VACÍO (el nodo SVG de Revideo falla fuera de la escena activa)
+  // y solo se comprobaba el número de fotogramas. El círculo naranja debe verse: fondo #101820 → píxeles naranjas.
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const { stdout } = await promisify(execFile)(process.env.FME_FFMPEG_PATH ?? 'ffmpeg',
+    ['-v', 'error', '-i', fileURLToPath(result.outputs[0]!.uri), '-vf', 'select=eq(n\\,100)', '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'],
+    { encoding: 'buffer', maxBuffer: 1920 * 1080 * 3 + 1024, windowsHide: true });
+  let orange = 0;
+  for (let p = 0; p < stdout.length; p += 3) if (stdout[p]! > 200 && stdout[p + 1]! > 80 && stdout[p + 1]! < 140 && stdout[p + 2]! < 90) orange++;
+  assert.ok(orange > 10_000, `el SVG no se ve: ${orange} píxeles naranjas`);
 });
