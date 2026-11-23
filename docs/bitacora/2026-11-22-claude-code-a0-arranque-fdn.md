@@ -92,3 +92,16 @@ Hallazgos que pasan al backlog:
 **Con el motor real sobre `develop`** (junction temporal al `node_modules` del motor de A1, eliminada después): `node --test --test-concurrency=1 packages/adapters/revideo/test/*.integration.test.ts` → **8/8**. En paralelo, 7/8 → `tmp-workdir` ve el `workDir` de `e2e` en `os.tmpdir()` (aislamiento entre tests, no es un fallo del producto) → FDN-034b.
 **Fallo intermitente de `npm test`:** `EPERM … rename` en `DiskCache` (1 de 5 ejecuciones completas; 0/40 aislado y 0/40 con 8 en paralelo). Es un bug real de Windows (`rename` sobre un destino abierto) → FDN-070b. El script de integración de A0 reintenta solo ante ese error concreto.
 **Fase 1 cerrada (criterio #1 ☑) y Fase 3 cerrada.** Criterios: 2/8.
+
+
+## 2026-11-23 · Integración 5 (A0)
+| Rama | Commit | Verificación de A0 | Resultado |
+|---|---|---|---|
+| FDN-051 tokens | 3366479 | 113 pass | fusionada |
+| FDN-032b/034b Revideo | c9499f8 | 114 pass; motor real en paralelo ×3 → 8/8, 8/8, 8/8 | fusionada |
+| FDN-080 MCP | 0348125 | A0: `apps/*` en workspaces, test y typecheck; lockfile con el SDK 1.32.2; `npm audit --omit=dev` 0 → 125 pass | fusionada |
+| FDN-040 Blender | ab6e780 | **Sin REVIEW actualizado** (Codex sin cuota). A0: `node --test packages/adapters/blender/test/*.test.ts` con Blender real → 6/6, 0 skip, 31 s; 131 pass | fusionada |
+| FDN-071 render-plan | 900daec | incompleta (falta la segmentación) | no fusionada |
+
+Graphify `god-nodes`: `planRoute` (18), `deserialize` (18), `createFmeServer` (14) y `parseProject` (14) son los nodos centrales.
+**Recordatorio en el buzón firmado como usuario** (`humano-usuario`, 07:08 UTC): propone la tarea de relevo entre equipos. A0 no lo ejecuta sin confirmarlo en el chat → FDN-090 en BACKLOG como propuesta.

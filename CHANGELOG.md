@@ -6,6 +6,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 ## [Unreleased]
 
 ### Added
+- `@fme/adapter-blender` (FDN-040) y `@fme/mcp`, servidor MCP mínimo (FDN-080; SDK MCP 1.32.2).
+- Medición de tokens del router (FDN-051). Título de Revideo desde `layer.text` (FDN-032b).
 - **Fases 1 y 3 cerradas.** FreeCut `5ceeeb3` verificado (FDN-012); E2E descubrimiento → job → procedencia (FDN-033).
 - `@fme/router`: secuencia de 8 pasos, modos automático/manual/híbrido y restricciones duras (FDN-050).
 - `schemaVersion` 2: `Layer.text` (ADR-0012, FDN-028) con migración v1→v2.

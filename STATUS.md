@@ -30,11 +30,12 @@ Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-acept
   - interfaz común de adaptadores (ADR-0011).
   - **Adaptador Revideo con job real** (FDN-032; 120 fotogramas desde la fixture híbrida, procedencia con SHA-256).
   - Caché por dependencias (FDN-070).
-  - Adaptador Blender terminado; pendiente de un ajuste para `schemaVersion` 2 (FDN-040).
+  - **Adaptador Blender integrado** (FDN-040; Blender real 6/6).
+  - **Servidor MCP mínimo** (`apps/mcp`, FDN-080): `project.*`, `connectors.*`, `route.plan` y `job.run` sobre la API; el resto devuelve «no implementado».
   - Router: secuencia de 8 pasos, modos y restricciones duras sobre las tarjetas reales (FDN-050).
   - `schemaVersion` 2: contenido de las capas de texto (FDN-028, ADR-0012).
 - **Fase 6, adelantada:** perfiles de estilo y reglas deterministas (`@fme/art-direction`, FDN-060).
-- `npm test` 108 pass + 6 skip (integración de Revideo sin motor instalado en el checkout).
+- `npm test` 131 pass + 6 skip (integración de Revideo sin motor instalado en el checkout).
 - FORGEX Stack instalado y verificado en el entorno de preparación (ver la bitácora del 2026-11-22). Cada persona debe instalarlo en su máquina.
 
 ## Qué NO existe todavía

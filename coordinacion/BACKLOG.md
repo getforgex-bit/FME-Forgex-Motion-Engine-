@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-23 (integración 4; **Fases 1, 2 y 3 cerradas**)._
+> _Última consolidación: 2026-11-23 (integración 5)._
 
 ## Resumen
 
@@ -22,8 +22,8 @@
 | FDN-014 | Cierre de la Fase 1 (criterio #1) | CL-A0 | 010, 011, 012 | DONE (criterio #1 ☑) |
 | FDN-026 | `deserialize` aplica las migraciones (`migrateToCurrent`) | CL-A2 | 021, 024 | DONE (652f0e2) |
 | FDN-070b | `DiskCache`: reintentar `rename` ante EPERM/EBUSY/EACCES en Windows (bug real; 1 de 5 en `npm test`) | CX | 070 | READY |
-| FDN-032b | Adaptador Revideo: usar `layer.text` (ADR-0012) en lugar de `requirements.text` | CL-A1 | 028, 032 | READY |
-| FDN-034b | Tests de integración de Revideo seguros en paralelo (tmp-workdir frente a e2e) | CL-A1 | 033, 034 | READY |
+| FDN-032b | Adaptador Revideo: usar `layer.text` (ADR-0012) en lugar de `requirements.text` | CL-A1 | 028, 032 | DONE (c9499f8) |
+| FDN-034b | Tests de integración de Revideo seguros en paralelo (tmp-workdir frente a e2e) | CL-A1 | 033, 034 | DONE (c9499f8; A0 8/8 en paralelo ×3) |
 | FDN-028 | Contenido de las capas `text` en el modelo universal (ADR-0012 + `schemaVersion` 2 + migración v1→v2) | CL-A2 | 021, 024, 026 | DONE (05a8e64) |
 | FDN-034 | Revideo: temporales dentro de `ctx.workDir` (no en `os.tmpdir()`) | CL-A1 | 032 | DONE (ad7058e) |
 | FDN-027 | ADR-0011: interfaz común de adaptadores y procedencia | CL-A0 | 030, 031 | DONE (b290224) |
@@ -39,25 +39,26 @@
 | FDN-031 | Ejecución aislada de procesos (`runtime/workers`) | CX | 003 | DONE (e73f706) |
 | FDN-032 | Adaptador Revideo real (JobRequest→JobResult con procedencia) | CL-A1 | 010, 021, 030, 031 | DONE (a88148d; job real 6/6 verificado por A0) |
 | FDN-033 | Cierre de la Fase 3: descubrimiento → job real → procedencia, de extremo a extremo | CL-A1 (A0 valida) | 030, 032 | DONE (13606e6; Fase 3 cerrada) |
-| FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | IN_PROGRESS (devuelta: adaptar a schemaVersion 2) |
+| FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | DONE (ab6e780; A0 verificó con Blender real 6/6) |
 | FDN-041 | Adaptador FreeCut (nivel A, recomendado por FDN-012) | AG | 012, 030, 031 | READY |
 | FDN-042 | Rutas A/B/C + `ExternalProjectRef`/`RenderArtifact` enlazados | a decidir | 021, 032, 040, 041 | BACKLOG |
 | FDN-043 | Cierre de la Fase 4 (criterio #3) | CL-A0 | 042 | BACKLOG |
 | FDN-050 | Núcleo del router (8 pasos, modos, restricciones duras) con tarjetas simuladas | AG | 030 | DONE (3ef734e) |
-| FDN-051 | Medición de tokens: tarjeta simple frente a avanzada | CL-A3 | 050 | READY |
+| FDN-051 | Medición de tokens: tarjeta simple frente a avanzada | CL-A3 | 050 | DONE (3366479) |
 | FDN-052 | Fallbacks con adaptadores reales | a decidir | 050, 043 | BACKLOG |
 | FDN-053 | Cierre de la Fase 5 (criterios #4 y #5) | CL-A0 | 051, 052 | BACKLOG |
 | FDN-060 | Dirección artística: perfiles de estilo y reglas | libre (el primero que quede libre) | 021 | DONE (b78af00, AG) |
-| FDN-061 | Gradientes y técnicas → operaciones por backend | a decidir | 060, 032, 040 | BACKLOG |
+| FDN-061 | Gradientes y técnicas → operaciones por backend | CL-A1 | 060, 032, 040 | READY |
 | FDN-062 | Cierre de la Fase 6 (criterio #6) | CL-A0 | 061 | BACKLOG |
 | FDN-070 | Caché con invalidación por dependencias | CX | 021, 031 | DONE (f3ad71f) |
-| FDN-071 | Render por segmentos + preview adaptativa | CX | 070 | READY |
+| FDN-071 | Render por segmentos + preview adaptativa | CX | 070 | IN_PROGRESS (parte C1 hecha, 7c7ce39; falta la segmentación de C2; Codex sin cuota) |
 | FDN-072 | Errores: falta de VRAM, reintento seguro, backend alternativo | libre | 070 | READY |
 | FDN-073 | Suite técnica (temporal, estética, editabilidad, enrutamiento, recursos, seguridad, regresión) | a decidir | 043, 062, 071, 072 | BACKLOG |
 | FDN-074 | Exportación final con audio y sincronía | a decidir | 043, 071 | BACKLOG |
 | FDN-075 | Prueba híbrida de 10 s (criterios #7 y #8) | CL-A0 + todos | 073, 074 | BACKLOG |
-| FDN-080 | Servidor MCP mínimo (`apps/mcp`) | CL-A2 | 021, 030, 050 | READY |
-| FDN-081 | CLI (`apps/cli`) | a decidir | 080 | BACKLOG |
+| FDN-080 | Servidor MCP mínimo (`apps/mcp`) | CL-A2 | 021, 030, 050 | DONE (0348125) |
+| FDN-081 | CLI (`apps/cli`) | CL-A2 | 080 | READY |
+| FDN-090 | Protocolo de relevo entre equipos (equipo sin cuota → otro lo releva; reincorporación con nota de lo avanzado) + ADR | CL-A0 | — | BACKLOG (propuesta; pendiente de que el usuario la confirme) |
 | FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | IN_PROGRESS |
 
 ---
@@ -120,6 +121,18 @@ Cada ficha es el contrato de la tarea: si algo no está aquí, pregúntalo antes
 - **Aceptación:** tests de alta y baja, duplicados, filtros, `unknown` y secciones; `npm run typecheck` + `npm test` en verde.
 
 ---
+
+## Fichas de la Tanda 6 (READY desde el 2026-11-23, integración 5)
+
+### FDN-061 · Gradientes y técnicas → operaciones por backend (CL-A1)
+- **Rutas:** `packages/art-direction/src/backends/**` y `packages/art-direction/test/backends.test.ts` (nuevos; no cambies la API existente de `@fme/art-direction` sin una `solicitud`), y `packages/adapters/revideo/src/mapping.ts` + `packages/adapters/blender/src/**` **solo** si hace falta consumir los canales `expression` e `integration` (en Blender, coordina el diff con una `solicitud` a A0: el código es de Codex).
+- **Hacer:** traducir los dos gradientes (`expression`, `integration`; spec §4) y las técnicas a operaciones concretas y **observables** por backend. Ejemplos: Revideo → amplitud del trazo, jitter u opacidad del contorno; Blender → mezcla de material o intensidad de outline/Freestyle. Documenta la tabla de mapeo en `packages/art-direction/README.md`.
+- **Aceptación (base del criterio #6):** un render real en el que el gradiente cambia una propiedad visual medible a lo largo del tiempo. Por ejemplo, una métrica de píxeles (luminancia media o anchura de borde) en los fotogramas 0, 60 y 120 debe variar de forma monótona con la curva. Test con el motor real y skip con motivo sin él.
+
+### FDN-081 · CLI de consola (CL-A2)
+- **Rutas:** `apps/cli/**` (`@fme/cli`; `apps/*` ya está en los workspaces; A0 añade la referencia y el lockfile).
+- **Hacer:** CLI sobre la **misma** API que `apps/mcp` (sin duplicar la lógica: reutiliza lo que exporte `@fme/mcp` o los paquetes del núcleo). Comandos: `project validate <archivo>`, `project migrate <archivo>`, `connectors list`, `route plan <archivo> --layer <id>` y `job run <archivo> --layer <id> --out <dir>`. Salida JSON con `--json` y códigos de salida distintos de 0 en caso de error. Sin dependencias nuevas (`node:util` `parseArgs`).
+- **Aceptación:** tests que ejecutan la CLI como proceso sobre la fixture híbrida; `job run` hace skip con motivo si no hay motor.
 
 ## Fichas de la Tanda 5 (READY desde el 2026-11-23, integración 4)
 

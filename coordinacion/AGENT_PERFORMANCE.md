@@ -28,6 +28,10 @@
 | FDN-040 | CX-C0+C1 Sol | 06:32 → 06:41 UTC | ~9 min | 5/5 con Blender real | 1 | — | **sí: no compatible con v2 (FDN-028 en paralelo)** | 1 semántico | 5 / 0 | no medido | Primer conflicto entre equipos: contrato cambiado en paralelo |
 | FDN-050 | AG-B2 Hydrogen | 06:37 → 06:42 UTC | ~5 min | 78/78 ✔ | 0 | — | 0 | 0 | 2 / 1 | no medido | Métricas de tarjetas ya instrumentadas |
 | FDN-012 | AG-B1 Hydrogen (+B0) | 05:56 → 06:47 UTC | ~51 min (con espera de autorización) | 4 corridas desde cero ✔ (A0 la reprodujo) | 1 | Upstream `probe.mjs` exige Chrome (resuelto sin fork) | pequeño | 0 | 1 / 0 | no medido | Recomendación de nivel A bien fundada |
+| FDN-051 | CL-A3 Haiku 5.5 | ~07:04 → 07:05 UTC | ~1 min | 5/5 ✔ | 1 (choque de reclamo) | — | 0 | 0 | 1 / 0 | proxy caracteres/4 | Tabla útil: 222 tok fijos en tarjetas simples; avanzadas, 0–197 tok según la tarea, frente a 503 tok si se leyeran todas |
+| FDN-080 | CL-A2 Sonnet 5.5 | ~07:04 → 07:08 UTC | ~4 min | 11 pass (cliente del SDK) | 0 | — | 0 | 0 | — | no medido | No tocó la raíz; dejó listas las instrucciones para A0 |
+| FDN-032b/034b | CL-A1 Sonnet 5.5 | 07:04 → 07:09 UTC | ~5 min | 8/8 en paralelo ×3 (A0 lo reprodujo) | 1 | — | 0 | 0 | — | no medido | — |
+| FDN-040 (arreglo v2) | CX-C0 Sol | ~06:57 UTC | — | A0: Blender real 6/6 | 0 | — | — | — | — | — | Hizo el arreglo pero se quedó sin cuota antes de enviar el REVIEW |
 | FDN-004 | CL-A3 Haiku 5.5 | 05:51 → 05:56 UTC | ~5 min | n/a (documento) | 0 | — | 0 | 0 | 0 / 0 | no medido | Calidad alta; contradijo con fuentes la hipótesis «Sonnet ≥ Opus en terminal» |
 
 ## Tiempo de coordinación (A0)
@@ -35,6 +39,7 @@
 | Fecha | Actividad | Duración aproximada |
 |---|---|---|
 | 2026-11-23 | Revisión e integración de 5 ramas, reproducción del render de Blender y consolidación | ~15 min |
+| 2026-11-23 | Integración 5: 4 ramas + FDN-040 sin REVIEW (Codex sin cuota); verificación con motores reales | ~20 min |
 | 2026-11-23 | Integración 4: 6 ramas, diagnóstico de 2 fallos intermitentes (EPERM de la caché; aislamiento de tests de Revideo), verificación de FreeCut y del E2E, cierre de las F1 y F3 | ~30 min |
 | 2026-11-23 | Integración 2: 8 ramas, 2 workspaces nuevos (lockfile), verificación PS 5.1, ADR-0011 y fichas de la Tanda 3 | ~25 min |
 
