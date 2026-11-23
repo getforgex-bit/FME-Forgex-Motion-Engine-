@@ -95,7 +95,10 @@ test('Fase 3 e2e: descubrir → ejecutar → procedencia → RenderArtifact → 
   // 7. Enlace en la capa y validación del proyecto resultante.
   const linked = structuredClone(project);
   const target = linked.sequences[0]!.scenes[0]!.layers.find((l) => l.id === 'capa-titulo')!;
+  const replaced = target.externalProject?.renderArtifactId;
   target.externalProject = { ...target.externalProject!, pluginId: 'revideo', engineVersion: prov.engineVersion, renderArtifactId: artifact.id };
+  // schemaVersion 3 (ADR-0015): el catálogo vive en el proyecto y el id debe resolver.
+  linked.artifacts = [...(linked.artifacts ?? []).filter((a) => a.id !== replaced), artifact];
   const checked = parseProject(JSON.parse(serialize(linked)));
   assert.ok(checked.ok, checked.ok ? '' : JSON.stringify(checked.errors));
   assert.equal(checked.value.sequences[0]!.scenes[0]!.layers.find((l) => l.id === 'capa-titulo')!.externalProject?.renderArtifactId, artifact.id);

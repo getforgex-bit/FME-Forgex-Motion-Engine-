@@ -1,5 +1,5 @@
 /** @jsxImportSource @revideo/2d/lib */
-import {Node, SVG, Txt, makeScene2D} from '@revideo/2d';
+import {Img, Node, Txt, makeScene2D} from '@revideo/2d';
 import {createRef, useScene} from '@revideo/core';
 
 // Escena genérica de FME: dibuja UNA capa (texto o SVG) y aplica, fotograma a fotograma,
@@ -31,7 +31,7 @@ export default makeScene2D('fme-capa', function* (view) {
   view.add(
     <Node ref={nodo}>
       {job.kind === 'svg' ? (
-        <SVG svg={job.svg ?? ''} />
+        <Img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(job.svg ?? '')}`} />
       ) : (
         <Txt ref={texto} text={job.text ?? ''} fill={job.fill ?? '#ffffff'} fontSize={job.fontSize ?? 96} fontFamily={job.fontFamily ? `${job.fontFamily}, sans-serif` : 'sans-serif'} />
       )}
