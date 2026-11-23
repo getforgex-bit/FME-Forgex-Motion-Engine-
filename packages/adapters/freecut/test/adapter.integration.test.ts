@@ -155,12 +155,18 @@ test(
     const ctx2 = { jobId: newJobId(), workDir: newWorkDir('run2'), timeoutMs: 180_000 };
 
     const res1 = await adapter.run(job, ctx1);
-    assert.deepEqual(res1.diagnostics, [], JSON.stringify(res1.diagnostics));
+    assert.ok(
+      res1.diagnostics.every((d) => d.code === 'ATOMIC_REPLACE_UNAVAILABLE'),
+      JSON.stringify(res1.diagnostics),
+    );
     assert.equal(res1.status, 'ok');
     assert.deepEqual(checkAdapterResult(res1, adapter), []);
 
     const res2 = await adapter.run(job, ctx2);
-    assert.deepEqual(res2.diagnostics, [], JSON.stringify(res2.diagnostics));
+    assert.ok(
+      res2.diagnostics.every((d) => d.code === 'ATOMIC_REPLACE_UNAVAILABLE'),
+      JSON.stringify(res2.diagnostics),
+    );
     assert.equal(res2.status, 'ok');
     assert.deepEqual(checkAdapterResult(res2, adapter), []);
 

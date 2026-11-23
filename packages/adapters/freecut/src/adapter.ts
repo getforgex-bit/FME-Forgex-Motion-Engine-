@@ -12,6 +12,7 @@ import {
   readdirSync,
   readFileSync,
   realpathSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
@@ -56,6 +57,12 @@ export type FreeCutAdapterOptions = {
   nodePath?: string;
   /** Carpeta para los logs de `probe()`. */
   probeWorkDir?: string;
+  /** Reintentos máximos ante `ATOMIC_REPLACE_UNAVAILABLE` transitorio (defecto `3`). */
+  maxTransientRetries?: number;
+  /** Backoff inicial en ms (`retryBackoffMs * 2^(intento-1)`, defecto `250`). */
+  retryBackoffMs?: number;
+  /** Espera inyectable para tests unitarios sin retardos reales. */
+  sleep?: (ms: number) => Promise<void>;
 };
 
 type Diag = { code: string; message: string };
@@ -75,6 +82,23 @@ const DEFAULT_ENGINE_DIR = resolve(
 );
 const DEFAULT_FREECUT_DIR = 'C:\\Users\\bogex\\Documents\\Forgex\\FME-ext\\freecut';
 const SHA256_RE = /^[0-9a-f]{64}$/;
+const DEFAULT_MAX_TRANSIENT_RETRIES = 3;
+const DEFAULT_RETRY_BACKOFF_MS = 250;
+
+/** Detecta fallos transitorios de `assertAtomicReplace` en Windows (`EPERM`/`EBUSY`/`EACCES`). */
+export function isTransientAtomicReplaceFailure(code: string, errText: string): boolean {
+  if (code === 'ATOMIC_REPLACE_UNAVAILABLE') return true;
+  if (errText.includes('ATOMIC_REPLACE_UNAVAILABLE')) return true;
+  const hasMarker = /\.(?:freecut-headless|atomic-test)/i.test(errText);
+  const hasWindowsLock = /\b(?:EPERM|EBUSY|EACCES)\b/i.test(errText);
+  return hasMarker && hasWindowsLock;
+}
+
+function defaultSleep(ms: number): Promise<void> {
+  return new Promise((resolveSleep) => {
+    setTimeout(resolveSleep, ms);
+  });
+}
 
 function isFile(p: string | undefined): p is string {
   if (!p || !isAbsolute(p)) return false;
@@ -579,10 +603,6 @@ export class FreeCutAdapter implements ConnectorAdapter {
     const workDir = realpathSync(ctx.workDir);
     const jobJsonPath = join(workDir, `${ctx.jobId}.job.json`);
     const outPath = join(workDir, `${ctx.jobId}.mp4`);
-    const tmpDir = join(workDir, `${ctx.jobId}.tmp`);
-    const engineWorkDir = join(workDir, `${ctx.jobId}.engine`);
-    mkdirSync(tmpDir, { recursive: true });
-    mkdirSync(engineWorkDir, { recursive: true });
     writeFileSync(jobJsonPath, JSON.stringify(engineJob, null, 2), { flag: 'wx' });
 
     const realNode = realpathSync(tools.node);
@@ -595,38 +615,78 @@ export class FreeCutAdapter implements ConnectorAdapter {
       }
     }
 
-    const run = await runIsolated({
-      cmd: realNode,
-      args: [
-        { path: realCli },
-        '--job',
-        { path: jobJsonPath },
-        '--out',
-        { path: outPath },
-        '--work-dir',
-        { path: engineWorkDir },
-        '--freecut-dir',
-        { path: realFreecutDir },
-        '--browser',
-        tools.browser,
-      ],
-      workDir,
-      allowedPaths: [realNode, realCli, realFreecutDir, workDir, ...mediaPaths],
-      timeoutMs: ctx.timeoutMs,
-      env: buildEnv({
-        TEMP: tmpDir,
-        TMP: tmpDir,
-        TMPDIR: tmpDir,
-        FME_FREECUT_DIR: realFreecutDir,
-        FME_FREECUT_BROWSER: tools.browser,
-      }),
+    const maxTransientRetries =
+      typeof this.opts.maxTransientRetries === 'number' &&
+      Number.isFinite(this.opts.maxTransientRetries)
+        ? Math.max(0, Math.floor(this.opts.maxTransientRetries))
+        : DEFAULT_MAX_TRANSIENT_RETRIES;
+    const retryBackoffMs =
+      typeof this.opts.retryBackoffMs === 'number' && Number.isFinite(this.opts.retryBackoffMs)
+        ? Math.max(0, Math.floor(this.opts.retryBackoffMs))
+        : DEFAULT_RETRY_BACKOFF_MS;
+    const sleepFn = this.opts.sleep ?? defaultSleep;
+    const maxAttempts = 1 + maxTransientRetries;
+    const retryDiagnostics: Diag[] = [];
+    const failWithHistory = (code: string, message: string): AdapterJobResult => ({
+      jobId: ctx.jobId,
+      status: 'failed',
+      outputs: [],
+      provenance: [],
+      diagnostics: [...retryDiagnostics, { code, message }],
     });
 
-    if (run.killed || run.exitCode === null) {
-      return fail('timeout', `El render de FreeCut superó ${ctx.timeoutMs} ms y se terminó el proceso.`);
-    }
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const attemptSuffix = attempt === 1 ? '' : `-retry-${attempt - 1}`;
+      const tmpDir = join(workDir, `${ctx.jobId}.tmp${attemptSuffix}`);
+      const engineWorkDir = join(workDir, `${ctx.jobId}.engine${attemptSuffix}`);
+      mkdirSync(tmpDir, { recursive: true });
+      mkdirSync(engineWorkDir, { recursive: true });
+      if (attempt > 1 && existsSync(outPath)) {
+        rmSync(outPath, { force: true });
+      }
 
-    if (run.exitCode !== 0) {
+      const elapsedBeforeAttempt = Date.now() - startedAt.getTime();
+      const attemptTimeoutMs =
+        attempt === 1 ? ctx.timeoutMs : Math.max(1, ctx.timeoutMs - elapsedBeforeAttempt);
+
+      const run = await runIsolated({
+        cmd: realNode,
+        args: [
+          { path: realCli },
+          '--job',
+          { path: jobJsonPath },
+          '--out',
+          { path: outPath },
+          '--work-dir',
+          { path: engineWorkDir },
+          '--freecut-dir',
+          { path: realFreecutDir },
+          '--browser',
+          tools.browser,
+        ],
+        workDir,
+        allowedPaths: [realNode, realCli, realFreecutDir, workDir, ...mediaPaths],
+        timeoutMs: attemptTimeoutMs,
+        env: buildEnv({
+          TEMP: tmpDir,
+          TMP: tmpDir,
+          TMPDIR: tmpDir,
+          FME_FREECUT_DIR: realFreecutDir,
+          FME_FREECUT_BROWSER: tools.browser,
+        }),
+      });
+
+      if (run.killed || run.exitCode === null) {
+        return failWithHistory(
+          'timeout',
+          `El render de FreeCut superó ${ctx.timeoutMs} ms y se terminó el proceso.`,
+        );
+      }
+
+      if (run.exitCode === 0) {
+        break;
+      }
+
       const errText = tail(run.stderrPath);
       let code = 'render-failed';
       try {
@@ -636,18 +696,37 @@ export class FreeCutAdapter implements ConnectorAdapter {
       } catch {
         // stderr no es JSON
       }
-      return fail(code, `FreeCut terminó con código ${run.exitCode}: ${errText}`);
+
+      const isTransient = isTransientAtomicReplaceFailure(code, errText);
+      if (!isTransient || attempt >= maxAttempts) {
+        return failWithHistory(code, `FreeCut terminó con código ${run.exitCode}: ${errText}`);
+      }
+
+      const backoffMs = retryBackoffMs * 2 ** (attempt - 1);
+      const remainingMs = ctx.timeoutMs - (Date.now() - startedAt.getTime());
+      if (remainingMs <= 0 || remainingMs <= backoffMs) {
+        return failWithHistory(
+          code,
+          `Intento ${attempt}/${maxAttempts} falló por error transitorio (${code}) sin margen en timeoutMs (${ctx.timeoutMs} ms) para reintentar tras ${backoffMs} ms: ${errText}`,
+        );
+      }
+
+      retryDiagnostics.push({
+        code: 'ATOMIC_REPLACE_UNAVAILABLE',
+        message: `Intento ${attempt}/${maxAttempts} falló por error transitorio (${code}); reintentando con nuevo workDir tras ${backoffMs} ms.`,
+      });
+      await sleepFn(backoffMs);
     }
 
     if (!isFile(outPath) || statSync(outPath).size === 0) {
-      return fail('no-output', 'FreeCut terminó bien pero no produjo el archivo MP4 esperado.');
+      return failWithHistory('no-output', 'FreeCut terminó bien pero no produjo el archivo MP4 esperado.');
     }
 
     let contentSha256: string;
     try {
       contentSha256 = await computeDecodedVideoSha256(tools.ffmpeg, outPath, ctx.timeoutMs);
     } catch (err) {
-      return fail(
+      return failWithHistory(
         'content-hash-failed',
         err instanceof Error ? err.message : String(err),
       );
@@ -655,7 +734,7 @@ export class FreeCutAdapter implements ConnectorAdapter {
 
     const engineVersion = this.engineVersionCache ?? (await this.probe()).engineVersion;
     if (!engineVersion) {
-      return fail('engine-broken', 'No se pudo obtener engineVersion de FreeCut.');
+      return failWithHistory('engine-broken', 'No se pudo obtener engineVersion de FreeCut.');
     }
 
     const uri = pathToFileURL(outPath).href;
@@ -688,7 +767,7 @@ export class FreeCutAdapter implements ConnectorAdapter {
       status: 'ok',
       outputs: [{ uri, type }],
       provenance: [provenance],
-      diagnostics: [],
+      diagnostics: retryDiagnostics,
     };
   }
 }

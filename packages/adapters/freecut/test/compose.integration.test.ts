@@ -222,7 +222,10 @@ test(
       },
       pngCtx,
     );
-    assert.deepEqual(pngRes.diagnostics, [], JSON.stringify(pngRes.diagnostics));
+    assert.ok(
+      pngRes.diagnostics.every((d) => d.code === 'ATOMIC_REPLACE_UNAVAILABLE'),
+      JSON.stringify(pngRes.diagnostics),
+    );
     assert.equal(pngRes.status, 'ok');
     assert.deepEqual(checkAdapterResult(pngRes, adapter), []);
     assert.match(pngRes.provenance[0]?.contentSha256 ?? '', /^[0-9a-f]{64}$/);
@@ -309,7 +312,10 @@ test(
       },
       movCtx,
     );
-    assert.deepEqual(movRes.diagnostics, [], JSON.stringify(movRes.diagnostics));
+    assert.ok(
+      movRes.diagnostics.every((d) => d.code === 'ATOMIC_REPLACE_UNAVAILABLE'),
+      JSON.stringify(movRes.diagnostics),
+    );
     assert.equal(movRes.status, 'ok');
     assert.deepEqual(checkAdapterResult(movRes, adapter), []);
     assert.match(movRes.provenance[0]?.contentSha256 ?? '', /^[0-9a-f]{64}$/);
