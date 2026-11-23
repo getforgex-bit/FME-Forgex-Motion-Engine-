@@ -19,6 +19,9 @@
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
 | Mantenimiento activo de los proyectos upstream (FreeCut, Revideo) no confirmado para la versión que se fije | Integrar contra una base abandonada o inestable | En la Fase 1, revisar la actividad reciente, las releases y las issues abiertas antes de fijar versión |
+| Revideo 0.11.0 incluye un FFmpeg de 2018 con binario GPLv3 y `fluent-ffmpeg` deprecado; `npm audit` da un aviso *high* en vite | Licencia y seguridad del futuro adaptador | FDN-016: usar el FFmpeg del sistema y actualizar vite; ADR-0010 |
+| Revideo: el exportador wasm genera MP4 vacíos, el rango es inclusivo y el alpha solo sale en ProRes `.mov` | Errores silenciosos en el adaptador | Trampas documentadas en `examples/fase1/revideo/RESULTADOS.md`; tests en FDN-032 |
+| Los PNG de Blender llevan metadatos volátiles (Date/RenderTime) | Hashes de archivo distintos entre corridas idénticas | La caché y la regresión comparan el SHA-256 del RGBA decodificado (FDN-040/070) |
 | GitNexus (herramienta de desarrollo) es no comercial | Bloqueo para trabajo comercial | Migrar antes de cualquier uso comercial ([ADR-0003](decisiones/0003-forgex-stack-como-memoria.md)) |
 
 ## 2. Decisiones que quedan fijadas

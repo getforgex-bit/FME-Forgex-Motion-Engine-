@@ -7,7 +7,7 @@
 | Rol | Modelo | Entorno | Fortalezas observables o esperadas | Uso en FDN |
 |---|---|---|---|---|
 | A0 | Opus 5.5 | Claude Code Desktop | Razonamiento largo, arquitectura, revisión | Dirección, contratos, integración, ADR |
-| A1, A2 | Sonnet 5.5 | Sesiones independientes de Claude Code Desktop | Implementación con terminal (TB 4.0 alto) | Tareas de código de tamaño medio |
+| A1, A2 | Sonnet 5.5 | Sesiones independientes de Claude Code Desktop | Implementación con terminal (dentro del ruido frente a Opus en TB 4.0 y 4.1; ver BENCHMARKS §4) | Tareas de código de tamaño medio; en la Tanda 1 entregaron en 4–11 min con pruebas en verde |
 | A3 | Haiku 5.5 | Sesión de Claude Code Desktop bajo demanda | Rápido y barato; terminal limitado | Investigación web, resúmenes, scripts simples, comprobaciones |
 | B0 | Gemini 4 Neon | Antigravity (`/swarm`) | Orquestación; agente de navegador del entorno | Coordina AG; tareas de UI o navegador |
 | B1, B2 | Gemini 4 Hydrogen | Antigravity | Ejecución | Lo que asigne Neon |

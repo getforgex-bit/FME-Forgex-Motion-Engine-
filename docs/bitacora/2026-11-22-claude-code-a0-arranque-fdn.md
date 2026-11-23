@@ -33,3 +33,15 @@ La verificación de los worktrees se anota en la sección siguiente.
 
 ## Memoria actualizada
 - `decision:red-fdn-tres-equipos` y `gotcha:graphify-extract-usa-llm`.
+
+## 2026-11-23 · Integración 1 (A0)
+| Rama | Commit | Revisión de A0 | Resultado |
+|---|---|---|---|
+| fdn/FDN-021-esquema | b0325f9 | rutas OK (+`packages/project/tsconfig.json`, justificado); typecheck; test 18/18 | fusionada (fff45fd) |
+| fdn/FDN-022-tiempo | 026af28 | rutas OK; typecheck; test 30/30 | fusionada (67c164d) |
+| — | cde3c23 | re-exportaciones en `index.ts`; `dist` carga 12 exportaciones; `codegraph affected` → 4 tests | commit A0 |
+| fdn/FDN-011-blender | b0a7db7 | A0 ejecutó `blender -b -P render_scene.py`: 90 PNG 960×540 RGBA en 23 s; SHA-256 RGBA `c9706f10…450b` **idéntico** al de C1. `run.ps1` falla en Windows PowerShell 5.1 (`IncompleteHashLiteral`, `if` como valor de hashtable) → FDN-015 | fusionada (c8f9c09) |
+| fdn/FDN-010-revideo | 6ee5826 | rutas OK, aislado (lockfile propio, `node_modules` ignorado). **No re-ejecutado por A0** (~800 MB de descargas); evidencia de A1: dos `npm run verify`, el segundo limpio | fusionada (7eb001d) |
+| fdn/FDN-004-benchmarks | 7cdfd04 | solo BENCHMARKS.md; contrasta los datos iniciales; marca las contradicciones | fusionada (a94c03b) |
+
+Después: `npm run typecheck` OK y `npm test` 30/30 en `develop`. Nuevas tareas READY: 013, 015, 016, 023, 024, 031 y 060. Licencias registradas: zod, Revideo, FFmpeg bundled GPLv3, Chrome for Testing, Blender y FFmpeg del sistema.

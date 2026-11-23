@@ -22,11 +22,13 @@ Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-acept
 
 - Documentación completa derivada de la spec v0.1.
 - Contratos TypeScript **propuestos** (`@fme/project`, `@fme/connectors`): `npm run typecheck` en verde.
+- **Fase 1, 2 de 3:** Revideo 0.11.0 y Blender 5.2.3 verificados con pruebas repetibles (FDN-010 y FDN-011; ver el catálogo).
+- **Fase 2, en curso:** esquema Zod, validación, serialización determinista y tiempo racional sin deriva en `@fme/project` (FDN-021 y FDN-022). `npm test` 30/30.
 - FORGEX Stack instalado y verificado en el entorno de preparación (ver la bitácora del 2026-11-22). Cada persona debe instalarlo en su máquina.
 
 ## Qué NO existe todavía
 
-- Ningún adaptador, enrutador, dirección artística, MCP ni render. Ninguna herramienta externa verificada.
+- Ningún adaptador, enrutador, dirección artística ni MCP. FreeCut todavía sin verificar (FDN-012 en curso).
 
 ## Ejecución distribuida (FDN)
 

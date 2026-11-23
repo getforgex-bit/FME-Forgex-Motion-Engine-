@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-22 (arranque)._
+> _Última consolidación: 2026-11-23 (integración 1 de la Tanda 1, `develop`)._
 
 ## Resumen
 
@@ -12,22 +12,24 @@
 | FDN-001 | Documentos FDN, CONTINUATION y prompts | CL-A0 | — | DONE (arranque) |
 | FDN-002 | Carpeta operativa `FME-ops` + `coord.mjs` (eventos, solicitudes, raíz) | CL-A0 | — | DONE (arranque) |
 | FDN-003 | Infraestructura de tests de paquetes + typecheck en verde | CL-A0 | — | DONE (arranque) |
-| FDN-004 | Benchmarks verificados por modelo | CL-A3 | — | READY |
+| FDN-004 | Benchmarks verificados por modelo | CL-A3 | — | DONE (7cdfd04, VERIFICADO PARCIAL) |
 | FDN-005 | Aprobación formal de la spec v0.1 | **Usuario** | — | BLOCKED (humano) |
 | FDN-006 | `develop`, worktrees, política de índices | CL-A0 | 001–003 | DONE (arranque) |
-| FDN-010 | Verificar Revideo | CL-A1 | 003 | READY |
-| FDN-011 | Verificar Blender 5.2 headless | CX | — | READY |
-| FDN-012 | Verificar FreeCut | AG | — | READY |
-| FDN-013 | Sonda de medios `scripts/probe-media.mjs` | CL-A3 | 003 | BACKLOG (Tanda 2) |
+| FDN-010 | Verificar Revideo | CL-A1 | 003 | DONE (6ee5826) |
+| FDN-011 | Verificar Blender 5.2 headless | CX | — | DONE (b0a7db7; A0 reprodujo el SHA-256 de píxeles) |
+| FDN-012 | Verificar FreeCut | AG | — | IN_PROGRESS |
+| FDN-013 | Sonda de medios `scripts/probe-media.mjs` | CL-A3 | 003 | READY |
 | FDN-014 | Cierre de la Fase 1 (criterio #1) | CL-A0 | 010, 011, 012 | BACKLOG |
 | FDN-020 | ADR-0008: validación con Zod 4 | CL-A0 | — | DONE (propuesta escrita) |
-| FDN-021 | Esquema Zod + validación + serialización de `Project` | CL-A2 | 003, 020 | READY |
-| FDN-022 | Tiempo racional y timecode sin deriva | CX | 003 | READY |
-| FDN-023 | Fixtures (incluida la híbrida de 10 s) + round-trip | CL-A2 | 021, 022 | BACKLOG |
-| FDN-024 | Marco de migraciones + migración de ejemplo | CX | 021 | BACKLOG |
+| FDN-015 | `run.ps1` de Blender compatible con Windows PowerShell 5.1 | CX | 011 | READY |
+| FDN-016 | Revideo: FFmpeg del sistema en lugar del binario GPLv3 de 2018 + `npm audit` (vite) + ADR-0010 | CL-A1 | 010 | READY |
+| FDN-021 | Esquema Zod + validación + serialización de `Project` | CL-A2 | 003, 020 | DONE (b0325f9) |
+| FDN-022 | Tiempo racional y timecode sin deriva | CX | 003 | DONE (026af28) |
+| FDN-023 | Fixtures (incluida la híbrida de 10 s) + round-trip | CL-A2 | 021, 022 | READY |
+| FDN-024 | Marco de migraciones + migración de ejemplo | CX | 021 | READY |
 | FDN-025 | Cierre de la Fase 2 (criterio #2) | CL-A0 | 023, 024 | BACKLOG |
-| FDN-030 | Registro dinámico de conectores + ADR-0009 | AG | 003 | READY |
-| FDN-031 | Ejecución aislada de procesos (`runtime/workers`) | CX | 003 | BACKLOG (Tanda 2) |
+| FDN-030 | Registro dinámico de conectores + ADR-0009 | AG | 003 | IN_PROGRESS |
+| FDN-031 | Ejecución aislada de procesos (`runtime/workers`) | CX | 003 | READY |
 | FDN-032 | Adaptador Revideo real (JobRequest→JobResult con procedencia) | CL | 010, 021, 030, 031 | BACKLOG |
 | FDN-033 | Cierre de la Fase 3 | CL-A0 | 032 | BACKLOG |
 | FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | BACKLOG |
@@ -38,7 +40,7 @@
 | FDN-051 | Medición de tokens: tarjeta simple frente a avanzada | a decidir | 050 | BACKLOG |
 | FDN-052 | Fallbacks con adaptadores reales | a decidir | 050, 043 | BACKLOG |
 | FDN-053 | Cierre de la Fase 5 (criterios #4 y #5) | CL-A0 | 051, 052 | BACKLOG |
-| FDN-060 | Dirección artística: perfiles de estilo y reglas | a decidir | 021 | BACKLOG |
+| FDN-060 | Dirección artística: perfiles de estilo y reglas | libre (el primero que quede libre) | 021 | READY |
 | FDN-061 | Gradientes y técnicas → operaciones por backend | a decidir | 060, 032, 040 | BACKLOG |
 | FDN-062 | Cierre de la Fase 6 (criterio #6) | CL-A0 | 061 | BACKLOG |
 | FDN-070 | Caché con invalidación por dependencias | a decidir | 021, 031 | BACKLOG |
@@ -111,6 +113,43 @@ Cada ficha es el contrato de la tarea: si algo no está aquí, pregúntalo antes
 - **Aceptación:** tests de alta y baja, duplicados, filtros, `unknown` y secciones; `npm run typecheck` + `npm test` en verde.
 
 ---
+
+## Fichas de la Tanda 2 (READY desde el 2026-11-23)
+
+### FDN-015 · `run.ps1` compatible con PowerShell 5.1 (CX)
+- **Hallazgo de A0:** `powershell -File examples/fase1/blender/run.ps1` (Windows PowerShell 5.1, el que trae Windows) falla con `IncompleteHashLiteral` en la línea 151. La causa es `clave = if (...) { ... }` dentro de un hashtable. Se arregla con `clave = $(if (...) { ... })`. El render en sí está verificado: A0 obtuvo el mismo SHA-256 de píxeles, `c9706f10…450b`.
+- **Rutas:** `examples/fase1/blender/run.ps1` y la sección de comandos de `RESULTADOS.md`.
+- **Aceptación:** `powershell -NoProfile -ExecutionPolicy Bypass -File run.ps1 -RunName x` termina en verde en PS 5.1. Si dispones de PowerShell 7, también en `pwsh`.
+
+### FDN-016 · Revideo sin el binario GPLv3 de 2018 (CL-A1)
+- **Contexto:** FDN-010 detectó que `@ffmpeg-installer/win32-x64` 4.1.0 trae FFmpeg N-92722 (2018, GPLv3), que `fluent-ffmpeg` está deprecado y que `npm audit` da un aviso *high* en vite. El sistema ya tiene FFmpeg 9.0.2 (winget, en el PATH).
+- **Rutas:** `examples/fase1/revideo/**` y `docs/decisiones/0010-ffmpeg-del-sistema-para-revideo.md` (ADR nuevo, en estado propuesta).
+- **Hacer:** comprobar si Revideo admite una ruta de FFmpeg configurable (variable de entorno o `ffmpegPath`). Si la admite, repetir la aceptación de FDN-010 con el FFmpeg del sistema (MP4 de 90 fotogramas y MOV con alpha) y documentar la licencia efectiva de ese binario (`ffmpeg -version`, `--enable-gpl`…). Evaluar si `vite >= 8.3.8` resuelve el aviso sin romper el render (**pide confirmación al usuario antes de la descarga**).
+- **Aceptación:** el ADR-0010 recoge la opción elegida con evidencia; `npm run verify` sigue en verde.
+
+### FDN-023 · Fixtures y round-trip (CL-A2)
+- **Rutas:** `examples/prueba-hibrida-10s/project.fme.json`, `packages/project/test/fixtures/**` y `packages/project/test/fixtures.test.ts`.
+- **Contenido:** la fixture híbrida de 300 fotogramas (rangos de `examples/prueba-hibrida-10s/README.md`, con fondo, 2D, 3D y título como capas, `ExternalProjectRef` en las capas de Revideo y Blender, y los canales `expression`/`integration` animados), una mínima y una a 30000/1001. Usa `parseProject`, `serialize`/`deserialize` y las funciones de `time.ts` (todas exportadas en `@fme/project`).
+- **Aceptación:** el 100 % de las fixtures validan, el round-trip produce bytes idénticos y la duración en segundos de la fixture de 29,97 es exacta (calculada con `framesToSeconds`).
+
+### FDN-024 · Migraciones (CX)
+- **Rutas:** `packages/project/src/migrate.ts`, `packages/project/test/migrate.test.ts` y `packages/project/test/fixtures-v0/**` (fixture sintética v0). **No** toques `index.ts`, `schema.ts` ni `serialize.ts`. Si necesitas un *hook* en `deserialize`, pídelo con una `solicitud`.
+- **Contenido:** registro ordenado de migraciones `vN → vN+1` y `migrateToCurrent(raw)`, que devuelve el proyecto migrado o un error estructurado. Una migración de ejemplo v0 → v1 (p. ej. `fps` como número → `{num, den}`).
+- **Aceptación:** la fixture v0 migrada pasa `parseProject`; una versión futura o desconocida da error; sin pérdida de campos.
+
+### FDN-031 · Ejecución aislada de procesos (CX)
+- **Rutas:** `runtime/workers/package.json` (nuevo workspace `@fme/runtime-workers`; añádelo a `workspaces` y a las referencias de `tsconfig.json` de la raíz; es el único cambio permitido en archivos de la raíz), `runtime/workers/src/**` y `runtime/workers/test/**`.
+- **Contenido:** `runIsolated({ cmd, args, workDir, allowedPaths, timeoutMs, env })`, que devuelve `{ exitCode, stdoutPath, stderrPath, durationMs, killed }`. Sin shell (`spawn` con `shell: false`). Directorio de trabajo propio por job, dentro de una raíz permitida. Rechaza rutas con `..` o fuera de `allowedPaths` tras `realpath`. Al vencer el timeout, mata el árbol de procesos en Windows (`taskkill /T /F`). Entorno mínimo explícito (no hereda todo `process.env`).
+- **Aceptación:** tests de timeout que matan un proceso hijo con nietos, de ruta rechazada, de código de salida y de que no hay shell (un argumento con `&` no se interpreta).
+
+### FDN-013 · Sonda de medios (CL-A3)
+- **Rutas:** `scripts/probe-media.mjs` y `scripts/probe-media.test.mjs`.
+- **Contenido y aceptación:** los de la ficha resumida de abajo. Los tests generan sus medios con `ffmpeg -f lavfi testsrc2` en un directorio temporal y comprueban fps, fotogramas y `hasAlpha` (con un MOV ProRes 4444 con alpha y un MP4 sin alpha).
+
+### FDN-060 · Dirección artística: perfiles y reglas (libre)
+- **Rutas:** `packages/art-direction/**` (nuevo workspace `@fme/art-direction`; añádelo a `workspaces` y a las referencias de `tsconfig.json`).
+- **Contenido:** tipos y validación (Zod) de `StyleProfile` y de las reglas de animación como procedimientos deterministas (no IA para microdecisiones): un plan estético por secuencia, plano y capa que produce curvas para `expression` e `integration` sobre un `Project`. Toma la spec §5–§6.1 y `docs/arquitectura.md` §1 como fuente; no amplíes el alcance.
+- **Aceptación:** aplicar un perfil a la fixture mínima produce cambios deterministas en los canales (mismo seed → misma salida) y `npm test` está en verde. ADR si se introduce algún tipo compartido con `@fme/project`.
 
 ## Fichas resumidas de la Tanda 2 (pasan a READY al integrar sus dependencias)
 

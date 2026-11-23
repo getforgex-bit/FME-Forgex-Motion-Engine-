@@ -6,6 +6,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 ## [Unreleased]
 
 ### Added
+- `@fme/project`: esquema Zod 4.6.7 con validación estricta (`parseProject`) y JSON Schema generado, serialización determinista (`serialize`/`deserialize`) y tiempo racional sin deriva con timecode drop-frame (FDN-021, FDN-022).
+- Verificación de la Fase 1: Revideo 0.11.0 (`examples/fase1/revideo`, FDN-010) y Blender 5.2.3 headless (`examples/fase1/blender`, FDN-011), con scripts repetibles y tarjetas reales.
+- `coordinacion/BENCHMARKS.md` verificado con fuentes (FDN-004).
 - Estructura del repositorio según la spec v0.1 §11.2 (`apps/`, `packages/`, `runtime/`, `examples/`, `docs/`).
 - Especificación integral v0.1 (PDF) y documentación navegable en `docs/`.
 - Roadmap con objetivos a corto, mediano y largo plazo (`docs/roadmap.md`).

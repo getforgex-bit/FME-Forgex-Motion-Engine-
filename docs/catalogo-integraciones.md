@@ -11,8 +11,8 @@ Estado de verificación en este repositorio: **ninguna herramienta está verific
 | Herramienta | Rol acordado | Situación según la spec | Verificado |
 |---|---|---|---|
 | **FreeCut** | Editor/timeline principal: capas, clips, texto, efectos y exportación | Conector 1; MIT; requiere Chromium moderno para el flujo completo [S1] | ☐ |
-| **Revideo** | Motor de animación y vídeos por código TypeScript | Conector 2; MIT; render programático [S2] | ☐ |
-| **Blender** | Modelado, cámaras, rigging, 3D, Grease Pencil y render | Conector 3; GPL; automatización `bpy` [S3] | ☐ |
+| **Revideo** | Motor de animación y vídeos por código TypeScript | Conector 2; MIT; render programático [S2] | ☑ 0.11.0: MP4 de 90 fotogramas a 30 FPS + MOV ProRes con alpha ([FDN-010](../examples/fase1/revideo/RESULTADOS.md)) |
+| **Blender** | Modelado, cámaras, rigging, 3D, Grease Pencil y render | Conector 3; GPL; automatización `bpy` [S3] | ☑ 5.2.3 LTS: 90 PNG RGBA a 960×540 con Cycles CPU, reproducible ([FDN-011](../examples/fase1/blender/RESULTADOS.md)) |
 | Blender MCP | Puente comunitario de IA con Blender | Complemento opcional; no oficial [S4] | ☐ |
 | FFmpeg | Procesado y exportación audiovisual | Transversal; LGPL/GPL según configuración [S5] | ☐ |
 | OpenTimelineIO | Intercambio de cortes y estructura editorial | Interoperabilidad; límites claros [S6] | ☐ |
