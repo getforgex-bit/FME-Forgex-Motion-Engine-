@@ -14,8 +14,8 @@ Desde la raíz del repositorio, elige nombres de corrida nuevos:
 ```powershell
 $blender = 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe'
 & $blender --version
-.\examples\fase1\blender\run.ps1 -RunName fdn011-f
-.\examples\fase1\blender\run.ps1 -RunName fdn011-g
+powershell -NoProfile -ExecutionPolicy Bypass -File examples/fase1/blender/run.ps1 -RunName fdn011-f
+pwsh -NoProfile -File examples/fase1/blender/run.ps1 -RunName fdn011-g
 ```
 
 `run.ps1` crea `out/<corrida>/` y ejecuta el equivalente a este comando con rutas absolutas:

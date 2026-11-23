@@ -46,6 +46,8 @@ try {
     }
     $process = Start-Process -FilePath $blenderExe -ArgumentList $blenderArgs `
         -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    # Windows PowerShell 5.1 necesita conservar el identificador para leer ExitCode.
+    $null = $process.Handle
     while (-not $process.HasExited) {
         $process.Refresh()
         try {
@@ -147,7 +149,7 @@ $report = [ordered]@{
     meanFrameSeconds = [Math]::Round($times.Average, 4)
     minFrameSeconds = $times.Minimum
     maxFrameSeconds = $times.Maximum
-    peakBlenderWorkingSetMiB = if ($peakWorkingSet) { [Math]::Round($peakWorkingSet / 1MB, 2) }
+    peakBlenderWorkingSetMiB = $(if ($peakWorkingSet) { [Math]::Round($peakWorkingSet / 1MB, 2) })
     gpuDeviceMemoryMiB = @($gpu | Where-Object { $null -ne $_ })
     manifestSha256 = (Get-FileHash -LiteralPath $manifest -Algorithm SHA256).Hash.ToLowerInvariant()
 }
