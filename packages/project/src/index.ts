@@ -101,3 +101,11 @@ export type Project = {
   assets: Asset[];
   sequences: Sequence[];
 };
+
+// API pública (re-exportaciones añadidas por A0 al integrar FDN-021 y FDN-022).
+export { projectSchema, projectJsonSchema, parseProject, formatPath } from './schema.ts';
+export type { ParseProjectResult, ValidationIssue, ProjectFromSchema } from './schema.ts';
+export { serialize, deserialize } from './serialize.ts';
+export type { DeserializeResult } from './serialize.ts';
+export { framesToSeconds, secondsToFrames, rescaleFrames, framesToTimecode, timecodeToFrames } from './time.ts';
+export type { FrameRounding } from './time.ts';
