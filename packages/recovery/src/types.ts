@@ -17,6 +17,7 @@ export type ExecutionFailureCategory =
   | 'timeout'
   | 'transient'
   | 'invalid-input'
+  | 'unsupported-capability'
   | 'engine-unavailable'
   | 'cancelled'
   | 'engine-crash'

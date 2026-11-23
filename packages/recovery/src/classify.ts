@@ -45,6 +45,19 @@ const CATEGORY_RULES: readonly CategoryRule[] = [
     reasonPrefix: 'Memoria principal (RAM) agotada',
   },
   {
+    category: 'unsupported-capability',
+    patterns: [
+      'unsupported-alpha',
+      'unsupported-layer',
+      'unsupported-scene',
+      'unsupported-fps',
+    ],
+    retryable: false,
+    degradable: false,
+    fallbackEligible: true,
+    reasonPrefix: 'Capacidad o formato no soportado por el motor actual',
+  },
+  {
     category: 'invalid-input',
     patterns: [
       'invalid-input',
@@ -54,6 +67,7 @@ const CATEGORY_RULES: readonly CategoryRule[] = [
       'missing-asset',
       'asset-outside-project',
       'unsupported-operation',
+      'blender_invalid_job',
     ],
     retryable: false,
     degradable: false,
@@ -71,6 +85,8 @@ const CATEGORY_RULES: readonly CategoryRule[] = [
   {
     category: 'transient',
     patterns: [
+      'atomic_replace_unavailable',
+      'atomic-replace-unavailable',
       'eperm',
       'ebusy',
       'eacces',
@@ -90,6 +106,9 @@ const CATEGORY_RULES: readonly CategoryRule[] = [
       'engine-unavailable',
       'engine-missing',
       'engine-broken',
+      'browser-missing',
+      'blender-missing',
+      'ffprobe_no_disponible',
       'enoent',
       'unavailable',
     ],
