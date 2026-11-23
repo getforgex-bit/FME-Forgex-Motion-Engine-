@@ -7,16 +7,16 @@ _Última actualización: 2026-11-22: repositorio preparado (Fase 0)._
 | Fase | Nombre | Estado | Condición de cierre |
 |---|---|---|---|
 | 0 | Especificar | **Hecha** (pendiente de la aprobación formal del usuario) | Especificación FME 0.1 aprobada |
-| 1 | Verificar software | **Siguiente** | Tres pruebas individuales repetibles |
-| 2 | Modelo universal | Pendiente | Guardar/abrir sin perder estado |
-| 3 | Conectores | Pendiente | Descubrimiento y job de extremo a extremo |
+| 1 | Verificar software | **En curso** (2/3: Revideo y Blender; falta FreeCut) | Tres pruebas individuales repetibles |
+| 2 | Modelo universal | **Hecha** (2026-11-23, criterio #2) | Guardar/abrir sin perder estado |
+| 3 | Conectores | **En curso** | Descubrimiento y job de extremo a extremo |
 | 4 | Integración real | Pendiente | Vídeo final con fuentes enlazadas |
 | 5 | Enrutador | Pendiente | Selección justificada y verificable |
 | 6 | Dirección artística | Pendiente | Cambios reales y reproducibles en la escena |
 | 7 | Calidad | Pendiente | Prueba híbrida de 10 s superada |
 | 8 | Evolución | Pendiente | Cada pieza nueva demuestra valor concreto |
 
-Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (0/8).
+Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (1/8).
 
 ## Qué existe hoy (verificado)
 
