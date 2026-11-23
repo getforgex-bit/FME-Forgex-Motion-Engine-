@@ -1,8 +1,17 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/project" },
-    { "path": "packages/connectors" },
-    { "path": "runtime/workers" }
+    {
+      "path": "packages/project"
+    },
+    {
+      "path": "packages/connectors"
+    },
+    {
+      "path": "runtime/workers"
+    },
+    {
+      "path": "packages/art-direction"
+    }
   ]
 }
