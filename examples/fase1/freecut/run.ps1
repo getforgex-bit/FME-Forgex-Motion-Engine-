@@ -28,7 +28,7 @@ New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $workspaceDir = Join-Path $outDir 'workspace'
 $inputClip = Join-Path $outDir 'test-clip-5s.mp4'
 $exportedClip = Join-Path $outDir 'exported.mp4'
-$sampleProjectOut = Join-Path $PSScriptRoot 'sample-project.json'
+$sampleProjectOut = Join-Path $outDir 'sample-project.json'
 $reportOut = Join-Path $outDir 'report.json'
 $stdoutLog = Join-Path $outDir 'e2e.stdout.log'
 $stderrLog = Join-Path $outDir 'e2e.stderr.log'
