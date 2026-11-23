@@ -6,6 +6,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 ## [Unreleased]
 
 ### Added
+- **Fases 1 y 3 cerradas.** FreeCut `5ceeeb3` verificado (FDN-012); E2E descubrimiento → job → procedencia (FDN-033).
+- `@fme/router`: secuencia de 8 pasos, modos automático/manual/híbrido y restricciones duras (FDN-050).
+- `schemaVersion` 2: `Layer.text` (ADR-0012, FDN-028) con migración v1→v2.
+- Revideo escribe sus temporales en `workDir` (FDN-034).
 - `@fme/adapter-revideo`: primer adaptador real (ADR-0011), motor aislado en `runtime/engines/revideo` (FDN-032).
 - `@fme/cache`: `dependencyHash`, `DependencyGraph` y `DiskCache` (FDN-070).
 - `deserialize` aplica las migraciones; **Fase 2 cerrada** (FDN-025, FDN-026).

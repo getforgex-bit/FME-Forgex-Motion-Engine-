@@ -20,3 +20,4 @@ Registro de las decisiones duraderas de FME. Formato heredado de Segundo Cerebro
 | [0009](0009-api-registro-conectores.md) | API del registro dinámico de conectores | propuesta |
 | [0010](0010-ffmpeg-del-sistema-para-revideo.md) | Revideo con el FFmpeg del sistema; FME no redistribuye FFmpeg | propuesta |
 | [0011](0011-interfaz-de-adaptadores.md) | Interfaz común de adaptadores y procedencia | propuesta |
+| [0012](0012-contenido-de-capas-de-texto.md) | Contenido de las capas de texto y schemaVersion 2 | propuesta |

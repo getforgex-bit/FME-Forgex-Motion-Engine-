@@ -18,7 +18,7 @@ A **30 FPS**, la primera prueba tiene **300 fotogramas** (0 a 299). La secuencia
 
 | # | Criterio | Fase | Estado | Evidencia |
 |---|---|---|---|---|
-| 1 | FreeCut, Revideo y Blender ejecutan **cada uno** una operación de muestra de forma independiente | 1 | ☐ | |
+| 1 | FreeCut, Revideo y Blender ejecutan **cada uno** una operación de muestra de forma independiente | 1 | ☑ | A0, 2026-11-23: FreeCut `run.ps1` → MP4 de 150 fotogramas a 30 FPS con audio (`probe-media`); Revideo `npm run verify` (A1, ×2 desde cero) y 8/8 tests con el motor real sobre `develop`; Blender `run.ps1` en PS 5.1 → 90 PNG RGBA, SHA-256 RGBA `c9706f10…450b` reproducido ([bitácora A0](bitacora/2026-11-22-claude-code-a0-arranque-fdn.md)) |
 | 2 | Un proyecto FME puede guardar, validar, recuperar y versionar su timeline | 2 | ☑ | FDN-021/022/023/024/026: `node --test packages/project/test/*.test.ts` → 36/36; v0 → v1 por `deserialize`; round-trip byte a byte de 4 fixtures ([bitácora A0, integración 3](bitacora/2026-11-22-claude-code-a0-arranque-fdn.md)) |
 | 3 | Los tres adaptadores ejecutan trabajos **reales**, no simulados | 4 | ☐ | |
 | 4 | El router selecciona una ruta compatible consultando primero la tarjeta simple | 5 | ☐ | |

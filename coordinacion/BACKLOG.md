@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-23 (integración 3; **Fase 2 cerrada**)._
+> _Última consolidación: 2026-11-23 (integración 4; **Fases 1, 2 y 3 cerradas**)._
 
 ## Resumen
 
@@ -17,12 +17,15 @@
 | FDN-006 | `develop`, worktrees, política de índices | CL-A0 | 001–003 | DONE (arranque) |
 | FDN-010 | Verificar Revideo | CL-A1 | 003 | DONE (6ee5826) |
 | FDN-011 | Verificar Blender 5.2 headless | CX | — | DONE (b0a7db7; A0 reprodujo el SHA-256 de píxeles) |
-| FDN-012 | Verificar FreeCut | AG | — | IN_PROGRESS (descarga autorizada por el usuario el 2026-11-23) |
+| FDN-012 | Verificar FreeCut | AG | — | DONE (fcc4b49; A0 lo reprodujo) |
 | FDN-013 | Sonda de medios `scripts/probe-media.mjs` | CL-A3 | 003 | DONE (f271d29) |
-| FDN-014 | Cierre de la Fase 1 (criterio #1) | CL-A0 | 010, 011, 012 | BACKLOG |
+| FDN-014 | Cierre de la Fase 1 (criterio #1) | CL-A0 | 010, 011, 012 | DONE (criterio #1 ☑) |
 | FDN-026 | `deserialize` aplica las migraciones (`migrateToCurrent`) | CL-A2 | 021, 024 | DONE (652f0e2) |
-| FDN-028 | Contenido de las capas `text` en el modelo universal (ADR-0012 + `schemaVersion` 2 + migración v1→v2) | CL-A2 | 021, 024, 026 | READY |
-| FDN-034 | Revideo: temporales dentro de `ctx.workDir` (no en `os.tmpdir()`) | CL-A1 | 032 | READY |
+| FDN-070b | `DiskCache`: reintentar `rename` ante EPERM/EBUSY/EACCES en Windows (bug real; 1 de 5 en `npm test`) | CX | 070 | READY |
+| FDN-032b | Adaptador Revideo: usar `layer.text` (ADR-0012) en lugar de `requirements.text` | CL-A1 | 028, 032 | READY |
+| FDN-034b | Tests de integración de Revideo seguros en paralelo (tmp-workdir frente a e2e) | CL-A1 | 033, 034 | READY |
+| FDN-028 | Contenido de las capas `text` en el modelo universal (ADR-0012 + `schemaVersion` 2 + migración v1→v2) | CL-A2 | 021, 024, 026 | DONE (05a8e64) |
+| FDN-034 | Revideo: temporales dentro de `ctx.workDir` (no en `os.tmpdir()`) | CL-A1 | 032 | DONE (ad7058e) |
 | FDN-027 | ADR-0011: interfaz común de adaptadores y procedencia | CL-A0 | 030, 031 | DONE (b290224) |
 | FDN-020 | ADR-0008: validación con Zod 4 | CL-A0 | — | DONE (propuesta escrita) |
 | FDN-015 | `run.ps1` de Blender compatible con Windows PowerShell 5.1 | CX | 011 | DONE (d216597; A0 lo verificó en PS 5.1) |
@@ -35,13 +38,13 @@
 | FDN-030 | Registro dinámico de conectores + ADR-0009 | AG | 003 | DONE (4ee6910) |
 | FDN-031 | Ejecución aislada de procesos (`runtime/workers`) | CX | 003 | DONE (e73f706) |
 | FDN-032 | Adaptador Revideo real (JobRequest→JobResult con procedencia) | CL-A1 | 010, 021, 030, 031 | DONE (a88148d; job real 6/6 verificado por A0) |
-| FDN-033 | Cierre de la Fase 3: descubrimiento → job real → procedencia, de extremo a extremo | CL-A1 (A0 valida) | 030, 032 | READY |
-| FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | IN_PROGRESS |
-| FDN-041 | Adaptador FreeCut (nivel A o B según la F1) | AG | 012, 030, 031 | BACKLOG |
+| FDN-033 | Cierre de la Fase 3: descubrimiento → job real → procedencia, de extremo a extremo | CL-A1 (A0 valida) | 030, 032 | DONE (13606e6; Fase 3 cerrada) |
+| FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | IN_PROGRESS (devuelta: adaptar a schemaVersion 2) |
+| FDN-041 | Adaptador FreeCut (nivel A, recomendado por FDN-012) | AG | 012, 030, 031 | READY |
 | FDN-042 | Rutas A/B/C + `ExternalProjectRef`/`RenderArtifact` enlazados | a decidir | 021, 032, 040, 041 | BACKLOG |
 | FDN-043 | Cierre de la Fase 4 (criterio #3) | CL-A0 | 042 | BACKLOG |
-| FDN-050 | Núcleo del router (8 pasos, modos, restricciones duras) con tarjetas simuladas | AG | 030 | IN_PROGRESS |
-| FDN-051 | Medición de tokens: tarjeta simple frente a avanzada | a decidir | 050 | BACKLOG |
+| FDN-050 | Núcleo del router (8 pasos, modos, restricciones duras) con tarjetas simuladas | AG | 030 | DONE (3ef734e) |
+| FDN-051 | Medición de tokens: tarjeta simple frente a avanzada | CL-A3 | 050 | READY |
 | FDN-052 | Fallbacks con adaptadores reales | a decidir | 050, 043 | BACKLOG |
 | FDN-053 | Cierre de la Fase 5 (criterios #4 y #5) | CL-A0 | 051, 052 | BACKLOG |
 | FDN-060 | Dirección artística: perfiles de estilo y reglas | libre (el primero que quede libre) | 021 | DONE (b78af00, AG) |
@@ -49,11 +52,11 @@
 | FDN-062 | Cierre de la Fase 6 (criterio #6) | CL-A0 | 061 | BACKLOG |
 | FDN-070 | Caché con invalidación por dependencias | CX | 021, 031 | DONE (f3ad71f) |
 | FDN-071 | Render por segmentos + preview adaptativa | CX | 070 | READY |
-| FDN-072 | Errores: falta de VRAM, reintento seguro, backend alternativo | a decidir | 070 | BACKLOG |
+| FDN-072 | Errores: falta de VRAM, reintento seguro, backend alternativo | libre | 070 | READY |
 | FDN-073 | Suite técnica (temporal, estética, editabilidad, enrutamiento, recursos, seguridad, regresión) | a decidir | 043, 062, 071, 072 | BACKLOG |
 | FDN-074 | Exportación final con audio y sincronía | a decidir | 043, 071 | BACKLOG |
 | FDN-075 | Prueba híbrida de 10 s (criterios #7 y #8) | CL-A0 + todos | 073, 074 | BACKLOG |
-| FDN-080 | Servidor MCP mínimo (`apps/mcp`) | a decidir | 021, 030, 050 | BACKLOG |
+| FDN-080 | Servidor MCP mínimo (`apps/mcp`) | CL-A2 | 021, 030, 050 | READY |
 | FDN-081 | CLI (`apps/cli`) | a decidir | 080 | BACKLOG |
 | FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | IN_PROGRESS |
 
@@ -117,6 +120,47 @@ Cada ficha es el contrato de la tarea: si algo no está aquí, pregúntalo antes
 - **Aceptación:** tests de alta y baja, duplicados, filtros, `unknown` y secciones; `npm run typecheck` + `npm test` en verde.
 
 ---
+
+## Fichas de la Tanda 5 (READY desde el 2026-11-23, integración 4)
+
+Base: `develop` ≥ el commit de la integración 4 (`schemaVersion` **2**). **Regla nueva para los adaptadores y el router:** para leer un proyecto se usa `deserialize` (o `migrateToCurrent` sobre el JSON ya parseado), nunca `parseProject` directamente, porque así se aceptan versiones anteriores migrables.
+
+### FDN-040 (devuelta) · Adaptador Blender con `schemaVersion` 2 (CX)
+- **Motivo:** al fusionar con `develop` (v2), `adapter.test.ts` falla con `BLENDER_INVALID_JOB … schemaVersion 1 no soportado; esta versión entiende 2`.
+- **Hacer:** `git merge develop` en `fdn/FDN-040-adapter-blender` (sin rebase); leer el proyecto con `deserialize`/`migrateToCurrent`; mantener el test de la fixture v1 (ahora como migración) y añadir la v2.
+- **Aceptación:** la rama se fusiona con `develop` limpia, `npm test` está en verde y los 5 tests con Blender real siguen pasando.
+
+### FDN-070b · `DiskCache` en Windows (CX)
+- **Evidencia (A0):** `npm test` 1 de 5 → `EPERM: operation not permitted, rename '…\.cache-<uuid>.tmp' -> '…\<sha>.bin'` en «publica una entrada completa con escrituras concurrentes». Windows rechaza el `rename` sobre un destino abierto por otra operación.
+- **Rutas:** `packages/cache/src/store.ts` y `packages/cache/test/**`.
+- **Hacer:** reintentar `rename` (y `unlink` del temporal) ante `EPERM`/`EBUSY`/`EACCES` con backoff acotado (p. ej. hasta ~1 s en total) y error estructurado si se agota. Test de estrés: N escrituras y lecturas concurrentes, repetido.
+- **Aceptación:** 50 ejecuciones seguidas del test de concurrencia sin fallos, más `npm test` 5 veces seguidas en verde (cita el comando).
+
+### FDN-041 · Adaptador FreeCut, nivel A (AG)
+- **Rutas:** `packages/adapters/freecut/**` (`@fme/adapter-freecut`) y `runtime/engines/freecut/**` (el wrapper Node sobre `headless/lib/*` de `FME-ext/freecut` que recomendó FDN-012; sin forkear upstream).
+- **Hacer:** `ConnectorAdapter` (ADR-0011). Operación `edit.export`: proyecto FME (`deserialize`) + `requirements.sceneId` → proyecto FreeCut → MP4 exportado por su headless. Ejecución con `runIsolated` y navegador configurable (`FME_FREECUT_BROWSER`), ruta del clon con `FME_FREECUT_DIR`. Como el contenedor no es determinista, usa `contentSha256` sobre los fotogramas decodificados (`ffmpeg -f hash` de rawvideo) además del `sha256` del archivo.
+- **Aceptación:** con la capa de fondo (vídeo) de la fixture híbrida o un clip generado → MP4 verificado con `scripts/probe-media.mjs`; `checkAdapterResult` = []; dos jobs dan el mismo `contentSha256`; skip con motivo si no hay clon o navegador.
+
+### FDN-051 · Medición de tokens del router (CL-A3)
+- **Rutas:** `packages/router/test/tokens.test.ts` y `docs/bitacora/` (informe). Sin cambios en `packages/router/src` salvo que pidas un *hook* con una `solicitud`.
+- **Hacer:** para las solicitudes de prueba del router, medir los bytes y una estimación de tokens (caracteres/4, declarando el método) de lo que se lee: tarjetas simples frente a secciones avanzadas pedidas, comparado con leer todas las tarjetas avanzadas completas.
+- **Aceptación:** tabla con los números reales en el informe; el test falla si el router lee una sección avanzada que no era necesaria (base de los criterios #4 y #5).
+
+### FDN-080 · Servidor MCP mínimo (CL-A2)
+- **Rutas:** `apps/mcp/**` (workspace nuevo `@fme/mcp`; A0 añade `apps/*` a los workspaces, la referencia y el lockfile al integrar; no toques los archivos de la raíz).
+- **Hacer:** adaptador **de la API**, no un segundo sistema (spec §10). Herramientas de `docs/contratos.md` §3 que ya tienen implementación: `project.create`/`project.open` (deserialize), `connectors.list`/`connectors.inspect` (registro), `route.plan` (router) y `job.run` (adaptadores registrados). Las que aún no existen (`preview.*`, `project.export`) se declaran como «no implementadas» con un error estructurado, sin simular. Transporte stdio. Rutas de proyecto validadas dentro de una raíz configurada; nada de ejecución arbitraria.
+- **Dependencia:** SDK oficial MCP TypeScript (`@modelcontextprotocol/sdk`, MIT). **Pide confirmación al usuario** antes de instalarlo (versión exacta, origen y tamaño) e informa la licencia en el REVIEW.
+- **Aceptación:** test que arranca el servidor por stdio con un cliente del SDK, lista las herramientas y ejecuta `project.open` + `connectors.list` + `route.plan` sobre la fixture híbrida.
+
+### FDN-032b · Revideo usa `layer.text` (CL-A1)
+- **Rutas:** `packages/adapters/revideo/**`.
+- **Hacer:** el contenido del título sale de `layer.text.content` (más `fontFamily`, `fontSize` y `color`, si existen). `requirements.text` queda solo como sobrescritura explícita (documentada) o se elimina.
+- **Aceptación:** el título de la fixture híbrida v2 se renderiza con su texto real; tests unitarios del mapeo.
+
+### FDN-034b · Tests de integración de Revideo seguros en paralelo (CL-A1)
+- **Evidencia (A0):** con el motor, `node --test packages/adapters/revideo/test/*.integration.test.ts` da 7/8 en paralelo (`entradas nuevas en …\Temp: fme-e2e-*`, porque el E2E crea su `workDir` en `os.tmpdir()` mientras `tmp-workdir` vigila esa carpeta) y 8/8 con `--test-concurrency=1`.
+- **Hacer:** que los tests de integración creen sus `workDir` bajo una raíz propia (no en `os.tmpdir()`), o que `tmp-workdir` ejecute el job con `TEMP`/`TMP` apuntando a una carpeta vigilada exclusiva. Mueve también los logs de `probe()` fuera del temporal del sistema si es viable.
+- **Aceptación:** 8/8 en paralelo, 3 veces seguidas, con el motor.
 
 ## Fichas de la Tanda 4 (READY desde el 2026-11-23, integración 3)
 

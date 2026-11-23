@@ -22,6 +22,12 @@
 | FDN-026 | CL-A2 Sonnet 5.5 | 06:31 → 06:32 UTC | ~1 min | test 73/73 ✔ | 0 | — | 0 | 0 | 1 (impact) / 0 | no medido | Pequeña y precisa |
 | FDN-032 | CL-A1 Sonnet 5.5 | 06:31 → 06:38 UTC | ~7 min | 86/86, 6 con el motor real (A0: 6/6 en 28 s) | 0 | — | 0 | 0 | — | no medido | Interpretaciones de contrato bien señaladas (`text`, `easing`) |
 | FDN-070 | CX-C2 Sol | 06:32 → 06:39 UTC | ~7 min | 79/79 ✔ | 1 (índice desactualizado) | — | 0 | 0 | 6 / 0 | no medido | Pidió el validador compartido en vez de importar código interno (correcto) |
+| FDN-028 | CL-A2 Sonnet 5.5 | 06:45 → 06:47 UTC | ~2 min | 101 pass ✔ | 0 | — | 0 | 0 | 2 (impact) / 0 | no medido | Cambio de contrato bien gestionado (solicitud con el diff exacto) |
+| FDN-033 | CL-A1 Sonnet 5.5 | 06:45 → 06:49 UTC | ~4 min | E2E 1/1 con motor (A0: 8/8 en serie) | 0 | No identificó el fallo intermitente (A0: aislamiento entre tests) | 0 | 0 | — | no medido | — |
+| FDN-034 | CL-A1 Sonnet 5.5 | 06:49 → 06:50 UTC | ~1 min | 1/1; el test detecta la regresión con el arreglo revertido | 0 | — | 0 | 0 | — | no medido | Buena prueba de regresión |
+| FDN-040 | CX-C0+C1 Sol | 06:32 → 06:41 UTC | ~9 min | 5/5 con Blender real | 1 | — | **sí: no compatible con v2 (FDN-028 en paralelo)** | 1 semántico | 5 / 0 | no medido | Primer conflicto entre equipos: contrato cambiado en paralelo |
+| FDN-050 | AG-B2 Hydrogen | 06:37 → 06:42 UTC | ~5 min | 78/78 ✔ | 0 | — | 0 | 0 | 2 / 1 | no medido | Métricas de tarjetas ya instrumentadas |
+| FDN-012 | AG-B1 Hydrogen (+B0) | 05:56 → 06:47 UTC | ~51 min (con espera de autorización) | 4 corridas desde cero ✔ (A0 la reprodujo) | 1 | Upstream `probe.mjs` exige Chrome (resuelto sin fork) | pequeño | 0 | 1 / 0 | no medido | Recomendación de nivel A bien fundada |
 | FDN-004 | CL-A3 Haiku 5.5 | 05:51 → 05:56 UTC | ~5 min | n/a (documento) | 0 | — | 0 | 0 | 0 / 0 | no medido | Calidad alta; contradijo con fuentes la hipótesis «Sonnet ≥ Opus en terminal» |
 
 ## Tiempo de coordinación (A0)
@@ -29,6 +35,7 @@
 | Fecha | Actividad | Duración aproximada |
 |---|---|---|
 | 2026-11-23 | Revisión e integración de 5 ramas, reproducción del render de Blender y consolidación | ~15 min |
+| 2026-11-23 | Integración 4: 6 ramas, diagnóstico de 2 fallos intermitentes (EPERM de la caché; aislamiento de tests de Revideo), verificación de FreeCut y del E2E, cierre de las F1 y F3 | ~30 min |
 | 2026-11-23 | Integración 2: 8 ramas, 2 workspaces nuevos (lockfile), verificación PS 5.1, ADR-0011 y fichas de la Tanda 3 | ~25 min |
 
 ## Valor de los grafos (se evalúa al cerrar cada tanda)

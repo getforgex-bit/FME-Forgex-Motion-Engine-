@@ -27,15 +27,15 @@ Orden de construcción (spec §19.1): **verificar software → archivo universal
 ### Fase 1: Verificar el software base
 **Objetivo:** demostrar que FreeCut, Revideo y Blender funcionan en el entorno de referencia antes de diseñar sobre ellos.
 
-- [ ] Fijar versiones exactas (commit/tag) de FreeCut, Revideo y Blender, y de FFmpeg.
-- [ ] Revisar la actividad del proyecto upstream (releases, issues) antes de fijar cada versión.
-- [ ] Prueba repetible por herramienta (script en `examples/` o `runtime/`):
+- [x] Fijar versiones exactas (commit/tag) de FreeCut, Revideo y Blender, y de FFmpeg. → FreeCut `5ceeeb3`, Revideo 0.11.0, Blender 5.2.3 LTS, FFmpeg 9.0.2 (registro en `licencias-seguridad.md`).
+- [x] Revisar la actividad del proyecto upstream (releases, issues) antes de fijar cada versión. → en cada `examples/fase1/<herramienta>/RESULTADOS.md`.
+- [x] Prueba repetible por herramienta (script en `examples/` o `runtime/`):
   - FreeCut: importar un clip y exportar un MP4 (o documentar qué API/flujo existe realmente).
   - Revideo: renderizar una escena TS de 3 s a MP4 y, si es posible, una secuencia PNG con alpha.
   - Blender: `blender -b` + script `bpy` que renderice una secuencia PNG RGBA con cámara animada.
-- [ ] Registrar para cada una: comando, versión, salida, tiempo, uso de VRAM/RAM y limitaciones (alpha, FPS, timebase).
-- [ ] Rellenar la tarjeta simple **real** de cada herramienta con lo verificado (`yes`/`no`/`unknown`).
-- **Cierre:** tres pruebas individuales repetibles (criterio de éxito #1).
+- [x] Registrar para cada una: comando, versión, salida, tiempo, uso de VRAM/RAM y limitaciones (alpha, FPS, timebase).
+- [x] Rellenar la tarjeta simple **real** de cada herramienta con lo verificado (`yes`/`no`/`unknown`). → `card.simple.json` y `card.advanced.json` en cada `examples/fase1/<herramienta>/`.
+- **Cierre:** tres pruebas individuales repetibles (criterio de éxito #1). ✅ **Cerrada el 2026-11-23** (FDN-014; A0 ejecutó las tres pruebas).
 - **Métrica:** 3/3 herramientas con prueba reproducible documentada en la bitácora.
 
 ### Fase 2: Modelo universal
@@ -52,11 +52,11 @@ Orden de construcción (spec §19.1): **verificar software → archivo universal
 ### Fase 3: Conectores
 **Objetivo:** contrato 0.1 operativo con registro y un primer adaptador.
 
-- [ ] Registro dinámico: alta y baja de conectores, y consulta de tarjetas simples y avanzadas por secciones.
-- [ ] Estados `soportado` / `no soportado` / `no comprobado` y el comportamiento ante `unknown`.
-- [ ] Primer adaptador (recomendado: **Revideo**, porque es TypeScript nativo y no requiere integrar el editor) con `JobRequest` → `JobResult` reales.
-- [ ] Ejecución aislada: directorio de trabajo propio, timeout y validación de rutas.
-- **Cierre:** descubrimiento y job de extremo a extremo.
+- [x] Registro dinámico: alta y baja de conectores, y consulta de tarjetas simples y avanzadas por secciones. → `ConnectorRegistry` (FDN-030, ADR-0009).
+- [x] Estados `soportado` / `no soportado` / `no comprobado` y el comportamiento ante `unknown`. → `requiresInspection`, nunca compatibilidad supuesta (FDN-030).
+- [x] Primer adaptador (recomendado: **Revideo**, porque es TypeScript nativo y no requiere integrar el editor) con `JobRequest` → `JobResult` reales. → `@fme/adapter-revideo` (FDN-032, ADR-0011).
+- [x] Ejecución aislada: directorio de trabajo propio, timeout y validación de rutas. → `@fme/runtime-workers` (FDN-031); temporales en `workDir` (FDN-034).
+- **Cierre:** descubrimiento y job de extremo a extremo. ✅ **Cerrada el 2026-11-23** (FDN-033: registro → `listSimple` → job real → `RenderArtifact` con `dependencyHash` → enlace en la capa → `parseProject`).
 - **Métrica:** un job real produce un artefacto con procedencia (herramienta, versión, parámetros y hash).
 
 ---

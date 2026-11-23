@@ -77,3 +77,18 @@ Hallazgos que pasan al backlog:
 - la capa `text` no tiene campo de contenido (A1 usa `requirements.text`) → FDN-028 (ADR + schemaVersion 2);
 - Revideo escribe temporales en `os.tmpdir()`, fuera de `workDir` → FDN-034;
 - validador de rutas compartido (solicitud de C2) → se pospone: el almacén de la caché valida su propia raíz y rechaza enlaces, y basta por ahora.
+
+
+## 2026-11-23 · Integración 4: cierre de las Fases 1 y 3 (A0)
+| Rama | Commit | Verificación de A0 | Resultado |
+|---|---|---|---|
+| FDN-028 texto / v2 | 05a8e64 | diff de `index.ts` = solicitud de A2; 101 pass | fusionada |
+| FDN-033 E2E | 13606e6 | +`@fme/cache` como devDependency; 101 pass | fusionada |
+| FDN-034 temporales | ad7058e | 101 pass | fusionada |
+| FDN-050 router | 3ef734e | ref + lockfile; 108 pass | fusionada |
+| FDN-012 FreeCut | fcc4b49 | A0: `powershell -File examples/fase1/freecut/run.ps1` → `probe-media`: 150 fotogramas, 30 FPS, 1280×720, audio, 8 s | fusionada |
+| FDN-040 Blender | 13a1358 | **falla con `develop`**: `schemaVersion 1 no soportado; esta versión entiende 2` (conflicto semántico con FDN-028) | **devuelta** a CX |
+
+**Con el motor real sobre `develop`** (junction temporal al `node_modules` del motor de A1, eliminada después): `node --test --test-concurrency=1 packages/adapters/revideo/test/*.integration.test.ts` → **8/8**. En paralelo, 7/8 → `tmp-workdir` ve el `workDir` de `e2e` en `os.tmpdir()` (aislamiento entre tests, no es un fallo del producto) → FDN-034b.
+**Fallo intermitente de `npm test`:** `EPERM … rename` en `DiskCache` (1 de 5 ejecuciones completas; 0/40 aislado y 0/40 con 8 en paralelo). Es un bug real de Windows (`rename` sobre un destino abierto) → FDN-070b. El script de integración de A0 reintenta solo ante ese error concreto.
+**Fase 1 cerrada (criterio #1 ☑) y Fase 3 cerrada.** Criterios: 2/8.

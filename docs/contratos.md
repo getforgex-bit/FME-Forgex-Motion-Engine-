@@ -35,12 +35,13 @@ type Layer = {
   guide3DLayerId?: string;
   channels: Partial<Record<'x' | 'y' | 'rotation' | 'scale' | 'opacity' | 'expression' | 'integration' | 'volume', Curve>>;
   externalProject?: { pluginId: string; uri: string };
+  text?: { content: string; fontFamily?: string; fontSize?: number; color?: string }; // solo si kind === 'text' (ADR-0012)
 };
 
 type Scene = { id: string; durationFrames: number; layers: Layer[] };
 type Sequence = { id: string; scenes: Scene[] };
 export type Project = {
-  schemaVersion: 1;
+  schemaVersion: 2; // v2: Layer.text (ADR-0012)
   id: string;
   name: string;
   fps: { num: number; den: number };
