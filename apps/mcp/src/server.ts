@@ -19,6 +19,7 @@ import {
 } from '@fme/connectors';
 import { SCHEMA_VERSION, parseProject, serialize } from '@fme/project';
 import { planRoute, type RouteOptions, type RouteTask } from '@fme/router';
+import { exportProject } from './export.ts';
 import { DEFAULT_PREVIEW_VRAM_MIB, OpsError, loadProjectFile, previewRender, summarize } from './ops.ts';
 import { PathError, resolveInRoot } from './paths.ts';
 
@@ -60,7 +61,6 @@ function fromThrown(e: unknown): ToolResult {
 
 const NOT_IMPLEMENTED = {
   'preview.inspect': 'La inspección de resultados (fotogramas, métricas) aún no existe.',
-  'project.export': 'La exportación final depende de @fme/pipeline (FDN-042c), que aún no está integrado.',
 } as const;
 
 export function createFmeServer(options: FmeServerOptions): McpServer {
@@ -274,6 +274,34 @@ export function createFmeServer(options: FmeServerOptions): McpServer {
           ...(args.endFrame !== undefined ? { endFrameExclusive: args.endFrame } : {}),
         });
         return ok(rendered);
+      } catch (e) {
+        return fromThrown(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    'project.export',
+    {
+      description: 'Exporta el proyecto con el pipeline híbrido (Revideo + Blender + FreeCut reales): MP4 final y proyecto con los artefactos enlazados, dentro de la raíz. Puede tardar minutos. Devuelve ENGINE_UNAVAILABLE sin ejecutar ningún paso si falta un motor; el progreso por pasos va en `progress` (se informa al terminar).',
+      inputSchema: {
+        path: z.string(),
+        outDir: z.string().optional().describe('Carpeta vacía o inexistente dentro de la raíz; por defecto .fme-exports/<id>'),
+        blenderResolution: z.string().optional().describe('ANCHOxALTO con la que renderiza Blender, p. ej. 960x540'),
+        timeoutMs: z.number().int().positive().max(3_600_000).optional().describe('Tiempo máximo por paso'),
+      },
+    },
+    async (args) => {
+      try {
+        const file = resolveInRoot(root, args.path);
+        const outDir = resolveInRoot(root, args.outDir ?? `.fme-exports/${randomUUID()}`);
+        const exported = await exportProject({
+          projectFile: file,
+          outDir,
+          ...(args.blenderResolution !== undefined ? { blenderResolution: args.blenderResolution } : {}),
+          ...(args.timeoutMs !== undefined ? { timeoutMs: args.timeoutMs } : {}),
+        });
+        return ok({ ...exported, outDir });
       } catch (e) {
         return fromThrown(e);
       }

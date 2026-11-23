@@ -1,6 +1,6 @@
 // FDN-080: arranca el servidor por stdio con un cliente del SDK y ejercita las herramientas.
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -8,6 +8,7 @@ import { after, before, test } from 'node:test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { resolveInRoot } from '../src/paths.ts';
+import { H, W, engineEnv, ffmpegAvailable, ffprobe, prepareHybridInput } from './hybrid-input.ts';
 
 const repo = resolve(import.meta.dirname, '..', '..', '..');
 const examples = join(repo, 'examples');
@@ -94,7 +95,7 @@ test('route.plan planifica con el enrutador real', async () => {
 });
 
 test('las herramientas sin implementación devuelven NOT_IMPLEMENTED', async () => {
-  for (const name of ['preview.inspect', 'project.export']) {
+  for (const name of ['preview.inspect']) {
     const r = await call(client, name);
     assert.equal(r.isError, true, name);
     assert.equal(r.body.error.code, 'NOT_IMPLEMENTED', name);
@@ -237,5 +238,73 @@ test('preview.render con el motor real: MP4 a resolución de preview (skip con m
   } finally {
     await c.close();
     rmSync(join(examples, '.fme-jobs'), { recursive: true, force: true });
+  }
+});
+
+// --- project.export (FDN-080c) ---------------------------------------------------------------------------
+
+test('project.export: rutas validadas, resolución y carpeta ocupada, motor no disponible sin ejecutar pasos', async () => {
+  const ok1 = { path: 'prueba-hibrida-10s/project.fme.json' };
+  assert.equal((await call(client, 'project.export', { path: '../package.json' })).body.error.code, 'PATH_OUTSIDE_ROOT');
+  assert.equal((await call(client, 'project.export', { ...ok1, outDir: '../fuera' })).body.error.code, 'PATH_OUTSIDE_ROOT');
+  assert.equal((await call(client, 'project.export', { path: 'no-existe.json' })).body.error.code, 'FILE_NOT_FOUND');
+  assert.equal((await call(client, 'project.export', { ...ok1, blenderResolution: 'grande' })).body.error.code, 'INVALID_RESOLUTION');
+  const { mkdirSync, writeFileSync } = await import('node:fs');
+  mkdirSync(join(scratch, 'ocupada'));
+  writeFileSync(join(scratch, 'ocupada', 'x.txt'), 'x');
+  const copia = join(scratch, 'p.fme.json');
+  writeFileSync(copia, readFileSync(join(examples, ok1.path)));
+  assert.equal((await call(writable, 'project.export', { path: 'p.fme.json', outDir: 'ocupada' })).body.error.code, 'OUT_DIR_NOT_EMPTY');
+
+  // Motor de Revideo inexistente: ningún paso se ejecuta.
+  const c = new Client({ name: 'fme-test', version: '0.0.0' });
+  await c.connect(new StdioClientTransport({
+    command: process.execPath,
+    args: [join(import.meta.dirname, 'fixture-server.ts'), scratch],
+    env: { ...(process.env as Record<string, string>), FME_REVIDEO_ENGINE_DIR: join(scratch, 'sin-motor') },
+    stderr: 'pipe',
+  }));
+  try {
+    const r = await call(c, 'project.export', { path: 'p.fme.json' });
+    assert.equal(r.isError, true);
+    assert.equal(r.body.error.code, 'ENGINE_UNAVAILABLE');
+    assert.deepEqual(r.body.error.details.progress, []);
+    assert.equal(existsSync(join(scratch, '.fme-exports')) && readdirSync(join(scratch, '.fme-exports')).some((d) => existsSync(join(scratch, '.fme-exports', d, 'jobs'))), false, 'no se creó ningún job');
+  } finally {
+    await c.close();
+  }
+});
+
+test('project.export con los tres motores reales: MP4 de 300 fotogramas y proyecto enlazado (skip con motivo sin motor)', { timeout: 1_800_000 }, async (t) => {
+  if (!ffmpegAvailable()) { t.skip('ffmpeg no disponible'); return; }
+  const root = mkdtempSync(join(tmpdir(), 'fme-mcp-export-'));
+  const c = new Client({ name: 'fme-test', version: '0.0.0' });
+  await c.connect(new StdioClientTransport({ command: process.execPath, args: [join(import.meta.dirname, 'fixture-server.ts'), root], env: engineEnv(), stderr: 'pipe' }));
+  try {
+    prepareHybridInput(join(root, 'in'));
+    const raw = (await c.callTool(
+      { name: 'project.export', arguments: { path: 'in/project.fme.json', outDir: 'out', blenderResolution: '640x360' } },
+      undefined, { timeout: 1_700_000 },
+    )) as { isError?: boolean; content: { text: string }[] };
+    const body = JSON.parse(raw.content[0]!.text);
+    if (body.error?.code === 'ENGINE_UNAVAILABLE') {
+      t.skip(`motor no disponible: ${body.error.details.diagnostics.map((d: any) => d.message).join(' | ')}`);
+      return;
+    }
+    assert.equal(raw.isError, undefined, JSON.stringify(body).slice(0, 2000));
+    const { probeMedia } = await import(pathToFileURL(join(repo, 'scripts', 'probe-media.mjs')).href);
+    const media = await probeMedia(body.mp4, { ffprobe });
+    assert.deepEqual([media.frames, media.fps, media.width, media.height], [300, 30, W, H]);
+    assert.ok(body.outDir.startsWith(root));
+    assert.ok(body.progress.length >= 4 && body.progress.every((p: any) => p.status === 'ok'));
+    for (const id of ['revideo', 'adapter.blender', 'adapter.freecut']) assert.ok(body.adaptersInProvenance.includes(id), `falta ${id}`);
+    const opened = await call(c, 'project.open', { path: 'out/project.fme.json', includeProject: true });
+    const ids = new Set(opened.body.project.artifacts.map((a: any) => a.id));
+    for (const l of opened.body.project.sequences[0].scenes[0].layers.filter((l: any) => ['capa-titulo', 'capa-2d', 'capa-3d'].includes(l.id))) {
+      assert.ok(ids.has(l.externalProject.renderArtifactId), `${l.id}: artefacto sin enlazar`);
+    }
+  } finally {
+    await c.close();
+    rmSync(root, { recursive: true, force: true });
   }
 });

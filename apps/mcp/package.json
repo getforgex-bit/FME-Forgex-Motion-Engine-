@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./dist/index.js",
-    "./ops": "./dist/ops.js"
+    "./ops": "./dist/ops.js",
+    "./export": "./dist/export.js"
   },
   "types": "./dist/index.d.ts",
   "bin": {
@@ -14,6 +15,7 @@
   "dependencies": {
     "@fme/adapter-revideo": "0.0.0",
     "@fme/connectors": "0.0.0",
+    "@fme/pipeline": "0.0.0",
     "@fme/project": "0.0.0",
     "@fme/render-plan": "0.0.0",
     "@fme/router": "0.0.0",
