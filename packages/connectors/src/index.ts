@@ -56,3 +56,15 @@ export type JobResult = {
   outputs: { uri: string; type: string }[];
   diagnostics: { code: string; message: string }[];
 };
+
+// API pública del registro (re-exportaciones añadidas por A0 al integrar FDN-030; ADR-0009).
+export { ADVANCED_SECTIONS, ConnectorRegistry, ConnectorRegistryError, createConnectorRegistry } from './registry.ts';
+export type {
+  AdvancedSection,
+  ConnectorRegistryErrorCode,
+  TechnicalExpectation,
+  ConnectorFilter,
+  ConnectorDiscoveryEntry,
+  InspectSections,
+  InspectResult,
+} from './registry.ts';

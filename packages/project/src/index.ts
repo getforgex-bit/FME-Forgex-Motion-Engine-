@@ -109,3 +109,4 @@ export { serialize, deserialize } from './serialize.ts';
 export type { DeserializeResult } from './serialize.ts';
 export { framesToSeconds, secondsToFrames, rescaleFrames, framesToTimecode, timecodeToFrames } from './time.ts';
 export type { FrameRounding } from './time.ts';
+export { migrateToCurrent } from './migrate.ts';
