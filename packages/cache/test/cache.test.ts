@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { realpathSync } from 'node:fs';
-import { link, mkdir, mkdtemp, readFile, readdir, rename, rm, symlink, writeFile } from 'node:fs/promises';
+import { realpathSync, type PathLike } from 'node:fs';
+import fsPromises, { link, mkdir, mkdtemp, readFile, readdir, rename, rm, symlink, writeFile } from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { test, type TestContext } from 'node:test';
 import { DependencyGraph, DiskCache, dependencyHash } from '../src/index.ts';
 import type { JsonValue } from '../src/index.ts';
@@ -101,19 +102,26 @@ test('guarda los bytes, reemplaza entradas completas y deja el valor anterior si
 test('publica una entrada completa con escrituras concurrentes', async (context) => {
   const root = await temporaryRoot(context);
   const cache = new DiskCache({ allowedRoot: root });
-  const first = Buffer.alloc(512 * 1024, 11);
-  const second = Buffer.alloc(512 * 1024, 22);
-  const third = Buffer.alloc(512 * 1024, 33);
+  const first = Buffer.alloc(256 * 1024, 0);
+  const versions = Array.from({ length: 12 }, (_, index) => Buffer.alloc(256 * 1024, index + 1));
+  const validVersions = [first, ...versions];
   await cache.set(key, first);
 
-  const [, , observed] = await Promise.all([
-    cache.set(key, second),
-    cache.set(key, third),
-    cache.get(key),
+  const readers = Array.from({ length: 12 }, async () => {
+    for (let iteration = 0; iteration < 8; iteration++) {
+      const observed = await cache.get(key);
+      assert.ok(observed && validVersions.some((value) => value.equals(observed)));
+    }
+  });
+  const results = await Promise.allSettled([
+    ...versions.map((value) => cache.set(key, value)),
+    ...readers,
   ]);
-  assert.ok(observed && [first, second, third].some((value) => value.equals(observed)));
+  for (const result of results) {
+    if (result.status === 'rejected') throw result.reason;
+  }
   const final = await cache.get(key);
-  assert.ok(final && [second, third].some((value) => value.equals(final)));
+  assert.ok(final && versions.some((value) => value.equals(final)));
   assert.deepEqual(await readdir(root), [filename]);
 });
 
@@ -168,4 +176,108 @@ test('rechaza un enlace de directorio, una entrada enlazada y una raíz sustitui
   await symlink(outside, join(nested, filename), type);
   await assert.rejects(replacement.get(key), /sin enlaces/);
   await assert.rejects(replacement.set(key, Buffer.from('datos')), /sin enlaces/);
+});
+
+const windowsOnly = { skip: process.platform !== 'win32' && 'Reintentos específicos de Windows' };
+
+function fsError(code: string): NodeJS.ErrnoException {
+  return Object.assign(new Error('Fallo de sistema simulado: ' + code), { code });
+}
+
+test('reintenta EPERM, EBUSY y EACCES sin retirar la entrada anterior', windowsOnly, async (context) => {
+  const root = await temporaryRoot(context);
+  const cache = new DiskCache({ allowedRoot: root });
+  const original = Buffer.from('entrada anterior');
+  const replacement = Buffer.from('entrada nueva');
+  await cache.set(key, original);
+
+  const nativeRename = rename;
+  const pending = ['EPERM', 'EBUSY', 'EACCES'];
+  const renameMock = context.mock.method(fsPromises, 'rename', async (from: PathLike, to: PathLike) => {
+    const code = pending.shift();
+    if (code) {
+      assert.deepEqual(await readFile(to), original);
+      throw fsError(code);
+    }
+    await nativeRename(from, to);
+  });
+  syncBuiltinESMExports();
+  try {
+    await cache.set(key, replacement);
+    assert.equal(renameMock.mock.callCount(), 4);
+    assert.deepEqual(await cache.get(key), replacement);
+    assert.deepEqual(await readdir(root), [filename]);
+  } finally {
+    renameMock.mock.restore();
+    syncBuiltinESMExports();
+  }
+});
+
+test('conserva un fallo no reintentable y reintenta solo la limpieza del temporal', windowsOnly, async (context) => {
+  const root = await temporaryRoot(context);
+  const cache = new DiskCache({ allowedRoot: root });
+  const original = Buffer.from('entrada anterior');
+  await cache.set(key, original);
+
+  const primary = fsError('EINVAL');
+  const nativeUnlink = fsPromises.unlink;
+  const renameMock = context.mock.method(fsPromises, 'rename', async () => { throw primary; });
+  let unlinkFailures = 2;
+  const unlinkMock = context.mock.method(fsPromises, 'unlink', async (path: PathLike) => {
+    assert.match(basename(String(path)), /^\.cache-.*\.tmp$/);
+    if (unlinkFailures-- > 0) throw fsError('EBUSY');
+    await nativeUnlink(path);
+  });
+  syncBuiltinESMExports();
+  try {
+    await assert.rejects(cache.set(key, Buffer.from('otra entrada')), (error) => error === primary);
+    assert.equal(renameMock.mock.callCount(), 1);
+    assert.equal(unlinkMock.mock.callCount(), 3);
+    assert.deepEqual(await readdir(root), [filename]);
+    assert.deepEqual(await cache.get(key), original);
+  } finally {
+    renameMock.mock.restore();
+    unlinkMock.mock.restore();
+    syncBuiltinESMExports();
+  }
+});
+
+test('informa agotamiento de publicación y limpieza sin enmascarar la causa original', windowsOnly, async (context) => {
+  const root = await temporaryRoot(context);
+  const cache = new DiskCache({ allowedRoot: root });
+  const original = Buffer.from('entrada anterior');
+  await cache.set(key, original);
+
+  const renameCause = fsError('EPERM');
+  const unlinkCause = fsError('EACCES');
+  const renameMock = context.mock.method(fsPromises, 'rename', async () => { throw renameCause; });
+  const unlinkMock = context.mock.method(fsPromises, 'unlink', async (path: PathLike) => {
+    assert.match(basename(String(path)), /^\.cache-.*\.tmp$/);
+    throw unlinkCause;
+  });
+  syncBuiltinESMExports();
+  try {
+    await assert.rejects(cache.set(key, Buffer.from('otra entrada')), (error) => {
+      assert.ok(error instanceof AggregateError);
+      assert.equal(error.errors.length, 2);
+      const [publication, cleanup] = error.errors;
+      assert.equal(error.cause, publication);
+      assert.equal(publication.code, 'CACHE_RETRY_EXHAUSTED');
+      assert.equal(publication.operation, 'rename');
+      assert.equal(publication.attempts, renameMock.mock.callCount());
+      assert.ok(publication.attempts > 1);
+      assert.equal(publication.cause, renameCause);
+      assert.equal(cleanup.code, 'CACHE_RETRY_EXHAUSTED');
+      assert.equal(cleanup.operation, 'unlink');
+      assert.equal(cleanup.attempts, unlinkMock.mock.callCount());
+      assert.ok(cleanup.attempts > 1);
+      assert.equal(cleanup.cause, unlinkCause);
+      return true;
+    });
+    assert.deepEqual(await cache.get(key), original);
+  } finally {
+    renameMock.mock.restore();
+    unlinkMock.mock.restore();
+    syncBuiltinESMExports();
+  }
 });

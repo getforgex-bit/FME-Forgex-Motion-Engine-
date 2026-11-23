@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { constants, lstatSync, realpathSync } from 'node:fs';
 import { open, rename, unlink } from 'node:fs/promises';
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 
 export type DiskCacheOptions = {
   /** Directorio preexistente y administrado por quien llama. */
@@ -54,8 +55,55 @@ function verifyDirectory(directory: Directory): void {
   }
 }
 
+function errorCode(error: unknown): unknown {
+  return typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+}
+
 function isMissing(error: unknown): boolean {
-  return (error as NodeJS.ErrnoException).code === 'ENOENT';
+  return errorCode(error) === 'ENOENT';
+}
+
+type FileOperation = 'rename' | 'unlink';
+const windowsRetryBudgetMs = 1_000;
+
+class DiskCacheRetryError extends Error {
+  readonly code = 'CACHE_RETRY_EXHAUSTED';
+  readonly operation: FileOperation;
+  readonly attempts: number;
+
+  constructor(operation: FileOperation, attempts: number, cause: unknown) {
+    super('Se agotaron los reintentos de caché de ' + operation + ' en Windows.', { cause });
+    this.name = 'DiskCacheRetryError';
+    this.operation = operation;
+    this.attempts = attempts;
+  }
+}
+
+async function retryFileOperation(
+  operation: FileOperation,
+  verify: () => void,
+  perform: () => Promise<void>,
+): Promise<void> {
+  const deadline = performance.now() + windowsRetryBudgetMs;
+  let backoff = 10;
+  let attempts = 0;
+  while (true) {
+    // Las comprobaciones de seguridad se repiten y sus fallos se propagan sin reintento.
+    verify();
+    attempts++;
+    try {
+      await perform();
+      return;
+    } catch (error) {
+      const code = errorCode(error);
+      if (!windows || (code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES')) throw error;
+
+      const remaining = deadline - performance.now();
+      if (remaining <= 0) throw new DiskCacheRetryError(operation, attempts, error);
+      await delay(Math.min(backoff, remaining));
+      backoff = Math.min(backoff * 2, 250);
+    }
+  }
 }
 
 function checkEntry(path: string): boolean {
@@ -140,26 +188,37 @@ export class DiskCache {
     checkEntry(target);
     const temporary = join(this.#directory.path, '.cache-' + randomUUID() + '.tmp');
     const file = await open(temporary, 'wx', 0o600);
-    let published = false;
     try {
       try {
         await file.writeFile(bytes);
         await file.sync();
-      } finally {
-        await file.close();
+      } catch (error) {
+        try {
+          await file.close();
+        } catch (closeError) {
+          throw new AggregateError([error, closeError], 'Fallaron la escritura y el cierre de la entrada temporal.', { cause: error });
+        }
+        throw error;
       }
+      await file.close();
 
-      this.#verifyDirectories();
-      checkEntry(target);
-      await rename(temporary, target);
-      published = true;
-    } finally {
-      if (!published) {
+      await retryFileOperation('rename', () => {
         this.#verifyDirectories();
-        await unlink(temporary).catch((error: unknown) => {
-          if (!isMissing(error)) throw error;
-        });
+        checkEntry(temporary);
+        checkEntry(target);
+      }, () => rename(temporary, target));
+    } catch (error) {
+      try {
+        await retryFileOperation('unlink', () => {
+          this.#verifyDirectories();
+          checkEntry(temporary);
+        }, () => unlink(temporary).catch((unlinkError: unknown) => {
+          if (!isMissing(unlinkError)) throw unlinkError;
+        }));
+      } catch (cleanupError) {
+        throw new AggregateError([error, cleanupError], 'Fallaron la publicación y la limpieza de la entrada temporal.', { cause: error });
       }
+      throw error;
     }
   }
 }
