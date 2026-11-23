@@ -41,13 +41,14 @@ type Layer = {
 type Scene = { id: string; durationFrames: number; layers: Layer[] };
 type Sequence = { id: string; scenes: Scene[] };
 export type Project = {
-  schemaVersion: 2; // v2: Layer.text (ADR-0012)
+  schemaVersion: 3; // v2: Layer.text (ADR-0012) · v3: artifacts (ADR-0015)
   id: string;
   name: string;
   fps: { num: number; den: number };
   width: number; height: number; seed: number;
   assets: Asset[];
   sequences: Sequence[];
+  artifacts?: RenderArtifact[]; // v3; cada layer.externalProject.renderArtifactId debe existir aquí (ADR-0015)
 };
 ```
 

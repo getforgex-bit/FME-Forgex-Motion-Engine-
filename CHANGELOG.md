@@ -6,6 +6,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 ## [Unreleased]
 
 ### Added
+- `schemaVersion` 3: `Project.artifacts` con validación referencial (FDN-042b, ADR-0015). FreeCut `edit.compose` con overlays alpha (FDN-042a). Gradientes en Blender (FDN-061b).
 - `@fme/adapter-freecut` (FDN-041), `@fme/render-plan` (FDN-071), `@fme/recovery` (FDN-072) y `@fme/cli` (FDN-081).
 - Gradientes → operaciones de Revideo (FDN-061, **criterio #6**). `DiskCache` robusta en Windows (FDN-070b).
 - Modo ausencia del usuario (ADR-0014): `coord.mjs usuario --presente`, escalones a 2, 4 y 6 h, cola de decisiones (`pendiente`, `pendientes`, `decidir`), «en pausa» en lugar de «sospechoso», y `caida`/`relevar` bloqueados sin presencia.

@@ -157,3 +157,13 @@ Graphify `god-nodes`: `planRoute` (18), `deserialize` (18), `createFmeServer` (1
 
 Con el motor Revideo real sobre `develop` (junction temporal, eliminada después): integración del adaptador **9/9 en paralelo** (incluidos los gradientes) y CLI **9/9** (`job run` real). **Criterio #6 ☑** (Revideo). La F6 sigue abierta hasta tener Blender (FDN-061b) y FDN-062.
 Tanda 7 abierta: Fase 4, con 042a (AG), 042b (A2) y 061b (CX). 042c (A1) queda para después.
+
+
+## 2026-11-23 · Integración 7 (A0)
+| Rama | Commit | Verificación de A0 | Resultado |
+|---|---|---|---|
+| FDN-042b artefactos / v3 | 8aaa304 | diff de `index.ts` = solicitud de A2; ediciones fuera de ficha aceptadas (`apps/mcp` usa `SCHEMA_VERSION`); 184 pass | fusionada |
+| FDN-061b gradientes en Blender | 81bad19 | fusionada sobre la v3 sin conflictos; lockfile; 185 pass; `node --test packages/adapters/blender/test/*.test.ts` con Blender real → 7/7, 31 s | fusionada |
+| FDN-042a compose en FreeCut | 58c752b | 192 pass; `node --test packages/adapters/freecut/test/*.test.ts` con FreeCut real → 14/14, 18 s | fusionada |
+
+Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (A1, criterio #3), 080b (A2), 074a (AG) y 073a (CX).

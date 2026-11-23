@@ -38,6 +38,9 @@
 | FDN-071 | CX-C1+C2 Sol | 06:54 → 16:48 UTC | ~10 h (incluida la pausa sin cuota) | 12/12 ✔ | 1 | — | 0 | 0 | 6 / 0 | no medido | Primera tarea que sobrevivió a la falta de cuota |
 | FDN-061 | CL-A1 Sonnet 5.5 | 16:49 → 16:55 UTC | ~6 min | motor real: métrica monótona (A0: 9/9) | 0 | — | 0 | 0 | — | no medido | Cambios fuera de ficha, aditivos y declarados |
 | FDN-081 | CL-A2 Sonnet 5.5 | ~16:47 → 16:52 UTC | ~5 min | 8 + 1 skip (A0 con motor: 9/9) | 0 | — | 0 | 0 | — | no medido | — |
+| FDN-042b | CL-A2 Sonnet 5.5 | ~17:25 → 17:30 UTC | ~5 min | 184 pass ✔ | 0 | — | 0 | 0 | 2 (impact) / 0 | no medido | Arregló consumidores ajenos para mantener el verde y los declaró |
+| FDN-061b | CX-C0+C1+C2 Sol | 17:25 → 17:33 UTC | ~8 min | Blender real (A0: 7/7) | 0 | — | 0 | 0 | sí / 1 | no medido | Primera tarea con los tres Sol a la vez |
+| FDN-042a | AG-B0+B1+B2 | 17:31 → 17:45 UTC | ~14 min | FreeCut real 14/14 (A0 lo reprodujo) | 0 | — | 0 | 0 | 3 / 1 | no medido | Hallazgo empírico valioso: alpha por formato en FreeCut |
 | FDN-004 | CL-A3 Haiku 5.5 | 05:51 → 05:56 UTC | ~5 min | n/a (documento) | 0 | — | 0 | 0 | 0 / 0 | no medido | Calidad alta; contradijo con fuentes la hipótesis «Sonnet ≥ Opus en terminal» |
 
 ## Tiempo de coordinación (A0)

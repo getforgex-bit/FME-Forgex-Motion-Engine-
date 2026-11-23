@@ -77,9 +77,9 @@ Orden de construcción (spec §19.1): **verificar software → archivo universal
 - **Cierre:** selección justificada y verificable (criterios #4 y #5).
 
 ### Fase 6: Dirección artística
-- [ ] Perfiles de estilo editables y reglas de animación como procedimientos.
-- [ ] Las 5 técnicas y los 2 gradientes, aplicados y animados con curvas.
-- [ ] Mapeo de gradientes a operaciones concretas por backend.
+- [x] Perfiles de estilo editables y reglas de animación como procedimientos. → `@fme/art-direction` (FDN-060).
+- [ ] Las 5 técnicas y los 2 gradientes, aplicados y animados con curvas. → **parcial:** 2 gradientes en Revideo y Blender (FDN-061 y FDN-061b); faltan `2.5d`, `3d-with-2d` y `guide3DLayerId` (FDN-063).
+- [x] Mapeo de gradientes a operaciones concretas por backend. → `art-direction/src/backends` (Revideo: contorno y sombra; Blender: contorno y luminancia).
 - **Cierre:** cambios reales y reproducibles en la escena (criterio #6).
 
 ### Fase 7: Calidad

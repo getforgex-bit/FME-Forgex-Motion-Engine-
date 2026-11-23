@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-23 (integración 6; criterio #6 ☑)._
+> _Última consolidación: 2026-11-23 (integración 7)._
 
 ## Resumen
 
@@ -59,10 +59,14 @@
 | FDN-080 | Servidor MCP mínimo (`apps/mcp`) | CL-A2 | 021, 030, 050 | DONE (0348125) |
 | FDN-081 | CLI (`apps/cli`) | CL-A2 | 080 | DONE (f87d164; A0: `job run` real 9/9) |
 | FDN-090 | Protocolo de relevo entre equipos (equipo sin cuota → otro lo releva; reincorporación con nota de lo avanzado) + ADR-0013 | CL-A0 | — | DONE (ADR-0013 aceptada; `coord.mjs equipos/caida/relevar/reincorporar`) |
-| FDN-042a | FreeCut: componer pistas y overlays (vídeo de fondo + MOV ProRes alpha + secuencia PNG RGBA) y exportar | AG | 041 | READY |
-| FDN-042b | `Project` guarda los `RenderArtifact` y los enlaza (ADR-0015 + `schemaVersion` 3 + migración) | CL-A2 | 028 | READY |
-| FDN-042c | Pipeline de la ruta híbrida: router → Revideo + Blender → FreeCut → vídeo final con fuentes enlazadas | CL-A1 | 042a, 042b | BACKLOG |
-| FDN-061b | Gradientes en Blender (mapeo propuesto en `art-direction/backends/blender.ts`) con métrica de píxeles | CX | 040, 061 | READY |
+| FDN-042a | FreeCut: componer pistas y overlays (vídeo de fondo + MOV ProRes alpha + secuencia PNG RGBA) y exportar | AG | 041 | DONE (58c752b; A0: FreeCut real 14/14) |
+| FDN-042b | `Project` guarda los `RenderArtifact` y los enlaza (ADR-0015 + `schemaVersion` 3 + migración) | CL-A2 | 028 | DONE (8aaa304; schemaVersion 3) |
+| FDN-042c | Pipeline de la ruta híbrida: router → Revideo + Blender → FreeCut → vídeo final con fuentes enlazadas | CL-A1 | 042a, 042b | READY |
+| FDN-061b | Gradientes en Blender (mapeo propuesto en `art-direction/backends/blender.ts`) con métrica de píxeles | CX | 040, 061 | DONE (81bad19; A0: Blender real 7/7) |
+| FDN-063 | Técnicas pendientes en los backends: `2.5d`, `3d-with-2d` y `guide3DLayerId` (2D guiado por cámara 3D) | por asignar | 061, 061b | BACKLOG |
+| FDN-073a | Pruebas técnicas independientes de la ruta: seguridad (rutas, comandos, permisos) y regresión de salidas por hash de contenido | CX | 040, 041, 032 | READY |
+| FDN-074a | Audio en `edit.compose`: pista de audio, sample rate explícito y sincronía A/V medida | AG | 042a | READY |
+| FDN-080b | MCP y CLI: `preview.render` y `project.export` reales (render-plan + adaptadores), sin simular | CL-A2 | 071, 080, 081 | READY |
 | FDN-091 | Modo ausencia del usuario (ADR-0014) | CL-A0 | 090 | DONE |
 | FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | IN_PROGRESS |
 
@@ -126,6 +130,45 @@ Cada ficha es el contrato de la tarea: si algo no está aquí, pregúntalo antes
 - **Aceptación:** tests de alta y baja, duplicados, filtros, `unknown` y secciones; `npm run typecheck` + `npm test` en verde.
 
 ---
+
+## Fichas de la Tanda 8 (READY desde el 2026-11-23, integración 7)
+
+### FDN-042c · Pipeline de la prueba híbrida (CL-A1) → criterio #3
+- **Rutas:** `packages/pipeline/**` (workspace `@fme/pipeline`; A0 añade la referencia y el lockfile).
+- **Hacer:** `runHybrid(projectPath, outDir)`:
+  1. abre el proyecto con `deserialize` (v3);
+  2. planifica cada capa con `planWorkflow` de `@fme/router` sobre un registro con los **tres adaptadores reales**;
+  3. ejecuta: título y 2D → Revideo (MOV ProRes alpha); capa 3D → Blender (PNG RGBA); como FreeCut no acepta `image/png-sequence` (hallazgo de FDN-042a), la secuencia se **precodifica a ProRes 4444** con FFmpeg mediante `runIsolated`, y queda registrado como paso propio con su procedencia; fondo y composición final → FreeCut `edit.compose`;
+  4. registra todo en `project.artifacts` (v3) y enlaza `renderArtifactId` en cada capa;
+  5. guarda el `project.fme.json` resultante junto al MP4.
+  - Los assets de la fixture son URIs de ejemplo: el test genera un fondo real con FFmpeg (`testsrc2` + audio `sine`) y usa el primitivo de sustitución de Blender si falta el modelo, avisando en los diagnósticos.
+- **Aceptación (criterio #3):**
+  - MP4 final de 300 fotogramas a 30 FPS (`probe-media`);
+  - una métrica de píxeles confirma cada capa **en su rango** (título 180–299, 3D 105–254, 2D 30–239);
+  - el proyecto resultante pasa `parseProject` y cada `renderArtifactId` resuelve;
+  - los tres adaptadores aparecen en la procedencia;
+  - skip con motivo si falta algún motor;
+  - A0 lo reproduce.
+
+### FDN-073a · Pruebas de seguridad y regresión (CX)
+- **Rutas:** `tests/seguridad/**` y `tests/regresion/**` (nuevas carpetas en la raíz; añade el glob al script de test en el REVIEW como «pendiente de A0», sin editar `package.json`).
+- **Hacer:**
+  - **Seguridad:** cada adaptador y `runIsolated` rechazan rutas fuera de `workDir` o de la raíz, `..`, junctions y argumentos con metacaracteres de shell; MCP y CLI rechazan proyectos fuera de la raíz configurada; ningún adaptador ejecuta código recibido en el `JobRequest`.
+  - **Regresión:** `contentSha256` de referencia por adaptador para un job fijo (`expected/*.json`), con un procedimiento documentado para actualizarlo solo tras una revisión de A0.
+- **Aceptación:** tests en verde y skips con motivo sin motor; un cambio deliberado de un parámetro rompe la regresión (demostrado en el informe).
+
+### FDN-074a · Audio en la composición (AG)
+- **Rutas:** `packages/adapters/freecut/**` y `runtime/engines/freecut/**`.
+- **Hacer:** `edit.compose` admite pistas de audio (del vídeo de fondo y archivos WAV), con sample rate explícito (48 kHz), y mide la sincronía A/V en el MP4 resultante (inicio de audio frente a vídeo, con `ffprobe`, y un pulso sincronizado con un destello de vídeo).
+- **Aceptación:** desfase A/V ≤ 1 fotograma (33 ms a 30 FPS) medido y documentado; skip con motivo sin FreeCut.
+
+### FDN-080b · `preview.render` y `project.export` reales (CL-A2)
+- **Rutas:** `apps/mcp/**` y `apps/cli/**`.
+- **Hacer:** sustituir los «no implementado»:
+  - `preview.render`: `@fme/render-plan` (perfil de preview para 4 GB) + adaptadores, para un rango de fotogramas o una capa;
+  - `project.export`: si existe `@fme/pipeline` (FDN-042c), lo usa; si no, sigue devolviendo «no implementado».
+  - Reutiliza la lógica entre MCP y CLI (resuelve la duplicación que señalaste en FDN-081).
+- **Aceptación:** `preview.render` de la capa de título produce un MP4 a resolución de preview (verificado con `probe-media`, real con el motor) y tests sin motor con skip.
 
 ## Fichas de la Tanda 7 (READY desde el 2026-11-23, integración 6): Fase 4, integración real
 

@@ -23,7 +23,7 @@ A **30 FPS**, la primera prueba tiene **300 fotogramas** (0 a 299). La secuencia
 | 3 | Los tres adaptadores ejecutan trabajos **reales**, no simulados | 4 | ☐ | |
 | 4 | El router selecciona una ruta compatible consultando primero la tarjeta simple | 5 | ☐ | |
 | 5 | Solo consulta el detalle avanzado cuando una restricción crítica lo requiere | 5 | ☐ | |
-| 6 | Los gradientes cambian una propiedad visual comprobable a lo largo del tiempo | 6 | ☑ | FDN-061 (Revideo): `node --test packages/adapters/revideo/test/*.integration.test.ts` con el motor real sobre `develop` → 9/9 (A0, 2026-11-23). Con `expression` 0→1, los píxeles de contorno en los fotogramas 0/60/90/119 son 0, 11687, 21018 y 28564; con `integration` 1→0, los de sombra son 45705, 20241, 6047 y 1649. En Blender sigue pendiente (FDN-061b) |
+| 6 | Los gradientes cambian una propiedad visual comprobable a lo largo del tiempo | 6 | ☑ | FDN-061 (Revideo): `node --test packages/adapters/revideo/test/*.integration.test.ts` con el motor real sobre `develop` → 9/9 (A0, 2026-11-23). Con `expression` 0→1, los píxeles de contorno en los fotogramas 0/60/90/119 son 0, 11687, 21018 y 28564; con `integration` 1→0, los de sombra son 45705, 20241, 6047 y 1649. Blender (FDN-061b): índice de contorno 0, 1931, 17785 y 76056 y luminancia central 112, 115, 123 y 133 en cuatro fotogramas; A0: `node --test packages/adapters/blender/test/*.test.ts` → 7/7 con Blender real |
 | 7 | Se exporta correctamente un vídeo híbrido de 10 s con audio y sincronía adecuados (cuando aplique) | 7 | ☐ | |
 | 8 | Se pueden reabrir las fuentes externas y cambiar una parte sin rehacer todos los activos | 7 | ☐ | |
 
