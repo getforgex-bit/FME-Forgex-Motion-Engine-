@@ -56,9 +56,27 @@ test('capa de título de la fixture híbrida: 120 fotogramas, opacidad smooth 0�
   assert.deepEqual([job.width, job.height, job.fps, job.kind, job.text], [1920, 1080, 30, 'text', 'Título']);
 });
 
-test('texto por defecto: el nombre del proyecto', () => {
+test('el título sale de layer.text (contenido, tipografía, tamaño y color) y requirements lo sobrescribe', () => {
   const project = load();
-  assert.equal(buildEngineJob(project, findLayer(project, 'capa-titulo')).text, project.name);
+  const layer = findLayer(project, 'capa-titulo');
+  assert.ok(layer.text, 'la fixture v2 trae el texto real');
+  const job = buildEngineJob(project, layer);
+  assert.equal(job.text, layer.text.content);
+  assert.equal(job.fontFamily, layer.text.fontFamily);
+  assert.equal(job.fontSize, layer.text.fontSize);
+  assert.equal(job.fill, layer.text.color);
+  const over = buildEngineJob(project, layer, { text: 'Otro', fontSize: 40, fill: '#ff0000' });
+  assert.deepEqual([over.text, over.fontSize, over.fill], ['Otro', 40, '#ff0000']);
+  assert.equal(over.fontFamily, layer.text.fontFamily);
+});
+
+test('sin layer.text ni sobrescritura: el nombre del proyecto (compatibilidad)', () => {
+  const project = load();
+  const { text: _omit, ...bare } = findLayer(project, 'capa-titulo');
+  void _omit;
+  const job = buildEngineJob(project, bare as Layer);
+  assert.equal(job.text, project.name);
+  assert.equal(job.fontFamily, undefined);
 });
 
 test('sampleTracks respeta x, y, scale y rotation', () => {

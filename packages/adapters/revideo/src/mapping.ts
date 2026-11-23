@@ -21,6 +21,7 @@ export type EngineJob = {
   text?: string;
   svg?: string;
   fontSize?: number;
+  fontFamily?: string;
   fill?: string;
   tracks: Tracks;
 };
@@ -71,6 +72,7 @@ export function findLayer(project: Project, layerId: string): Layer {
   throw new MappingError('layer-not-found', `No existe la capa «${layerId}» en el proyecto`);
 }
 
+/** `text`, `fontSize` y `fill` son sobrescrituras explícitas (requirements); si faltan se usa `layer.text` (ADR-0012). */
 export type MapOptions = { text?: string; svgMarkup?: string; fontSize?: number; fill?: string };
 
 /** Construye el job del motor. `svgMarkup` lo lee el adaptador del asset (aquí no se toca el disco). */
@@ -89,9 +91,16 @@ export function buildEngineJob(project: Project, layer: Layer, options: MapOptio
     kind: isText ? 'text' : 'svg',
     tracks: sampleTracks(layer),
   };
-  if (isText) job.text = options.text ?? project.name;
-  else job.svg = options.svgMarkup!;
-  if (options.fontSize !== undefined) job.fontSize = options.fontSize;
-  if (options.fill !== undefined) job.fill = options.fill;
+  if (isText) {
+    // Precedencia: sobrescritura explícita > layer.text (ADR-0012) > nombre del proyecto (solo capas v1 sin texto).
+    job.text = options.text ?? layer.text?.content ?? project.name;
+    const fontSize = options.fontSize ?? layer.text?.fontSize;
+    const fill = options.fill ?? layer.text?.color;
+    if (fontSize !== undefined) job.fontSize = fontSize;
+    if (fill !== undefined) job.fill = fill;
+    if (layer.text?.fontFamily !== undefined) job.fontFamily = layer.text.fontFamily;
+  } else {
+    job.svg = options.svgMarkup!;
+  }
   return job;
 }

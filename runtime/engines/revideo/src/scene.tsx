@@ -10,6 +10,7 @@ type Job = {
   text?: string;
   svg?: string;
   fontSize?: number;
+  fontFamily?: string;
   fill?: string;
   frames: number;
   tracks: {x: number[]; y: number[]; opacity: number[]; scale: number[]; rotation: number[]};
@@ -26,7 +27,7 @@ export default makeScene2D('fme-capa', function* (view) {
       {job.kind === 'svg' ? (
         <SVG svg={job.svg ?? ''} />
       ) : (
-        <Txt text={job.text ?? ''} fill={job.fill ?? '#ffffff'} fontSize={job.fontSize ?? 96} />
+        <Txt text={job.text ?? ''} fill={job.fill ?? '#ffffff'} fontSize={job.fontSize ?? 96} fontFamily={job.fontFamily ? `${job.fontFamily}, sans-serif` : 'sans-serif'} />
       )}
     </Node>,
   );

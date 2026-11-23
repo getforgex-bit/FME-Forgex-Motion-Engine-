@@ -22,6 +22,8 @@ export type RevideoAdapterOptions = {
   ffprobePath?: string;
   /** Caché de Chrome de Puppeteer; por defecto `FME_PUPPETEER_CACHE_DIR` o la de Puppeteer. */
   puppeteerCacheDir?: string;
+  /** Carpeta donde `probe()` deja los logs de runIsolated; por defecto `<temporal del sistema>/fme-probe-revideo`. */
+  probeWorkDir?: string;
   /** Ruta de node; por defecto el que ejecuta el adaptador. */
   nodePath?: string;
 };
@@ -107,7 +109,7 @@ export class RevideoAdapter implements ConnectorAdapter {
   async probe(): Promise<ProbeResult> {
     const tools = this.resolveTools();
     if (tools.diagnostics.length > 0) return { available: false, diagnostics: tools.diagnostics };
-    const tmp = join(process.env.TEMP ?? process.env.TMPDIR ?? '/tmp', 'fme-probe-revideo');
+    const tmp = this.opts.probeWorkDir ?? join(process.env.TEMP ?? process.env.TMPDIR ?? '/tmp', 'fme-probe-revideo');
     mkdirSync(tmp, { recursive: true });
     const r = await runIsolated({
       cmd: tools.node, args: [{ path: tools.cli }, '--version'], workDir: realpathSync(tmp),
