@@ -343,68 +343,73 @@ export async function executeWithRecovery(
       }
 
       if (decision.action === 'subdivide' && decision.segmentCount !== undefined) {
-        policyState.subdivisionsUsed += 1;
-        policyState.currentSegmentCount = decision.segmentCount;
-        const subMitigation: AttemptMitigation = decision.mitigations?.[0] ?? {
-          type: 'subdivide-segments',
-          detail: `Subdivisión en ${decision.segmentCount} segmentos.`,
-        };
-        appliedMitigations.push(subMitigation);
+        let subDecision = decision;
+        let subErrorClass = classification;
 
-        const subOutcome = await runSubdividedSegments(
-          primaryAdapter,
-          currentJob,
-          primaryId,
-          decision.segmentCount,
-          attempts,
-          createContext,
-          subMitigation,
-        );
-        if (subOutcome.lastResult !== undefined) {
-          lastResult = subOutcome.lastResult;
-        }
-
-        if (subOutcome.ok && subOutcome.mergedResult !== undefined) {
-          if (options.onCacheStore !== undefined) {
-            await options.onCacheStore({
-              connectorId: primaryId,
-              job: currentJob,
-              result: subOutcome.mergedResult,
-              degraded,
-            });
-          }
-          return {
-            outcome: 'ok',
-            finalResult: subOutcome.mergedResult,
-            connectorId: primaryId,
-            degraded,
-            attempts,
-            appliedMitigations,
-            constraintsReported,
+        while (
+          subDecision.action === 'subdivide' &&
+          subDecision.segmentCount !== undefined
+        ) {
+          policyState.subdivisionsUsed += 1;
+          policyState.currentSegmentCount = subDecision.segmentCount;
+          const subMitigation: AttemptMitigation = subDecision.mitigations?.[0] ?? {
+            type: 'subdivide-segments',
+            detail: `Subdivisión en ${subDecision.segmentCount} segmentos.`,
           };
+          appliedMitigations.push(subMitigation);
+
+          const subOutcome = await runSubdividedSegments(
+            primaryAdapter,
+            currentJob,
+            primaryId,
+            subDecision.segmentCount,
+            attempts,
+            createContext,
+            subMitigation,
+          );
+          if (subOutcome.lastResult !== undefined) {
+            lastResult = subOutcome.lastResult;
+          }
+
+          if (subOutcome.ok && subOutcome.mergedResult !== undefined) {
+            if (options.onCacheStore !== undefined) {
+              await options.onCacheStore({
+                connectorId: primaryId,
+                job: currentJob,
+                result: subOutcome.mergedResult,
+                degraded,
+              });
+            }
+            return {
+              outcome: 'ok',
+              finalResult: subOutcome.mergedResult,
+              connectorId: primaryId,
+              degraded,
+              attempts,
+              appliedMitigations,
+              constraintsReported,
+            };
+          }
+
+          subErrorClass = subOutcome.classification ?? subErrorClass;
+          subDecision = decideRecoveryAction(
+            subErrorClass,
+            currentJob,
+            policyState,
+            options,
+          );
+          lastReason = subDecision.reason;
         }
 
-        const subClass = subOutcome.classification ?? classification;
-        const postSubDecision = decideRecoveryAction(
-          subClass,
-          currentJob,
-          policyState,
-          options,
-        );
-        lastReason = postSubDecision.reason;
-        if (postSubDecision.action === 'subdivide' && postSubDecision.segmentCount !== undefined) {
-          // Sigue al siguiente nivel de subdivisión si el rango lo permite
-          continue;
-        }
-        if (postSubDecision.action === 'fallback') {
+        if (subDecision.action === 'fallback') {
           tryFallbacks = true;
           break;
         }
-        if (postSubDecision.constraintMessage !== undefined) {
-          constraintsReported.push(postSubDecision.constraintMessage);
+        if (subDecision.constraintMessage !== undefined) {
+          constraintsReported.push(subDecision.constraintMessage);
         }
-        if (postSubDecision.suggestedActions !== undefined) {
-          suggestedActions = postSubDecision.suggestedActions;
+        if (subDecision.suggestedActions !== undefined) {
+          suggestedActions = subDecision.suggestedActions;
         }
         break;
       }

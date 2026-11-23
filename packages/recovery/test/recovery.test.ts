@@ -551,4 +551,62 @@ describe('@fme/recovery (FDN-072)', () => {
     assert.equal(escalated.outcome, 'escalated');
     assert.equal(escalated.attempts.length, 0);
   });
+
+  test('escala subdivisión 2 -> 4 segmentos directamente sin re-ejecutar el rango completo', async () => {
+    const registry = createConnectorRegistry();
+    registry.register(makeCardSimple('adapter.3d'), makeCardAdvanced('adapter.3d'));
+    const plan = planRoute(registry, {
+      operation: 'render.3d',
+      requiredCapabilities: ['render.3d'],
+    });
+
+    const seenRanges: string[] = [];
+    const adapter3d = makeAdapter('adapter.3d', async (job, ctx) => {
+      const range = String(job.requirements.frameRange);
+      seenRanges.push(range);
+      // Falla el rango completo (80 frames) y también en 2 segmentos (40 frames)
+      if (range === '0-79' || range === '0-39' || range === '40-79') {
+        return makeFailedResult(
+          ctx,
+          'out-of-vram',
+          `VRAM insuficiente para rango ${range}`,
+        );
+      }
+      return makeOkResult('adapter.3d', ctx, job);
+    });
+
+    const outcome = await executeWithRecovery(
+      plan,
+      { 'adapter.3d': adapter3d },
+      {
+        projectId: 'proj-escalate-subdiv',
+        operation: 'render.3d',
+        inputs: [{ uri: 'scene.json', type: 'fme/scene+json' }],
+        requirements: { frameRange: '0-79' },
+      },
+      createContextFactory(),
+      {
+        purpose: 'final',
+        allowSubdivision: true,
+        maxVramDegradations: 2,
+        sleep: instantSleep,
+      },
+    );
+
+    assert.equal(outcome.outcome, 'ok');
+    assert.equal(outcome.degraded, false);
+    // 1 completo ('0-79'), 1 segmento de 2 ('0-39' falla y corta), y directo a 4 segmentos sin repetir '0-79'
+    assert.deepEqual(seenRanges, [
+      '0-79',
+      '0-39',
+      '0-19',
+      '20-39',
+      '40-59',
+      '60-79',
+    ]);
+    assert.equal(seenRanges.filter((r) => r === '0-79').length, 1);
+    assert.equal(outcome.finalResult.outputs.length, 4);
+    assert.equal(outcome.finalResult.provenance.length, 4);
+    assert.deepEqual(checkAdapterResult(outcome.finalResult, adapter3d), []);
+  });
 });
