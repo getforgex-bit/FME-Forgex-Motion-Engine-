@@ -16,7 +16,7 @@ Primera ejecución: `npm ci` (~2 min) y descarga de Chrome (~1 min). La carpeta 
 | Paquete | Versión | Licencia |
 |---|---|---|
 | @revideo/core, 2d, renderer, vite-plugin, ffmpeg, ui | 0.11.0 (exacta) | MIT |
-| vite | 8.1.2 | MIT |
+| vite | 8.3.8 (FDN-016; antes 8.1.2) | MIT |
 | typescript | 7.0.2 | Apache-2.0 |
 | puppeteer (transitiva de renderer) | 25.18.1 | Apache-2.0 |
 | Chrome for Testing (lo baja `puppeteer browsers install chrome`) | 157.0.8103.78 | binario de Google |
@@ -55,12 +55,12 @@ El MP4 dio el mismo hash en 3 ejecuciones (incluida una con `node_modules` borra
 5. El MP4 lleva una pista de audio AAC silenciosa añadida automáticamente aunque la escena no tenga audio.
 6. **FPS y timebase:** solo se verificó 30 FPS entero (`r_frame_rate=30/1`; timebase del MP4 `1/15360`). NTSC fraccionario (30000/1001) y FPS variable: **no probados** (`fps` del proyecto es un número, no un racional → posible fricción con el `Fps {num, den}` de `@fme/project`).
 7. **Resolución verificada:** solo 1280×720.
-8. **Licencia del binario ffmpeg:** el paquete `@ffmpeg-installer/win32-x64` declara **GPLv3** y es un ffmpeg de 2018. Si FME redistribuye un instalador con Revideo, esto requiere revisión (candidato a ADR; alternativa: apuntar `ffmpeg` al del sistema mediante `FfmpegSettings`, no probado). Registrar en `docs/licencias-seguridad.md` (lo hace A0).
-9. **Seguridad:** `npm audit` marca 1 vulnerabilidad *high* en `vite 8.0.0–8.1.5` (servidor de desarrollo: `launch-editor`, middleware, `server.fs.allow`). El renderer levanta un servidor Vite local por render (puerto base 9000). Mitigación probable: subir a vite ≥ 8.3.8 y reprobar; **no hecho**. Los scripts de instalación no se ejecutaron (npm 11 los bloquea); el `postinstall` de `@revideo/telemetry` (crea un id en `~/.revideo`) quedó sin correr y se exporta `DISABLE_TELEMETRY=true`; si la telemetría se desactiva realmente es POR VALIDAR (no se inspeccionó el tráfico).
+8. **Licencia del binario ffmpeg:** el paquete `@ffmpeg-installer/win32-x64` declara **GPLv3** y es un ffmpeg de 2018. **FDN-016:** `render.mjs` ahora usa el FFmpeg/ffprobe del sistema (9.0.2, también `--enable-gpl --enable-version3`); ver [ADR-0010](../../../docs/decisiones/0010-ffmpeg-del-sistema-para-revideo.md). Requiere `ffmpeg-compat.mjs` (fluent-ffmpeg no reconoce `lavfi` con FFmpeg >= 7). Los hashes de abajo son de FDN-010 (ffmpeg 2018); con el ffmpeg del sistema: MP4 `9c7690cd1240dadbc58942127f506b811ab870a996f4d00d68663e9c3984cce0`, MOV `0e0e1affc68c6507a4605892f6380d0c47751de448e07f357b1446ce16a8d8a4`.
+9. **Seguridad:** el aviso *high* de `vite 8.1.2` se resolvio en FDN-016 con `vite 8.3.8` (`npm audit` -> 0 vulnerabilidades; render verde). El renderer sigue levantando un servidor Vite local por render (puerto base 9000). Los scripts de instalacion no se ejecutaron (npm 11 los bloquea); el `postinstall` de `@revideo/telemetry` quedo sin correr y se exporta `DISABLE_TELEMETRY=true`; que la telemetria se desactive realmente es POR VALIDAR.
 10. **Aislamiento:** el render escribe en `os.tmpdir()` (`revideo-<nombre>-<id>`) y abre un puerto local; el adaptador debe fijar `outDir`, timeouts y limpiar el temporal.
 
 ## Tarjetas
 `card.simple.json` y `card.advanced.json` (valores `yes/no/unknown` basados solo en lo anterior). `executor: "library"` porque la API pública es `renderVideo()` de Node; `editability: "native"` (el `.tsx` es el documento fuente) pero no se reabre un proyecto FME desde el MP4.
 
 ## Pendiente (no verificado)
-Audio real, vídeo como entrada, 1080p y escenas pesadas, FPS fraccionario, WebM-alpha, exportador wasm (causa), vite parcheado, ffmpeg del sistema, ejecución en otra máquina (la aceptación «otra sesión desde cero» está cubierta solo por una segunda ejecución propia con `node_modules` borrado; Chrome estaba en caché).
+Audio real, vídeo como entrada, 1080p y escenas pesadas, FPS fraccionario, WebM-alpha, exportador wasm (causa), ejecución en otra máquina (la aceptación «otra sesión desde cero» está cubierta solo por una segunda ejecución propia con `node_modules` borrado; Chrome estaba en caché).
