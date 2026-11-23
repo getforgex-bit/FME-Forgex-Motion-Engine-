@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "rewriteRelativeImportExtensions": true
+  },
+  "references": [
+    { "path": "../cache" },
+    { "path": "../project" }
+  ],
+  "include": ["src"]
+}
