@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "rewriteRelativeImportExtensions": true,
+    "types": ["node"]
+  },
+  "references": [
+    { "path": "../../packages/project" },
+    { "path": "../../packages/connectors" },
+    { "path": "../../packages/router" },
+    { "path": "../../packages/adapters/revideo" }
+  ],
+  "include": ["src"]
+}

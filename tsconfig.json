@@ -36,6 +36,9 @@
     },
     {
       "path": "packages/adapters/freecut"
+    },
+    {
+      "path": "apps/cli"
     }
   ]
 }
