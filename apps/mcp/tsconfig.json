@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "rewriteRelativeImportExtensions": true
+  },
+  "references": [
+    { "path": "../../packages/project" },
+    { "path": "../../packages/connectors" },
+    { "path": "../../packages/router" }
+  ],
+  "include": ["src"]
+}
