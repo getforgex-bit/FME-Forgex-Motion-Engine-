@@ -11,6 +11,7 @@
     { "path": "../connectors" },
     { "path": "../cache" },
     { "path": "../router" },
+    { "path": "../render-plan" },
     { "path": "../adapters/revideo" },
     { "path": "../adapters/blender" },
     { "path": "../adapters/freecut" },
