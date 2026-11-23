@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { Project } from './index.ts';
 
 /** Copia local de `SCHEMA_VERSION` de index.ts (evita un ciclo de importación cuando index re-exporte este módulo); el test la mantiene sincronizada. */
-const SCHEMA_VERSION = 1 as const;
+const SCHEMA_VERSION = 2 as const;
 
 /** Fotograma entero ≥ 0 (§7: el tiempo son fotogramas enteros). */
 const frame = z.number().int().nonnegative();
@@ -54,6 +54,14 @@ export const externalProjectRefSchema = z.strictObject({
   renderArtifactId: z.string().optional(),
 });
 
+/** Contenido de una capa `text` (ADR-0012). */
+export const textContentSchema = z.strictObject({
+  content: z.string().min(1),
+  fontFamily: z.string().min(1).optional(),
+  fontSize: z.number().finite().positive().optional(),
+  color: z.string().min(1).optional(),
+});
+
 export const layerSchema = z.strictObject({
   id,
   kind: z.union([assetTypeSchema, z.enum(['text', 'group'])]),
@@ -66,6 +74,15 @@ export const layerSchema = z.strictObject({
   guide3DLayerId: z.string().optional(),
   channels: z.partialRecord(channelSchema, curveSchema),
   externalProject: externalProjectRefSchema.optional(),
+  text: textContentSchema.optional(),
+}).superRefine((layer, ctx) => {
+  if (layer.text !== undefined && layer.kind !== 'text') {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['text'],
+      message: `\`text\` solo es válido en capas de tipo "text"; esta capa es "${layer.kind}"`,
+    });
+  }
 });
 
 export const sceneSchema = z.strictObject({
