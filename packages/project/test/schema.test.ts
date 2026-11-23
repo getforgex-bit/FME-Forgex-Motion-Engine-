@@ -18,7 +18,7 @@ const projectAsignableAZod = (p: Project): ProjectFromSchema => p;
 
 function proyectoValido(): Project {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: "p1",
     name: "Demo",
     fps: { num: 30000, den: 1001 },
@@ -62,7 +62,7 @@ function clone(): any {
 test("los tipos de Zod e index.ts son equivalentes y SCHEMA_VERSION coincide", () => {
   assert.equal(tiposEquivalentes, true);
   assert.equal(typeof projectAsignableAZod, "function");
-  assert.equal(SCHEMA_VERSION, 1);
+  assert.equal(SCHEMA_VERSION, 2);
   assert.equal(parseProject(proyectoValido()).ok, true);
 });
 
@@ -78,7 +78,7 @@ test("errores con ruta y mensaje", () => {
 });
 
 test("schemaVersion desconocido da un error estructurado", () => {
-  for (const v of [2, 0, "1", null]) {
+  for (const v of [3, 1, 0, "2", null]) {
     const p = clone();
     p.schemaVersion = v;
     const r = parseProject(p);
@@ -127,4 +127,31 @@ test("el JSON Schema se genera desde Zod", () => {
   const js = projectJsonSchema();
   assert.equal(js.type, "object");
   assert.ok(JSON.stringify(js).includes("schemaVersion"));
+});
+
+test("capas text: text válido en kind 'text' y rechazado en otras capas (ADR-0012)", () => {
+  const ok = clone();
+  const capa = ok.sequences[0].scenes[0].layers[0];
+  capa.kind = "text";
+  delete capa.assetId;
+  capa.text = { content: "Hola\nmundo", fontFamily: "Inter", fontSize: 48, color: "#fff" };
+  assert.equal(parseProject(ok).ok, true);
+  delete capa.text;
+  assert.equal(parseProject(ok).ok, true, "una capa text sin text sigue siendo válida");
+
+  const mala = clone();
+  mala.sequences[0].scenes[0].layers[0].text = { content: "x" };
+  const r = parseProject(mala);
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.equal(r.errors[0]?.path, "sequences[0].scenes[0].layers[0].text");
+});
+
+test("text: content no vacío, fontSize > 0, claves desconocidas rechazadas", () => {
+  for (const text of [{ content: "" }, { content: "x", fontSize: 0 }, { content: "x", fontSize: -3 }, { content: "x", color: "" }, { content: "x", extra: 1 }, {}]) {
+    const p = clone();
+    const capa = p.sequences[0].scenes[0].layers[0];
+    capa.kind = "text";
+    capa.text = text;
+    assert.equal(parseProject(p).ok, false, JSON.stringify(text));
+  }
 });
