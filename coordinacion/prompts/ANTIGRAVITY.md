@@ -59,6 +59,8 @@ Después, en cada terminal:
 - **Bloqueo y escalado:** si falta un contrato, una descarga necesita al usuario o una ficha es ambigua, envía un evento `BLOQUEO` o una `solicitud` y sigue con la otra tarea.
 - **Descargas:** antes de descargar algo (el clon de FreeCut o paquetes npm), pide confirmación al usuario indicando qué, de dónde y su tamaño.
 - **Prohibido sin el usuario:** hacer push, tocar `main`, usar `--force`, borrar ramas o archivos ajenos y ampliar el alcance de la spec v0.1.
+- **Si te quedaste sin cuota y vuelves:** antes de nada, `node scripts/coord.mjs buzon` y `node scripts/coord.mjs equipos`. Si hay una nota de reincorporación o un traspaso «RELEVO», sigue la sección «Relevo» de `coordinacion/CONTINUATION.md`: compara tu worktree con el acta y **no continúes** las tareas relevadas.
+- **Si te asignan un relevo** (traspaso «RELEVO FDN-xxx»): crea la rama `<rama-origen>-relevo-antigravity` desde la punta indicada, aplica el `.patch` del acta si lo hay, reclama las rutas y termina la tarea. Nunca uses la rama ni el worktree del equipo caído.
 - **Continuación:** cuando el usuario escriba «Continúa», sigue `coordinacion/CONTINUATION.md` al pie de la letra. Antes de terminar cada intervención, deja escrito en `FME-ops\estado\antigravity.md` el siguiente paso exacto.
 
 Empieza ahora: registra tus agentes, toma FDN-012 y FDN-030 y trabájalas en paralelo.

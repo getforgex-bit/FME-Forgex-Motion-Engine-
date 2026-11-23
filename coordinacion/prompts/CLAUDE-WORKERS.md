@@ -18,7 +18,8 @@ Eres **A<n>** del equipo Claude de la FORGEX Development Network. El director e 
    - escribe tu bitácora;
    - envía a `claude-code-a0` el evento `REVIEW` con el informe completo.
 6. **Límites:** nada de push, ni tocar `main`, ni `--force`, ni editar archivos compartidos. Antes de descargar algo, pide confirmación al usuario indicando qué, de dónde y su tamaño.
-7. **Cierre de turno:** resumen breve con estado, rama, commit y pendientes.
+7. **Relevo (ADR-0013):** si recibes un traspaso «RELEVO» o una nota de reincorporación, sigue la sección «Relevo» de `coordinacion/CONTINUATION.md`.
+8. **Cierre de turno:** resumen breve con estado, rama, commit y pendientes.
 
 ## Sesiones
 

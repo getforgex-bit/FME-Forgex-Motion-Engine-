@@ -62,3 +62,43 @@ test("tipos evento y solicitud (ADR-0007) y resolución de la carpeta operativa"
   assert.equal(resolverRaiz({ FME_COORD_DIR: process.env.FME_COORD_DIR }), process.env.FME_COORD_DIR);
   assert.match(resolverRaiz({}), /FME-ops$/);
 });
+
+test("relevo entre equipos (ADR-0013): sospechoso, caída con acta, relevo y reincorporación", () => {
+  const T0 = "2030-01-01T10:00:00.000Z";
+  process.env.FME_AHORA = T0;
+  try {
+    reg("codex", "r1", "rel-cx");
+    reg("antigravity", "r2", "rel-ag");
+    reg("claude-code", "int", "rel-int");
+    c.reclamar({ sesion: "codex-r1", ruta: "packages/render-plan", motivo: "FDN-071" });
+    c.reclamar({ sesion: "codex-r1", ruta: "packages/otra", motivo: "FDN-099" });
+    assert.match(c.equipos(), /rel-cx \| activo/);
+
+    process.env.FME_AHORA = "2030-01-01T11:05:00.000Z"; // 65 min sin latido
+    c.avance({ sesion: "antigravity-r2", texto: "sigo vivo" });
+    const tabla = c.equipos();
+    assert.match(tabla, /rel-cx \| sospechoso/);
+    assert.match(tabla, /rel-ag \| activo/);
+
+    assert.throws(() => c.caida({ sesion: "claude-code-int", equipo: "rel-cx" }), /Falta --cita/);
+    assert.match(c.caida({ sesion: "claude-code-int", equipo: "rel-cx", cita: "Codex se quedó sin tokens" }), /caído/);
+    assert.throws(() => c.caida({ sesion: "claude-code-int", equipo: "rel-cx", cita: "otra vez" }), /ya está declarado/);
+    assert.match(c.equipos(), /rel-cx \| caido/);
+
+    assert.throws(() => c.relevar({ sesion: "claude-code-int", tarea: "FDN-071", de: "rel-ag", a: "rel-cx", cita: "x" }), /no está declarado caído/);
+    assert.match(c.relevar({ sesion: "claude-code-int", tarea: "FDN-071", de: "rel-cx", a: "rel-ag", cita: "sí, que lo releve Antigravity" }), /Reclamos liberados: 1/);
+    assert.doesNotMatch(c.estado(), /packages\/render-plan/); // reclamo de 071 liberado
+    assert.match(c.estado(), /packages\/otra/); // el de otra tarea se conserva
+    assert.match(c.buzon({ sesion: "antigravity-r2" }), /RELEVO FDN-071/);
+
+    const r = c.reincorporar({ sesion: "claude-code-int", equipo: "rel-cx" });
+    assert.match(r, /reincorporado/);
+    const msg = c.buzon({ sesion: "codex-r1" });
+    assert.match(msg, /Nota de reincorporación/);
+    assert.match(msg, /FDN-071: rel-cx → rel-ag/);
+    assert.doesNotMatch(c.equipos(), /rel-cx \| caido/);
+    assert.throws(() => c.reincorporar({ sesion: "claude-code-int", equipo: "rel-cx" }), /no está caído/);
+  } finally {
+    delete process.env.FME_AHORA;
+  }
+});

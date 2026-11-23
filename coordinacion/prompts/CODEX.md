@@ -65,6 +65,8 @@ Después, en cada terminal:
   - Todo render lleva timeout.
 - **Bloqueo y escalado:** envía un evento `BLOQUEO` o una `solicitud` a `claude-code-a0` y sigue con la otra tarea.
 - **Prohibido sin el usuario:** hacer push, tocar `main`, usar `--force`, borrar ramas o archivos ajenos, hacer descargas no confirmadas y ampliar el alcance.
+- **Si te quedaste sin cuota y vuelves:** antes de nada, `node scripts/coord.mjs buzon` y `node scripts/coord.mjs equipos`. Si hay una nota de reincorporación o un traspaso «RELEVO», sigue la sección «Relevo» de `coordinacion/CONTINUATION.md`: compara tu worktree con el acta y **no continúes** las tareas relevadas.
+- **Si te asignan un relevo** (traspaso «RELEVO FDN-xxx»): crea la rama `<rama-origen>-relevo-codex` desde la punta indicada, aplica el `.patch` del acta si lo hay, reclama las rutas y termina la tarea. Nunca uses la rama ni el worktree del equipo caído.
 - **Continuación:** cuando el usuario escriba «Continúa», sigue `coordinacion/CONTINUATION.md`. Antes de terminar cada intervención, deja escrito en `FME-ops\estado\codex.md` el siguiente paso exacto.
 
 Empieza ahora: registra tus agentes, toma FDN-011 y FDN-022 y trabájalas en paralelo.

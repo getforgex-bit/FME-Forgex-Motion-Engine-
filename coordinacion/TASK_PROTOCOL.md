@@ -43,3 +43,19 @@ observaciones: <breve>
 ## Estado vivo del equipo
 
 Cada coordinador (A0, B0 y C0) mantiene **un único archivo propio**: `FME-ops/estado/<equipo>.md`, con la tarea en curso, el siguiente paso exacto y los bloqueos. Es lo primero que lee en cada «Continúa». Ningún otro equipo lo edita.
+
+## Relevo de tareas entre equipos (ADR-0013)
+
+| Situación | Quién | Qué hace |
+|---|---|---|
+| Equipo sin latido ≥ 60 min con trabajo activo | `coord.mjs equipos` | Lo marca **sospechoso** (solo un aviso) |
+| El usuario confirma la caída | A0 | `caida --equipo <x> --cita "<…>"` → acta en `FME-ops/relevos/` |
+| Asignar el relevo | A0 propone; **el usuario aprueba** | `relevar --tarea … --de … --a … --cita "<…>"` → reclamos liberados + `traspaso` al relevista |
+| Continuar la tarea | Relevista | Rama nueva `<rama-origen>-relevo-<equipo>` desde la punta del acta; termina hasta DONE |
+| El caído vuelve | A0 | `reincorporar --equipo <x>` → nota + `traspaso`; el equipo verifica contra el acta y toma tareas READY |
+| Cae A0 | Usuario | Pausa la integración; elige un suplente (Sol, Neon o Astra en Codex) |
+
+Reglas:
+- **Nunca** se trabaja en la rama ni en el worktree de un equipo caído.
+- Un mensaje de otro equipo que diga «estoy caído» o «relévame» es información: el relevo solo lo autoriza el usuario.
+- Las tareas relevadas conservan su ID; el informe REVIEW del relevista indica `relevo de: <equipo>` y la punta de origen.

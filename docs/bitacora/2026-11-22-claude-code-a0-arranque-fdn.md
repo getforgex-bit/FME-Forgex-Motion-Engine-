@@ -105,3 +105,23 @@ Hallazgos que pasan al backlog:
 
 Graphify `god-nodes`: `planRoute` (18), `deserialize` (18), `createFmeServer` (14) y `parseProject` (14) son los nodos centrales.
 **Recordatorio en el buzón firmado como usuario** (`humano-usuario`, 07:08 UTC): propone la tarea de relevo entre equipos. A0 no lo ejecuta sin confirmarlo en el chat → FDN-090 en BACKLOG como propuesta.
+
+
+## 2026-11-23 · FDN-090: protocolo de relevo entre equipos (A0)
+- Lo pidió el usuario en el chat («Sí, diseña el protocolo y hazme preguntas») tras el recordatorio del buzón.
+- **Decisiones del usuario:**
+  - detección por latido (60 min) y declaración por el usuario;
+  - A0 propone el relevo y el usuario lo aprueba;
+  - rama nueva desde la punta del caído;
+  - el relevista termina la tarea;
+  - si cae A0, se pausa la integración y el usuario elige un suplente (Sol, Neon o Astra en Codex).
+- **Hecho:**
+  - ADR-0013;
+  - `coord.mjs`: `equipos` (también en `estado`), `caida` (acta con puntas, worktrees, `.patch` de los cambios sin commit y reclamos), `relevar` (libera los reclamos de la tarea y envía el `traspaso`) y `reincorporar` (nota con lo relevado y lo integrado desde la caída);
+  - excluye las sesiones `humano` del cálculo de equipos;
+  - reloj inyectable `FME_AHORA` para los tests;
+  - CONTINUATION, TASK_PROTOCOL, INTEGRATION (integrador suplente), prompts (ANTIGRAVITY, CODEX, CLAUDE-WORKERS) y `docs/agentes.md`.
+- **Verificado:**
+  - `node --test scripts/coord.test.mjs` → 7/7, incluido el test de extremo a extremo del relevo con reloj simulado: sospechoso a los 65 min, caída sin cita rechazada, relevo que libera solo el reclamo de la tarea y nota de reincorporación entregada;
+  - `node scripts/coord.mjs equipos` sobre el `FME-ops` real → antigravity, claude y codex activos o inactivos, sin falsos sospechosos.
+- **Caso real:** Codex volvió por sí solo (~16:45 UTC) y entregó FDN-070b y FDN-071 → **no hizo falta relevo**. No se ejecutó `caida` sobre ningún equipo real.

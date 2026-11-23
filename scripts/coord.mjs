@@ -23,7 +23,29 @@ export function resolverRaiz(env = process.env, cwd = SCRIPT_DIR) {
 }
 const ROOT = resolverRaiz();
 const dir = (n) => join(ROOT, n);
-const ahora = () => new Date().toISOString();
+// FME_AHORA permite fijar el reloj en los tests (ISO 8601).
+const ahora = () => process.env.FME_AHORA ?? new Date().toISOString();
+/** Minutos sin latido a partir de los cuales un equipo con trabajo activo es «sospechoso de caída» (ADR-0013). */
+export const umbralCaidaMin = () => Number(process.env.FME_UMBRAL_CAIDA_MIN ?? 60);
+const minutosDesde = (iso) => (Date.parse(ahora()) - Date.parse(iso)) / 60000;
+const git = (args, cwd = SCRIPT_DIR) => {
+  try {
+    return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return null;
+  }
+};
+/** Worktree (ruta) donde está desprotegida una rama, según `git worktree list --porcelain`. */
+function worktreeDeRama(rama) {
+  const out = git(["worktree", "list", "--porcelain"]);
+  if (!out || !rama) return null;
+  let ruta = null;
+  for (const l of out.split(/\r?\n/)) {
+    if (l.startsWith("worktree ")) ruta = l.slice(9);
+    if (l === `branch refs/heads/${rama}`) return ruta;
+  }
+  return null;
+}
 const slug = (s) => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /** Frontmatter `clave: valor` + cuerpo. */
@@ -58,6 +80,35 @@ function sesionFile(id) {
 }
 const cargarSesion = (id) => leer(sesionFile(id));
 const guardarSesion = (id, meta, cuerpo) => escribir(sesionFile(id), meta, cuerpo);
+
+// --- Relevo entre equipos (ADR-0013) ---
+/** Estado de relevo de un equipo (`relevos/<equipo>.md`); vacío si nunca se declaró caído. */
+function estadoRelevo(equipo) {
+  mkdirSync(dir("relevos"), { recursive: true });
+  const f = join(dir("relevos"), `${slug(equipo)}.md`);
+  return existsSync(f) ? leer(f) : { meta: {}, cuerpo: "" };
+}
+const guardarRelevo = (equipo, meta, cuerpo) => escribir(join(dir("relevos"), `${slug(equipo)}.md`), meta, cuerpo);
+/** Equipos conocidos con su latido más reciente y su estado: activo | sospechoso | caido | reincorporado | inactivo. */
+export function estadoEquipos() {
+  const sesiones = listar("sesiones").map((f) => leer(join(dir("sesiones"), f)).meta);
+  const reclamos = listar("reclamos").map((f) => leer(join(dir("reclamos"), f)).meta);
+  // Las sesiones `humano` no son equipos de agentes: no caen por cuota ni se relevan.
+  const equipos = [...new Set(sesiones.filter((s) => s.herramienta !== "humano").map((s) => s.equipo).filter(Boolean))].sort();
+  return equipos.map((equipo) => {
+    const suyas = sesiones.filter((s) => s.equipo === equipo);
+    const activas = suyas.filter((s) => s.estado !== "cerrada").map((s) => s.id);
+    const nRecl = reclamos.filter((r) => suyas.some((s) => s.id === r.sesion)).length;
+    const ultimo = suyas.map((s) => s.ultimo_latido).filter(Boolean).sort().at(-1) ?? null;
+    const minutos = ultimo ? minutosDesde(ultimo) : null;
+    const rel = estadoRelevo(equipo).meta.estado;
+    let estado = activas.length || nRecl ? "activo" : "inactivo";
+    if (estado === "activo" && minutos !== null && minutos >= umbralCaidaMin()) estado = "sospechoso";
+    if (rel === "caido") estado = "caido";
+    else if (rel === "reincorporado" && estado !== "sospechoso") estado = `${estado} (reincorporado)`;
+    return { equipo, estado, ultimo, minutos, activas, reclamos: nRecl };
+  });
+}
 
 export const comandos = {
   /** Registra una sesión y devuelve su id. */
@@ -164,7 +215,103 @@ export const comandos = {
       if (n) out.push(`${s.id}: ${n}`);
     }
     out.push(`\n${sesiones.length - activas.length} sesión(es) cerrada(s).`);
+    out.push("", "## Equipos (ADR-0013)", comandos.equipos());
     return out.join("\n");
+  },
+  /** Estado de cada equipo: activo, sospechoso (sin latido ≥ umbral con trabajo activo) o caído/reincorporado (ADR-0013). */
+  equipos() {
+    const filas = estadoEquipos();
+    if (!filas.length) return "(sin equipos)";
+    const out = [`equipo | estado | último latido | min sin latido | sesiones activas | reclamos   (umbral ${umbralCaidaMin()} min)`];
+    for (const e of filas) out.push(`${e.equipo} | ${e.estado} | ${e.ultimo ?? "—"} | ${e.minutos === null ? "—" : Math.round(e.minutos)} | ${e.activas.join(", ") || "—"} | ${e.reclamos}`);
+    const sosp = filas.filter((e) => e.estado === "sospechoso");
+    if (sosp.length) out.push("", `⚠ Sospechosos de caída: ${sosp.map((e) => e.equipo).join(", ")}. Solo el usuario puede declararlos caídos (caida --cita).`);
+    return out.join("\n");
+  },
+  /** Declara caído un equipo (solo con la cita literal del usuario) y guarda el acta de su estado. No toca sus worktrees ni ramas. */
+  caida(o) {
+    requerir(o, "sesion", "equipo", "cita");
+    sesionFile(o.sesion);
+    const actual = estadoRelevo(o.equipo);
+    if (actual.meta.estado === "caido") throw new Error(`El equipo "${o.equipo}" ya está declarado caído (${actual.meta.desde}).`);
+    const t = ahora();
+    const sello = t.replace(/[-:.]/g, "");
+    const sesiones = listar("sesiones").map((f) => leer(join(dir("sesiones"), f)).meta).filter((s) => s.equipo === o.equipo && s.estado !== "cerrada");
+    const reclamos = listar("reclamos").map((f) => ({ f, ...leer(join(dir("reclamos"), f)).meta })).filter((r) => sesiones.some((s) => s.id === r.sesion));
+    const lineas = [`# Acta de caída: equipo ${o.equipo}`, "", `- Declarada: ${t} por ${o.sesion}`, `- Autoriza el usuario: «${o.cita}»`, "", "## Sesiones activas"];
+    for (const s of sesiones) {
+      const punta = s.rama ? git(["rev-parse", "--short", `refs/heads/${s.rama}`]) : null;
+      const wt = worktreeDeRama(s.rama);
+      const sucio = wt ? git(["status", "--porcelain"], wt) : null;
+      let parche = "";
+      if (sucio) {
+        const diff = git(["diff", "HEAD"], wt);
+        if (diff) {
+          parche = `${sello}-${slug(s.id)}.patch`;
+          writeFileSync(join(dir("relevos"), parche), `${diff}\n`);
+        }
+      }
+      lineas.push(`- ${s.id} · tarea: ${s.tarea} · rama: ${s.rama || "—"} · punta: ${punta ?? "desconocida"} · worktree: ${wt ?? "desconocido"} · último latido: ${s.ultimo_latido}`
+        + (sucio ? ` · **cambios sin commit**: ${sucio.split(/\r?\n/).length} archivo(s)${parche ? ` (parche: ${parche})` : " (solo sin seguimiento)"}` : " · limpio"));
+    }
+    if (!sesiones.length) lineas.push("(ninguna)");
+    lineas.push("", "## Reclamos", ...(reclamos.length ? reclamos.map((r) => `- ${r.rutas} ← ${r.sesion} (${r.motivo})`) : ["(ninguno)"]));
+    const acta = `${sello}-${slug(o.equipo)}-caida.md`;
+    escribir(join(dir("relevos"), acta), { tipo: "acta-caida", equipo: o.equipo, fecha: t, por: o.sesion }, `\n${lineas.join("\n")}\n`);
+    escribir(join(dir("relevos"), `${slug(o.equipo)}.md`), { equipo: o.equipo, estado: "caido", desde: t, acta, cita: o.cita }, "\n## Relevos\n");
+    comandos.enviar({ de: o.sesion, para: "todos", tipo: "info", asunto: `Equipo ${o.equipo} declarado CAÍDO`, texto: `Acta: FME-ops/relevos/${acta}. No toméis sus tareas sin un traspaso de A0 (ADR-0013). Cita del usuario: «${o.cita}».` });
+    return `Equipo ${o.equipo} declarado caído. Acta: ${acta}`;
+  },
+  /** Asigna una tarea del equipo caído a un relevista (con la aprobación literal del usuario): libera sus reclamos y envía el traspaso. */
+  relevar(o) {
+    requerir(o, "sesion", "tarea", "de", "a", "cita");
+    sesionFile(o.sesion);
+    const rel = estadoRelevo(o.de);
+    if (rel.meta.estado !== "caido") throw new Error(`El equipo "${o.de}" no está declarado caído: usa primero \`caida\`.`);
+    if (o.de === o.a) throw new Error("El relevista debe ser otro equipo.");
+    const sesiones = listar("sesiones").map((f) => leer(join(dir("sesiones"), f)).meta).filter((s) => s.equipo === o.de);
+    const conTarea = sesiones.filter((s) => (s.tarea ?? "").includes(o.tarea) && s.rama);
+    const rama = o.rama ?? conTarea.at(-1)?.rama ?? "";
+    const punta = rama ? git(["rev-parse", "--short", `refs/heads/${rama}`]) : null;
+    let liberados = 0;
+    for (const f of listar("reclamos")) {
+      const r = leer(join(dir("reclamos"), f)).meta;
+      if (sesiones.some((s) => s.id === r.sesion) && (r.motivo ?? "").includes(o.tarea)) { unlinkSync(join(dir("reclamos"), f)); liberados++; }
+    }
+    const nueva = rama ? `${rama}-relevo-${slug(o.a)}` : `fdn/${o.tarea}-relevo-${slug(o.a)}`;
+    const t = ahora();
+    const linea = `- ${t} · ${o.tarea}: ${o.de} → ${o.a} · rama origen: ${rama || "—"} @ ${punta ?? "desconocida"} · rama nueva: ${nueva} · reclamos liberados: ${liberados} · aprueba el usuario: «${o.cita}»`;
+    guardarRelevo(o.de, rel.meta, `${rel.cuerpo.replace(/\n*$/, "\n")}${linea}\n`);
+    comandos.enviar({ de: o.sesion, para: `equipo:${o.a}`, tipo: "traspaso", asunto: `RELEVO ${o.tarea} (de ${o.de})`,
+      texto: `Tomáis ${o.tarea}, que era de ${o.de} (caído). Rama de origen: ${rama || "—"} @ ${punta ?? "desconocida"}. Cread \`git switch -c ${nueva} ${punta ?? "develop"}\` (no toquéis su rama ni su worktree). Acta con el estado y los posibles parches: FME-ops/relevos/${rel.meta.acta}. Ficha: BACKLOG.md. Termináis vosotros la tarea hasta DONE (ADR-0013 §5).` });
+    return `${o.tarea} relevada de ${o.de} a ${o.a}. Rama sugerida: ${nueva}. Reclamos liberados: ${liberados}.`;
+  },
+  /** Reincorpora un equipo caído: genera la nota con lo ocurrido en su ausencia y se la envía como traspaso. */
+  reincorporar(o) {
+    requerir(o, "sesion", "equipo");
+    sesionFile(o.sesion);
+    const rel = estadoRelevo(o.equipo);
+    if (rel.meta.estado !== "caido") throw new Error(`El equipo "${o.equipo}" no está caído.`);
+    const t = ahora();
+    const relevos = rel.cuerpo.split(/\r?\n/).filter((l) => l.startsWith("- "));
+    const integrado = git(["log", "--first-parent", "--format=- %h %s", `--since=${rel.meta.desde}`, "develop"]);
+    const nota = [
+      `# Nota de reincorporación: equipo ${o.equipo}`, "",
+      `- Caída declarada: ${rel.meta.desde} · Reincorporación: ${t}`,
+      `- Acta de cuando caísteis: FME-ops/relevos/${rel.meta.acta}`, "",
+      "## Tareas relevadas (las termina el relevista; no las continuéis)", ...(relevos.length ? relevos : ["(ninguna)"]), "",
+      "## Integrado en develop desde la caída", integrado || "(nada)", "",
+      "## Qué hacer ahora",
+      "1. Compara tu worktree con el acta: misma punta de rama y los mismos cambios sin commit. Si difieren, avisa a A0 antes de tocar nada.",
+      "2. Haz `git merge develop` en tus ramas de tareas NO relevadas antes de seguir.",
+      "3. No continúes las tareas relevadas: si tienes trabajo propio sin commit sobre ellas, envíaselo al relevista como `solicitud` (parche o rama).",
+      "4. Lee `git show develop:coordinacion/CURRENT_SPRINT.md` y toma tareas READY de tu equipo.",
+    ].join("\n");
+    const archivo = `${t.replace(/[-:.]/g, "")}-${slug(o.equipo)}-reincorporacion.md`;
+    escribir(join(dir("relevos"), archivo), { tipo: "nota-reincorporacion", equipo: o.equipo, fecha: t }, `\n${nota}\n`);
+    guardarRelevo(o.equipo, { ...rel.meta, estado: "reincorporado", reincorporado: t, nota: archivo }, rel.cuerpo);
+    comandos.enviar({ de: o.sesion, para: `equipo:${o.equipo}`, tipo: "traspaso", asunto: "Reincorporación: lee la nota antes de seguir", texto: `Nota: FME-ops/relevos/${archivo}\n\n${nota}` });
+    return `Equipo ${o.equipo} reincorporado. Nota: ${archivo}`;
   },
   /** Muestra la carpeta operativa en uso. */
   raiz() {
@@ -178,7 +325,12 @@ export const comandos = {
   buzon     [--todo] [--sinmarcar]
   reclamar  --ruta a,b --motivo "<..>"      liberar [--ruta a,b]
   cerrar    --resumen "<..>"
-  estado    (tablero)        raiz  (muestra la carpeta operativa)`;
+  estado    (tablero)        raiz  (muestra la carpeta operativa)
+Relevo entre equipos (ADR-0013; solo el integrador, con la cita literal del usuario):
+  equipos                                         estado de cada equipo (sospechoso si no hay latido en ≥ FME_UMBRAL_CAIDA_MIN, 60 por defecto)
+  caida        --equipo <x> --cita "<usuario>"   declara caído y guarda el acta (no toca worktrees)
+  relevar      --tarea FDN-xxx --de <x> --a <y> --cita "<usuario>" [--rama <r>]
+  reincorporar --equipo <x>                       genera la nota de reincorporación y la envía`;
   },
 };
 

@@ -6,6 +6,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 ## [Unreleased]
 
 ### Added
+- Relevo entre equipos (ADR-0013): `coord.mjs equipos`, `caida`, `relevar` y `reincorporar`; actas y notas en `FME-ops/relevos/`; protocolo en CONTINUATION, TASK_PROTOCOL, INTEGRATION y los prompts.
 - `@fme/adapter-blender` (FDN-040) y `@fme/mcp`, servidor MCP mínimo (FDN-080; SDK MCP 1.32.2).
 - Medición de tokens del router (FDN-051). Título de Revideo desde `layer.text` (FDN-032b).
 - **Fases 1 y 3 cerradas.** FreeCut `5ceeeb3` verificado (FDN-012); E2E descubrimiento → job → procedencia (FDN-033).

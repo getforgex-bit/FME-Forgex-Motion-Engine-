@@ -35,3 +35,12 @@ Los equipos incorporan `develop` en su siguiente rama (la crean desde `develop`)
 ## Archivos compartidos (solo A0)
 
 `STATUS.md`, `CHANGELOG.md`, `docs/roadmap.md`, `docs/pruebas-aceptacion.md`, `docs/catalogo-integraciones.md`, `docs/licencias-seguridad.md`, `docs/bitacora/README.md`, `coordinacion/*.md` (salvo BENCHMARKS en la rama de FDN-004), y los `index.ts` de `packages/project` y `packages/connectors`.
+
+## Integrador suplente (ADR-0013)
+
+Si A0 se queda sin cuota:
+1. La integración en `develop` se **pausa**. Nadie fusiona; los equipos siguen en sus ramas y envían sus REVIEW a `claude-code-a0` como siempre.
+2. Solo el **usuario** puede nombrar un suplente: una sesión Sol, una Neon o Astra en Codex. Esta última es una excepción explícita del usuario, válida solo para este rol.
+3. El suplente se registra como `<herramienta>-integrador-suplente`, lee el buzón de `claude-code-a0` con `buzon --sesion claude-code-a0 --sinmarcar` (sin marcarlo como leído) y aplica la sección «Revisión de A0» de este documento sin saltarse pasos.
+4. Anota cada fusión en su bitácora (`docs/bitacora/AAAA-MM-DD-<id>-integracion.md`) con el comando y el resultado. Puede actualizar BACKLOG, CURRENT_SPRINT y TEAM_STATUS, pero **no** cambia contratos ni ADR.
+5. Cuando A0 vuelve, revisa todas las fusiones del suplente (`git log --first-parent develop` desde la caída) antes de seguir.
