@@ -4,20 +4,20 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/index.js",
+    "./ops": "./dist/ops.js"
   },
   "types": "./dist/index.d.ts",
   "bin": {
     "fme-mcp": "./dist/main.js"
   },
   "dependencies": {
+    "@fme/adapter-revideo": "0.0.0",
     "@fme/connectors": "0.0.0",
     "@fme/project": "0.0.0",
+    "@fme/render-plan": "0.0.0",
     "@fme/router": "0.0.0",
     "@modelcontextprotocol/sdk": "1.32.2",
     "zod": "4.6.7"
-  },
-  "devDependencies": {
-    "@fme/adapter-revideo": "0.0.0"
   }
 }

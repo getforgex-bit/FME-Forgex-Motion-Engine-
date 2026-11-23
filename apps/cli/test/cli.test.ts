@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { after, test } from 'node:test';
 
 const repo = resolve(import.meta.dirname, '..', '..', '..');
@@ -126,4 +127,34 @@ test('job run: renderiza el título con el motor real (skip con motivo si no hay
   assert.deepEqual(body.conformance, []);
   assert.ok(existsSync(body.result.outputs[0].uri.replace(/^file:\/+/, '')) || existsSync(body.result.outputs[0].uri));
   assert.equal(body.result.provenance[0].pluginId, 'revideo');
+});
+
+test('preview render: errores de uso y capas sin conector', () => {
+  assert.equal(fme(['preview', 'render', hibrida, '--layer', 'capa-titulo']).code, 2, 'falta --out');
+  assert.equal(fme(['preview', 'render', hibrida, '--out', scratch]).code, 2, 'falta --layer');
+  assert.equal(fme(['preview', 'render', hibrida, '--layer', 'capa-titulo', '--out', scratch, '--start', 'x']).code, 2);
+  const sin = fme(['preview', 'render', hibrida, '--layer', 'capa-3d', '--out', join(scratch, 'p3d'), '--json']);
+  assert.equal(sin.code, 1);
+  assert.equal(json(sin.stdout).error.code, 'NO_CONNECTOR');
+  const rango = fme(['preview', 'render', hibrida, '--layer', 'capa-titulo', '--out', join(scratch, 'pr'), '--start', '100', '--end', '200', '--json']);
+  assert.equal(rango.code, 1);
+  assert.equal(json(rango.stdout).error.code, 'INVALID_RANGE');
+});
+
+test('preview render: MP4 a 960×540 con el motor real (skip con motivo sin motor)', { timeout: 300_000 }, async (t) => {
+  const r = fme(['preview', 'render', hibrida, '--layer', 'capa-titulo', '--out', join(scratch, 'preview'), '--start', '0', '--end', '30', '--timeout', '240000', '--json'], 290_000);
+  if (r.code === 3) {
+    t.skip(`motor de Revideo no disponible: ${json(r.stdout).error.details?.map((d: any) => d.message).join(' | ')}`);
+    return;
+  }
+  assert.equal(r.code, 0, r.stdout + r.stderr);
+  const body = json(r.stdout);
+  assert.equal(body.result.status, 'ok');
+  assert.deepEqual([body.profile.width, body.profile.height], [960, 540]);
+  assert.deepEqual(body.conformance, []);
+  const { probeMedia } = await import(pathToFileURL(join(repo, 'scripts', 'probe-media.mjs')).href);
+  const media = await probeMedia(fileURLToPath(body.result.outputs[0].uri));
+  assert.equal(media.width, 960);
+  assert.equal(media.height, 540);
+  assert.equal(media.frames, 30);
 });
