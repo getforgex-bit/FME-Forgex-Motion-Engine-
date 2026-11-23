@@ -11,12 +11,12 @@ _Última actualización: 2026-11-22: repositorio preparado (Fase 0)._
 | 2 | Modelo universal | **Hecha** (2026-11-23, criterio #2) | Guardar/abrir sin perder estado |
 | 3 | Conectores | **Hecha** (2026-11-23, E2E con job real) | Descubrimiento y job de extremo a extremo |
 | 4 | Integración real | **Hecha** (2026-11-23, criterio #3) | Vídeo final con fuentes enlazadas |
-| 5 | Enrutador | **En curso** (núcleo con tarjetas reales) | Selección justificada y verificable |
+| 5 | Enrutador | **Hecha** (2026-11-23, criterios #4 y #5) | Selección justificada y verificable |
 | 6 | Dirección artística | **En curso** (criterio #6 ☑ en Revideo y Blender; faltan técnicas, FDN-063) | Cambios reales y reproducibles en la escena |
-| 7 | Calidad | Pendiente | Prueba híbrida de 10 s superada |
+| 7 | Calidad | **En curso** (criterio #8 ☑; falta el #7, sincronía sobre la exportación híbrida) | Prueba híbrida de 10 s superada |
 | 8 | Evolución | Pendiente | Cada pieza nueva demuestra valor concreto |
 
-Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (4/8).
+Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (7/8).
 
 ## Qué existe hoy (verificado)
 
@@ -40,7 +40,10 @@ Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-acept
 - **`schemaVersion` 3:** el proyecto guarda los artefactos generados y valida sus enlaces (FDN-042b, ADR-0015). FreeCut compone pistas con alpha (FDN-042a).
 - **Fase 4 CERRADA (criterio #3):** `@fme/pipeline` produce la prueba híbrida de 10 s con los tres motores reales y las fuentes enlazadas en el proyecto (FDN-042c).
 - Audio y sincronía A/V en la composición, con desfase medido de 0 ms (FDN-074a); `preview.render` real en MCP y CLI (FDN-080b); pruebas de seguridad y regresión (FDN-073a).
-- `npm test` 215 pass + 12 skip + 3 TODO (endurecimientos señalados por FDN-073a).
+- **Fase 5 CERRADA (criterios #4 y #5):** router sobre las tarjetas reales; fallbacks reales (FDN-052).
+- **Criterio #8 ☑:** cambiar el título re-renderiza solo esa capa y la composición; el resto viene de la caché (FDN-075a).
+- `project.export` real en MCP y CLI (FDN-080c). FreeCut reintenta su fallo transitorio de arranque (FDN-074b).
+- `npm test` 226 pass + 15 skip + 3 TODO. Falta el **criterio #7** (sincronía A/V medida sobre la exportación híbrida).
 - FORGEX Stack instalado y verificado en el entorno de preparación (ver la bitácora del 2026-11-22). Cada persona debe instalarlo en su máquina.
 
 ## Qué NO existe todavía
@@ -74,3 +77,4 @@ Fase 1: fijar las versiones de FreeCut, Revideo y Blender y ejecutar una prueba 
 | 2026-11-22 | Validación en runtime con Zod 4 (propuesta) | ADR-0008 |
 | 2026-11-23 | Relevo entre equipos: detección por latido (60 min) + declaración del usuario; A0 propone, el usuario aprueba; rama nueva desde la punta; el relevista termina; si cae A0, se pausa la integración y el usuario elige un suplente (Sol, Neon o Astra) | ADR-0013 |
 | 2026-11-23 | Modo ausencia del usuario: presencia en cada mensaje; escalones a 2, 4 y 6 h (solo lo asignado → solo lo en curso → punto de control y parada); sin relevos falsos; cola de decisiones con resumen y revisión una a una al volver; A0 integra solo lo verde | ADR-0014 |
+| 2026-11-23 | Suplente/asistente de A0 en paralelo: solo crea archivos con la autorización del usuario; no decide ni edita lo compartido | ADR-0016 |

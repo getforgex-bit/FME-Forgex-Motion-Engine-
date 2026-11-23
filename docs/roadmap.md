@@ -70,11 +70,11 @@ Orden de construcción (spec §19.1): **verificar software → archivo universal
 - **Cierre:** vídeo final con fuentes enlazadas (criterio #3). ✅ **Cerrada el 2026-11-23** (FDN-043; A0 reprodujo el pipeline con los tres motores reales).
 
 ### Fase 5: Enrutador
-- [ ] Modos automático, manual e híbrido.
-- [ ] Secuencia de decisión de 8 pasos (ver [`arquitectura.md`](arquitectura.md#3-enrutador-inteligente)) con justificación registrada.
-- [ ] Restricciones duras (compatibilidad y permisos), límites y rutas alternativas (fallbacks).
-- [ ] Medir los tokens consumidos por la exploración (tarjeta simple frente a avanzada).
-- **Cierre:** selección justificada y verificable (criterios #4 y #5).
+- [x] Modos automático, manual e híbrido. → `@fme/router` (FDN-050).
+- [x] Secuencia de decisión de 8 pasos (ver [`arquitectura.md`](arquitectura.md#3-enrutador-inteligente)) con justificación registrada. → FDN-050.
+- [x] Restricciones duras (compatibilidad y permisos), límites y rutas alternativas (fallbacks). → FDN-050 y FDN-052 (fallbacks reales con FreeCut y Blender; escalado al usuario sin simular).
+- [x] Medir los tokens consumidos por la exploración (tarjeta simple frente a avanzada). → FDN-051 (aproximación de caracteres/4).
+- **Cierre:** selección justificada y verificable (criterios #4 y #5). ✅ **Cerrada el 2026-11-23** (FDN-053).
 
 ### Fase 6: Dirección artística
 - [x] Perfiles de estilo editables y reglas de animación como procedimientos. → `@fme/art-direction` (FDN-060).

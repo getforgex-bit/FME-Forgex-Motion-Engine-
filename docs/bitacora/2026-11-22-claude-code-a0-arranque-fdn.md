@@ -179,3 +179,20 @@ Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (
 
 **Criterio #3 ☑ y Fase 4 cerrada.**
 **Nuevo fallo intermitente diagnosticado:** `ATOMIC_REPLACE_UNAVAILABLE` (EPERM en `.freecut-headless/atomic-test`, la comprobación de arranque del headless de FreeCut) en `audio-sync.integration.test.ts:214`, 1 de cada 6 ejecuciones → FDN-074b (reintento en el adaptador, sin forkear). El EPERM de `DiskCache` (070b) no ha vuelto a aparecer.
+
+
+## 2026-11-23 · Integración 9: Fase 5 cerrada y criterio #8 (A0)
+| Rama | Commit | Verificación de A0 | Resultado |
+|---|---|---|---|
+| FDN-075a incremental | d68149e | lockfile; 215 pass (segundo intento por el intermitente de la caché). **Con los 3 motores:** `node --test packages/pipeline/test/incremental.integration.test.ts` → 1/1, 135 s; diferencia fuera de 180–299 = 0 en 13 fotogramas | fusionada; **criterio #8 ☑** |
+| FDN-080c export | 7a873f1 | lockfile; 217 pass | fusionada |
+| FDN-052 fallbacks | fba05eb | 222 pass. `node --test packages/router/test/real-adapters.test.ts packages/recovery/test/real-fallbacks.integration.test.ts` con los motores → 5/5 | fusionada; **criterios #4 y #5 ☑** |
+| FDN-074b reintento FreeCut | — | 226 pass | fusionada |
+
+- **Mensajes del buzón firmados como el usuario** (`antigravity-plan`, `claude-code-a0s`): el usuario confirmó en el chat que eran suyos y que `a0s` es un suplente/asistente que solo crea archivos → ADR-0016.
+- **Propuesta v2 de trazabilidad:** revisada. El usuario decidió en el chat de A0: PROGRESO.md versionado; `--check` bloquea solo la integración de A0; implementación **después** de la prueba híbrida → FDN-092 en BACKLOG.
+- Las otras preguntas abiertas de la v2, decididas por A0 (se aplicarán en FDN-092):
+  - el script lee la copia consolidada versionada; FME-ops, solo para la vista en vivo;
+  - migración retroactiva con la tabla del §4, verificando que cada `[x]` enlace evidencia existente;
+  - FDN-004 y las tareas de operación, con la etiqueta «operación» y fuera del %.
+- **Intermitente:** el test de concurrencia de la caché vuelve a fallar con la suite completa en carga → FDN-070c. La referencia de regresión de Revideo quedó obsoleta tras la corrección del SVG → FDN-073c.
