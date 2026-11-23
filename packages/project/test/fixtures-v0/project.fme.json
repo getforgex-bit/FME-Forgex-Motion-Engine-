@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 0,
+  "id": "synthetic-v0",
+  "name": "Proyecto de prueba v0",
+  "fps": 25,
+  "width": 1920,
+  "height": 1080,
+  "seed": 42,
+  "assets": [
+    {
+      "id": "asset-image",
+      "type": "image",
+      "uri": "assets/background.png",
+      "hash": "fixture-hash",
+      "licenseId": "fixture-license"
+    }
+  ],
+  "sequences": [
+    {
+      "id": "sequence-main",
+      "scenes": [
+        {
+          "id": "scene-start",
+          "durationFrames": 125,
+          "layers": [
+            {
+              "id": "layer-image",
+              "kind": "image",
+              "assetId": "asset-image",
+              "startFrame": 10,
+              "durationFrames": 90,
+              "sourceInFrame": 5,
+              "zIndex": 3,
+              "techniques": [
+                "2d"
+              ],
+              "channels": {
+                "x": {
+                  "defaultValue": 0,
+                  "keyframes": [
+                    {
+                      "frame": 0,
+                      "value": 0,
+                      "easing": "linear"
+                    },
+                    {
+                      "frame": 25,
+                      "value": 80
+                    }
+                  ]
+                }
+              },
+              "externalProject": {
+                "pluginId": "fixture-plugin",
+                "uri": "source/scene.fixture",
+                "engineVersion": "1.2.3",
+                "renderArtifactId": "render-image"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
