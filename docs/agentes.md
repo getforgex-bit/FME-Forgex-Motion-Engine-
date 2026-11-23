@@ -1,6 +1,12 @@
 # Trabajo con varios agentes y sesiones
 
-**Estado: PROPUESTO** ([ADR-0006](decisiones/0006-coordinacion-multiagente-por-archivos.md)). Aplica a Claude Code, Codex, Antigravity, Claude Desktop y a personas, en cualquier número de sesiones a la vez.
+**Estado: PROPUESTO** ([ADR-0006](decisiones/0006-coordinacion-multiagente-por-archivos.md), actualizado por [ADR-0007](decisiones/0007-carpeta-operativa-y-red-fdn.md)).
+
+> **Cambio por ADR-0007 (2026-11-22):**
+> - `sesiones/`, `buzon/` y `reclamos/` ya no están en `coordinacion/` (versionado), sino en la carpeta operativa local `C:\Users\bogex\Documents\Forgex\FME-ops\`. `coord.mjs` la detecta solo y `raiz` la muestra.
+> - Ya no hace falta commit ni push para comunicarse. Donde este documento diga «commit/push de `coordinacion/`», léase «escribir en `FME-ops`».
+> - `coordinacion/` contiene ahora el plan FDN versionado.
+> - Integrador designado: **A0 (`claude-code-a0`)**. Rama de integración: `develop` (local). Aplica a Claude Code, Codex, Antigravity, Claude Desktop y a personas, en cualquier número de sesiones a la vez.
 
 ## Principio
 

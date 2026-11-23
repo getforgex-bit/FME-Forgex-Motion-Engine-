@@ -54,3 +54,11 @@ test("parseArgs", () => {
   assert.deepEqual(parseArgs(["--a", "1", "--todo"]), { a: "1", todo: true });
   assert.throws(() => parseArgs(["suelto"]), /inesperado/);
 });
+
+test("tipos evento y solicitud (ADR-0007) y resolución de la carpeta operativa", async () => {
+  const { resolverRaiz } = await import("./coord.mjs");
+  assert.match(c.enviar({ de: "claude-code-a", para: "todos", asunto: "FDN-000 review", texto: "rama fdn/x", tipo: "evento" }), /enviado/);
+  assert.match(c.enviar({ de: "claude-code-a", para: "todos", asunto: "FDN-000 cambio", texto: "pido", tipo: "solicitud" }), /enviado/);
+  assert.equal(resolverRaiz({ FME_COORD_DIR: process.env.FME_COORD_DIR }), process.env.FME_COORD_DIR);
+  assert.match(resolverRaiz({}), /FME-ops$/);
+});

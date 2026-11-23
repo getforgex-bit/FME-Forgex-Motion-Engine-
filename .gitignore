@@ -33,3 +33,9 @@ pctx.json
 *.bak-*
 # La memoria (.forgex/memory.jsonl) SÍ se versiona
 .gitnexus/
+
+# Índices de grafos de código: uno por worktree, nunca se versionan (coordinacion/GRAPH_TOOLS.md)
+.codegraph/
+graphify-out/
+# Salidas de las verificaciones de la Fase 1
+examples/**/out/

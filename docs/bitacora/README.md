@@ -8,5 +8,6 @@ Sirve para el **relevo** entre personas y agentes: quien retome el trabajo lee l
 |---|---|
 | 2026-11-22 | [Preparación del repositorio](2026-11-22-preparacion-repositorio.md) |
 | 2026-11-22 | [Coordinación multiagente](2026-11-22-claude-code-coordinacion-multiagente.md) |
+| 2026-11-22 | [Arranque de la red FDN](2026-11-22-claude-code-a0-arranque-fdn.md) |
 
 > Con varias sesiones en paralelo, esta tabla la mantiene solo el integrador ([`docs/agentes.md`](../agentes.md)); el resto de sesiones solo añaden su archivo.

@@ -28,6 +28,15 @@ Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-acept
 
 - Ningún adaptador, enrutador, dirección artística, MCP ni render. Ninguna herramienta externa verificada.
 
+## Ejecución distribuida (FDN)
+
+Tres equipos trabajan en paralelo (Claude, Antigravity y Codex) según [`coordinacion/`](coordinacion/README.md). Tanda 1:
+- **Claude:** FDN-010 (Revideo), FDN-021 (esquema) y FDN-004 (benchmarks).
+- **Codex:** FDN-011 (Blender) y FDN-022 (tiempo).
+- **Antigravity:** FDN-012 (FreeCut) y FDN-030 (registro).
+
+Detalle: [`coordinacion/CURRENT_SPRINT.md`](coordinacion/CURRENT_SPRINT.md).
+
 ## Próxima acción
 
 Fase 1: fijar las versiones de FreeCut, Revideo y Blender y ejecutar una prueba repetible de cada una en la PC de referencia (RTX 3050 de 4 GB, 23 GB de RAM, Ryzen 7 4800H).
@@ -42,3 +51,5 @@ Fase 1: fijar las versiones de FreeCut, Revideo y Blender y ejecutar una prueba 
 | 2026-11-22 | Licencia de FME pendiente; uso interno (propuesta) | ADR-0004 |
 | 2026-11-22 | Monorepo TypeScript con npm workspaces (propuesta) | ADR-0005 |
 | 2026-11-22 | Coordinación multiagente por archivos versionados (propuesta) | ADR-0006 |
+| 2026-11-22 | Red FDN: carpeta operativa local y plan versionado; A0 integrador; `develop` local (propuesta; plan aprobado) | ADR-0007 |
+| 2026-11-22 | Validación en runtime con Zod 4 (propuesta) | ADR-0008 |

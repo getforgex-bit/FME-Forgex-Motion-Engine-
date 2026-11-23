@@ -1,14 +1,27 @@
 #!/usr/bin/env node
-// Coordinación entre sesiones/agentes IA mediante archivos versionados en `coordinacion/`.
-// Un archivo por sesión, mensaje o reclamo: así dos sesiones nunca editan el mismo archivo y git no genera conflictos.
+// Coordinación entre sesiones/agentes IA mediante archivos en la carpeta operativa compartida (ADR-0007).
+// La carpeta es FME_COORD_DIR o, por defecto, `FME-ops` junto al checkout principal (la misma desde cualquier worktree).
+// Un archivo por sesión, mensaje, evento o reclamo: así dos sesiones nunca editan el mismo archivo.
 // Uso: node scripts/coord.mjs <comando> [--opción valor]   (ver `ayuda`)
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { execFileSync } from "node:child_process";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const HERRAMIENTAS = ["claude-code", "claude-desktop", "codex", "antigravity", "humano", "otra"];
-export const TIPOS = ["info", "pregunta", "respuesta", "bloqueo", "traspaso"];
-const ROOT = process.env.FME_COORD_DIR ?? join(dirname(fileURLToPath(import.meta.url)), "..", "coordinacion");
+export const TIPOS = ["info", "pregunta", "respuesta", "bloqueo", "traspaso", "evento", "solicitud"];
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+/** Carpeta operativa: FME_COORD_DIR, o `<padre del .git común>/../FME-ops`, idéntica para todos los worktrees. */
+export function resolverRaiz(env = process.env, cwd = SCRIPT_DIR) {
+  if (env.FME_COORD_DIR) return resolve(env.FME_COORD_DIR);
+  try {
+    const comun = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd, encoding: "utf8" }).trim();
+    return resolve(dirname(comun), "..", "FME-ops");
+  } catch {
+    return resolve(SCRIPT_DIR, "..", "..", "FME-ops");
+  }
+}
+const ROOT = resolverRaiz();
 const dir = (n) => join(ROOT, n);
 const ahora = () => new Date().toISOString();
 const slug = (s) => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -132,7 +145,7 @@ export const comandos = {
     const { meta, cuerpo } = cargarSesion(o.sesion);
     const t = ahora();
     guardarSesion(o.sesion, { ...meta, estado: "cerrada", ultimo_latido: t }, `${cuerpo.replace(/\n*$/, "\n")}- ${t} · CIERRE: ${o.resumen}\n`);
-    return `Sesión ${o.sesion} cerrada. ${comandos.liberar({ sesion: o.sesion })}\nRecuerda: bitácora en docs/bitacora/ y commit de coordinacion/.`;
+    return `Sesión ${o.sesion} cerrada. ${comandos.liberar({ sesion: o.sesion })}\nRecuerda: bitácora en docs/bitacora/ y evento de cierre para A0.`;
   },
   /** Tablero: sesiones, reclamos y mensajes pendientes. */
   estado() {
@@ -153,6 +166,10 @@ export const comandos = {
     out.push(`\n${sesiones.length - activas.length} sesión(es) cerrada(s).`);
     return out.join("\n");
   },
+  /** Muestra la carpeta operativa en uso. */
+  raiz() {
+    return ROOT;
+  },
   ayuda() {
     return `Comandos (opciones con --nombre valor; --sesion puede venir de FME_SESION):
   registrar --herramienta <${HERRAMIENTAS.join("|")}> --nombre <slug> --tarea "<texto>" [--equipo <x>] [--rama <r>]
@@ -161,7 +178,7 @@ export const comandos = {
   buzon     [--todo] [--sinmarcar]
   reclamar  --ruta a,b --motivo "<..>"      liberar [--ruta a,b]
   cerrar    --resumen "<..>"
-  estado`;
+  estado    (tablero)        raiz  (muestra la carpeta operativa)`;
   },
 };
 

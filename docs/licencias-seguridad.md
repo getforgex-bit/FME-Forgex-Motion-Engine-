@@ -25,7 +25,8 @@ Cuando se fije una versión de una herramienta, añade una fila aquí:
 
 | Herramienta | Versión fijada | Licencia verificada | Forma de acoplamiento | Fecha | Revisor |
 |---|---|---|---|---|---|
-| _(vacío)_ | | | | | |
+| @types/node (dev) | 24.19.2 | MIT (DefinitelyTyped) | Solo desarrollo, no se distribuye | 2026-11-22 | A0 |
+| typescript (dev) | 5.9.3 | Apache-2.0 | Solo desarrollo, no se distribuye | 2026-11-22 | A0 |
 
 ## 2. Seguridad del enrutador y de los adaptadores
 

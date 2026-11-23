@@ -11,12 +11,13 @@
     "node": "^22.18.0 || >=24.11.0"
   },
   "scripts": {
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "check:memory": "node scripts/check-memory.mjs",
-    "test": "node --test scripts/coord.test.mjs",
+    "test": "node --test scripts/*.test.mjs \"packages/*/test/**/*.test.ts\"",
     "coord": "node scripts/coord.mjs"
   },
   "devDependencies": {
+    "@types/node": "24.19.2",
     "typescript": "5.9.3"
   }
 }
