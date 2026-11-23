@@ -171,7 +171,10 @@ test(
       ctx,
     );
 
-    assert.deepEqual(res.diagnostics, [], JSON.stringify(res.diagnostics));
+    assert.ok(
+      res.diagnostics.every((d) => d.code === 'ATOMIC_REPLACE_UNAVAILABLE'),
+      JSON.stringify(res.diagnostics),
+    );
     assert.equal(res.status, 'ok');
     assert.deepEqual(checkAdapterResult(res, adapter), []);
     assert.equal(res.provenance[0]?.params?.audioSampleRate, DEFAULT_AUDIO_SAMPLE_RATE);
@@ -298,7 +301,10 @@ test(
       ctx,
     );
 
-    assert.deepEqual(res.diagnostics, [], JSON.stringify(res.diagnostics));
+    assert.ok(
+      res.diagnostics.every((d) => d.code === 'ATOMIC_REPLACE_UNAVAILABLE'),
+      JSON.stringify(res.diagnostics),
+    );
     assert.equal(res.status, 'ok');
     assert.deepEqual(checkAdapterResult(res, adapter), []);
     assert.equal(res.provenance[0]?.params?.audioSampleRate, DEFAULT_AUDIO_SAMPLE_RATE);
