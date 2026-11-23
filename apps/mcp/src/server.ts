@@ -4,7 +4,7 @@
  * Las herramientas sin implementación devuelven un error estructurado `NOT_IMPLEMENTED`; no se simulan.
  */
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
@@ -17,8 +17,9 @@ import {
   type ConnectorRegistry,
   type JobRequest,
 } from '@fme/connectors';
-import { SCHEMA_VERSION, deserialize, parseProject, serialize, type Project } from '@fme/project';
+import { SCHEMA_VERSION, parseProject, serialize } from '@fme/project';
 import { planRoute, type RouteOptions, type RouteTask } from '@fme/router';
+import { DEFAULT_PREVIEW_VRAM_MIB, OpsError, loadProjectFile, previewRender, summarize } from './ops.ts';
 import { PathError, resolveInRoot } from './paths.ts';
 
 export type FmeServerOptions = {
@@ -49,6 +50,7 @@ function fail(code: string, message: string, details?: unknown): ToolResult {
 /** Convierte cualquier excepción conocida en un error estructurado. */
 function fromThrown(e: unknown): ToolResult {
   if (e instanceof PathError) return fail(e.code, e.message);
+  if (e instanceof OpsError) return fail(e.code, e.message, e.details);
   if (e instanceof ConnectorRegistryError) return fail(e.code, e.message);
   const err = e as NodeJS.ErrnoException;
   if (err?.code === 'ENOENT') return fail('FILE_NOT_FOUND', 'El archivo no existe.');
@@ -56,25 +58,9 @@ function fromThrown(e: unknown): ToolResult {
   return fail('INTERNAL_ERROR', e instanceof Error ? e.message : String(e));
 }
 
-function summarize(p: Project) {
-  const layers = p.sequences.flatMap((s) => s.scenes.flatMap((sc) => sc.layers));
-  return {
-    id: p.id,
-    name: p.name,
-    schemaVersion: p.schemaVersion,
-    fps: p.fps,
-    size: { width: p.width, height: p.height },
-    assets: p.assets.length,
-    sequences: p.sequences.length,
-    scenes: p.sequences.reduce((n, s) => n + s.scenes.length, 0),
-    layers: layers.length,
-  };
-}
-
 const NOT_IMPLEMENTED = {
-  'preview.render': 'La previsualización depende del render por segmentos (FDN-071) y aún no está conectada.',
-  'preview.inspect': 'La inspección de resultados depende de preview.render y aún no existe.',
-  'project.export': 'La exportación final con audio (FDN-074) aún no existe.',
+  'preview.inspect': 'La inspección de resultados (fotogramas, métricas) aún no existe.',
+  'project.export': 'La exportación final depende de @fme/pipeline (FDN-042c), que aún no está integrado.',
 } as const;
 
 export function createFmeServer(options: FmeServerOptions): McpServer {
@@ -132,13 +118,8 @@ export function createFmeServer(options: FmeServerOptions): McpServer {
     },
     async (args) => {
       try {
-        const file = resolveInRoot(root, args.path);
-        const result = deserialize(readFileSync(file, 'utf8').replace(/\r\n/g, '\n'));
-        if (!result.ok) {
-          const unknownVersion = result.errors.some((e) => e.code === 'unknown-schema-version');
-          return fail(unknownVersion ? 'UNKNOWN_SCHEMA_VERSION' : 'INVALID_PROJECT', 'No se pudo abrir el proyecto.', result.errors);
-        }
-        return ok({ summary: summarize(result.value), ...(args.includeProject ? { project: result.value } : {}) });
+        const { project } = loadProjectFile(resolveInRoot(root, args.path));
+        return ok({ summary: summarize(project), ...(args.includeProject ? { project } : {}) });
       } catch (e) {
         return fromThrown(e);
       }
@@ -255,6 +236,44 @@ export function createFmeServer(options: FmeServerOptions): McpServer {
         const timeoutMs = Math.min(args.timeoutMs ?? 120_000, cap);
         const result = await adapter.run(job, { jobId, workDir, timeoutMs });
         return ok({ result, conformance: checkAdapterResult(result, adapter) });
+      } catch (e) {
+        return fromThrown(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    'preview.render',
+    {
+      description: 'Genera una preview real de una capa (o de un rango de sus fotogramas) a la resolución del perfil de 4 GB (@fme/render-plan) con el adaptador que la enrute. Devuelve ENGINE_UNAVAILABLE sin ejecutar nada si falta el motor.',
+      inputSchema: {
+        path: z.string(),
+        layerId: z.string().min(1),
+        startFrame: z.number().int().min(0).optional(),
+        endFrame: z.number().int().positive().optional().describe('Exclusivo, relativo a la capa'),
+        vramBudgetMiB: z.number().positive().default(DEFAULT_PREVIEW_VRAM_MIB),
+        alpha: z.boolean().default(false),
+        timeoutMs: z.number().int().positive().optional(),
+      },
+    },
+    async (args) => {
+      try {
+        const file = resolveInRoot(root, args.path);
+        const workRoot = resolveInRoot(root, '.fme-jobs');
+        mkdirSync(workRoot, { recursive: true });
+        const cap = options.jobTimeoutMs ?? 600_000;
+        const rendered = await previewRender({
+          adapters: [...adapters.values()],
+          projectFile: file,
+          layerId: args.layerId,
+          workRoot,
+          vramBudgetMiB: args.vramBudgetMiB,
+          timeoutMs: Math.min(args.timeoutMs ?? 120_000, cap),
+          alpha: args.alpha,
+          ...(args.startFrame !== undefined ? { startFrame: args.startFrame } : {}),
+          ...(args.endFrame !== undefined ? { endFrameExclusive: args.endFrame } : {}),
+        });
+        return ok(rendered);
       } catch (e) {
         return fromThrown(e);
       }

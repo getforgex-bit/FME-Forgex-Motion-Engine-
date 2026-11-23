@@ -1,26 +1,30 @@
 /**
- * CLI de FME (FDN-081): opera sin agente sobre la misma API que `apps/mcp`
- * (`@fme/project`, `ConnectorRegistry`, `@fme/router` y los adaptadores registrados).
+ * CLI de FME (FDN-081, FDN-080b): opera sin agente sobre la misma lógica que el servidor MCP
+ * (`@fme/mcp/ops`: carga de proyectos, enrutado, jobs y previews) y sobre `@fme/project`,
+ * `ConnectorRegistry`, `@fme/router` y los adaptadores registrados.
  *
  * Códigos de salida: 0 correcto · 1 error de la operación (proyecto inválido, ruta rechazada, job fallido)
  * · 2 uso incorrecto · 3 motor no disponible (el job no se ejecutó).
  */
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { RevideoAdapter } from '@fme/adapter-revideo';
+import { ConnectorRegistryError, type ConnectorAdapter, type ConnectorFilter } from '@fme/connectors';
 import {
-  ConnectorRegistryError,
-  checkAdapterResult,
-  createConnectorRegistry,
-  type ConnectorAdapter,
-  type ConnectorFilter,
-  type ConnectorRegistry,
-  type JobRequest,
-} from '@fme/connectors';
-import { deserialize, serialize, type Layer, type Project, type ValidationIssue } from '@fme/project';
-import { planRoute, type RouteTask } from '@fme/router';
+  DEFAULT_PREVIEW_VRAM_MIB,
+  OpsError,
+  buildRegistry,
+  findLayer,
+  loadProjectFile,
+  previewRender,
+  renderLayer,
+  routeTaskFor,
+  summarize,
+} from '@fme/mcp/ops';
+import { serialize, type ValidationIssue } from '@fme/project';
+import { planRoute } from '@fme/router';
 
 export const EXIT = { ok: 0, error: 1, usage: 2, engineUnavailable: 3 } as const;
 
@@ -47,6 +51,9 @@ Comandos:
   connectors list [--capability c] [--accepts t] [--produces t]
   route plan <archivo> --layer <id>             Planifica qué conector renderiza la capa
   job run <archivo> --layer <id> --out <dir>    Ejecuta el job (--alpha, --timeout <ms>)
+  preview render <archivo> --layer <id> --out <dir>
+                                                Preview de la capa a la resolución del perfil de 4 GB
+                                                (--start <n> --end <n> en fotogramas de la capa, --vram <MiB>, --alpha, --timeout <ms>)
 
 Opciones generales: --json (salida JSON), --help
 Códigos de salida: 0 correcto, 1 error, 2 uso incorrecto, 3 motor no disponible
@@ -82,75 +89,39 @@ function fail(out: Output, e: CliError): number {
   return e.exit;
 }
 
-function loadProject(file: string): { project: Project; sourceVersion: unknown } {
-  let text: string;
+/** Traduce los errores de las operaciones compartidas; `ENGINE_UNAVAILABLE` tiene su propio código de salida. */
+function fromOps(e: OpsError): CliError {
+  return new CliError(e.code, e.message, e.code === 'ENGINE_UNAVAILABLE' ? EXIT.engineUnavailable : EXIT.error, e.details);
+}
+
+function load(file: string) {
   try {
-    text = readFileSync(resolve(file), 'utf8').replace(/\r\n/g, '\n');
+    return loadProjectFile(resolve(file));
   } catch (e) {
-    const err = e as NodeJS.ErrnoException;
-    throw new CliError(err.code === 'ENOENT' ? 'FILE_NOT_FOUND' : 'FILE_UNREADABLE', `No se puede leer «${file}»: ${err.message}`);
+    if (e instanceof OpsError) throw fromOps(e);
+    throw e;
   }
-  const result = deserialize(text);
-  if (!result.ok) {
-    const unknown = result.errors.some((i) => i.code === 'unknown-schema-version');
-    throw new CliError(unknown ? 'UNKNOWN_SCHEMA_VERSION' : 'INVALID_PROJECT', `El proyecto «${file}» no es válido.`, EXIT.error, result.errors);
-  }
-  let sourceVersion: unknown;
+}
+
+function locate(project: ReturnType<typeof load>['project'], layerId: string) {
   try {
-    sourceVersion = (JSON.parse(text) as { schemaVersion?: unknown }).schemaVersion;
-  } catch {
-    sourceVersion = undefined;
+    return findLayer(project, layerId);
+  } catch (e) {
+    if (e instanceof OpsError) throw fromOps(e);
+    throw e;
   }
-  return { project: result.value, sourceVersion };
-}
-
-function summarize(p: Project) {
-  const layers = p.sequences.flatMap((s) => s.scenes.flatMap((sc) => sc.layers));
-  return {
-    id: p.id,
-    name: p.name,
-    schemaVersion: p.schemaVersion,
-    fps: p.fps,
-    size: { width: p.width, height: p.height },
-    assets: p.assets.length,
-    sequences: p.sequences.length,
-    scenes: p.sequences.reduce((n, s) => n + s.scenes.length, 0),
-    layers: layers.length,
-  };
-}
-
-function findLayer(project: Project, layerId: string): Layer {
-  for (const seq of project.sequences) {
-    for (const scene of seq.scenes) {
-      const layer = scene.layers.find((l) => l.id === layerId);
-      if (layer) return layer;
-    }
-  }
-  throw new CliError('LAYER_NOT_FOUND', `No existe la capa «${layerId}» en el proyecto.`);
-}
-
-/** Capacidad que debe tener el conector que renderice una capa. Las capas text y svg las pinta `render.video`. */
-function capabilityFor(layer: Layer): string {
-  return layer.kind === 'text' || layer.kind === 'svg' ? 'render.video' : `render.${layer.kind}`;
-}
-
-function buildRegistry(adapters: ConnectorAdapter[]): ConnectorRegistry {
-  const registry = createConnectorRegistry();
-  for (const a of adapters) registry.register(a.simple, a.advanced);
-  return registry;
-}
-
-function routeTaskFor(layer: Layer): RouteTask {
-  return {
-    operation: 'render.video',
-    requiredCapabilities: [capabilityFor(layer)],
-    requiredAccepts: ['fme/project+json'],
-  };
 }
 
 function requireString(value: string | undefined, name: string): string {
   if (value === undefined || value === '') throw new CliError('USAGE', `Falta ${name}.`, EXIT.usage);
   return value;
+}
+
+function intOption(value: string | undefined, name: string, min: number): number | undefined {
+  if (value === undefined) return undefined;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < min) throw new CliError('USAGE', `${name} debe ser un entero ≥ ${min}.`, EXIT.usage);
+  return n;
 }
 
 export async function run(argv: string[], io: CliIo, options: CliOptions = {}): Promise<number> {
@@ -170,6 +141,9 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
         produces: { type: 'string' },
         timeout: { type: 'string' },
         alpha: { type: 'boolean' },
+        start: { type: 'string' },
+        end: { type: 'string' },
+        vram: { type: 'string' },
       },
     });
   } catch (e) {
@@ -191,7 +165,7 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
 
     switch (command) {
       case 'project validate': {
-        const { project, sourceVersion } = loadProject(requireString(file, 'el archivo del proyecto'));
+        const { project, sourceVersion } = load(requireString(file, 'el archivo del proyecto'));
         const migratedFrom = sourceVersion !== project.schemaVersion ? sourceVersion : undefined;
         const summary = summarize(project);
         emit(out, { valid: true, ...(migratedFrom !== undefined ? { migratedFrom } : {}), summary },
@@ -199,7 +173,7 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
         return EXIT.ok;
       }
       case 'project migrate': {
-        const { project } = loadProject(requireString(file, 'el archivo del proyecto'));
+        const { project } = load(requireString(file, 'el archivo del proyecto'));
         const text = serialize(project);
         if (values.out !== undefined) {
           writeFileSync(resolve(values.out), text);
@@ -224,46 +198,50 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
         return EXIT.ok;
       }
       case 'route plan': {
-        const { project } = loadProject(requireString(file, 'el archivo del proyecto'));
-        const layer = findLayer(project, requireString(values.layer, '--layer <id>'));
+        const { project } = load(requireString(file, 'el archivo del proyecto'));
+        const { layer } = locate(project, requireString(values.layer, '--layer <id>'));
         const plan = planRoute(buildRegistry(adapters), routeTaskFor(layer));
         emit(out, plan, `${plan.status === 'planned' ? `Conector elegido: ${plan.selected?.connectorId}` : 'Sin conector'}. ${plan.justification}`);
         return plan.status === 'planned' ? EXIT.ok : EXIT.error;
       }
       case 'job run': {
         const projectFile = resolve(requireString(file, 'el archivo del proyecto'));
-        const { project } = loadProject(projectFile);
-        const layer = findLayer(project, requireString(values.layer, '--layer <id>'));
+        const { project } = load(projectFile);
+        const { layer } = locate(project, requireString(values.layer, '--layer <id>'));
         const outDir = resolve(requireString(values.out, '--out <dir>'));
-        const timeoutMs = values.timeout === undefined ? 120_000 : Number(values.timeout);
-        if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) throw new CliError('USAGE', '--timeout debe ser un entero positivo (ms).', EXIT.usage);
-
-        const plan = planRoute(buildRegistry(adapters), routeTaskFor(layer));
-        const connectorId = plan.selected?.connectorId;
-        const adapter = adapters.find((a) => a.simple.id === connectorId);
-        if (plan.status !== 'planned' || adapter === undefined) {
-          throw new CliError('NO_CONNECTOR', `Ningún conector puede renderizar la capa «${layer.id}». ${plan.justification}`, EXIT.error, plan.rejections);
-        }
-        const probe = await adapter.probe();
-        if (!probe.available) {
-          throw new CliError('ENGINE_UNAVAILABLE', `El motor de «${adapter.simple.id}» no está disponible; no se ejecutó el job.`, EXIT.engineUnavailable, probe.diagnostics);
-        }
+        const timeoutMs = intOption(values.timeout, '--timeout', 1) ?? 120_000;
         const jobId = randomUUID();
-        const workDir = resolve(outDir, jobId);
-        mkdirSync(workDir, { recursive: true });
-        const job: JobRequest = {
-          projectId: project.id,
-          operation: 'render.video',
-          inputs: [{ uri: projectFile, type: 'fme/project+json' }],
-          requirements: { layerId: layer.id, ...(values.alpha ? { alpha: true } : {}) },
-          seed: project.seed,
-        };
-        const result = await adapter.run(job, { jobId, workDir, timeoutMs });
-        const conformance = checkAdapterResult(result, adapter);
-        emit(out, { connectorId: adapter.simple.id, engineVersion: probe.engineVersion, result, conformance },
+        const rendered = await renderLayer({
+          adapters, projectFile, project, layer, jobId, workDir: resolve(outDir, jobId), timeoutMs,
+          ...(values.alpha ? { alpha: true } : {}),
+        });
+        const { result, conformance } = rendered;
+        emit(out, { connectorId: rendered.connectorId, engineVersion: rendered.engineVersion, result, conformance },
           result.status === 'ok'
             ? `Job ${result.jobId} correcto: ${result.outputs.map((o) => o.uri).join(', ')}`
             : `Job ${result.jobId} ${result.status}: ${result.diagnostics.map((d) => `${d.code}: ${d.message}`).join('; ')}`);
+        return result.status === 'ok' && conformance.length === 0 ? EXIT.ok : EXIT.error;
+      }
+      case 'preview render': {
+        const projectFile = resolve(requireString(file, 'el archivo del proyecto'));
+        const layerId = requireString(values.layer, '--layer <id>');
+        const outDir = resolve(requireString(values.out, '--out <dir>'));
+        const startFrame = intOption(values.start, '--start', 0);
+        const endFrame = intOption(values.end, '--end', 1);
+        const vramBudgetMiB = intOption(values.vram, '--vram', 1) ?? DEFAULT_PREVIEW_VRAM_MIB;
+        const timeoutMs = intOption(values.timeout, '--timeout', 1) ?? 120_000;
+        mkdirSync(outDir, { recursive: true });
+        const preview = await previewRender({
+          adapters, projectFile, layerId, workRoot: outDir, vramBudgetMiB, timeoutMs,
+          ...(startFrame !== undefined ? { startFrame } : {}),
+          ...(endFrame !== undefined ? { endFrameExclusive: endFrame } : {}),
+          ...(values.alpha ? { alpha: true } : {}),
+        });
+        const { result, conformance } = preview;
+        emit(out, preview,
+          result.status === 'ok'
+            ? `Preview ${preview.profile.width}×${preview.profile.height}, fotogramas ${preview.range.startFrame}–${preview.range.endFrameExclusive}: ${result.outputs.map((o) => o.uri).join(', ')}`
+            : `Preview ${result.status}: ${result.diagnostics.map((d) => `${d.code}: ${d.message}`).join('; ')}`);
         return result.status === 'ok' && conformance.length === 0 ? EXIT.ok : EXIT.error;
       }
       default:
@@ -271,6 +249,7 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
     }
   } catch (e) {
     if (e instanceof CliError) return fail(out, e);
+    if (e instanceof OpsError) return fail(out, fromOps(e));
     if (e instanceof ConnectorRegistryError) return fail(out, new CliError(e.code, e.message));
     return fail(out, new CliError('INTERNAL_ERROR', e instanceof Error ? e.message : String(e)));
   }

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Entrada stdio del servidor MCP de FME. Uso: `node dist/main.js --root <carpeta>` (o `FME_MCP_ROOT`).
- * Por defecto no registra adaptadores: `FME_MCP_ADAPTERS=revideo` registra el de Revideo si está instalado.
+ * Por defecto no registra adaptadores: `FME_MCP_ADAPTERS=revideo` registra el de Revideo si está instalado
+ * (`FME_REVIDEO_ENGINE_DIR` cambia la carpeta de su motor).
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createConnectorRegistry, type ConnectorAdapter } from '@fme/connectors';
@@ -27,8 +28,9 @@ async function loadAdapters(): Promise<ConnectorAdapter[]> {
       process.exit(2);
     }
     const moduleName = '@fme/adapter-revideo';
-    const mod = (await import(moduleName)) as { RevideoAdapter: new () => ConnectorAdapter };
-    adapters.push(new mod.RevideoAdapter());
+    const mod = (await import(moduleName)) as { RevideoAdapter: new (opts?: { engineDir?: string }) => ConnectorAdapter };
+    const engineDir = process.env.FME_REVIDEO_ENGINE_DIR;
+    adapters.push(new mod.RevideoAdapter(engineDir ? { engineDir } : {}));
   }
   return adapters;
 }

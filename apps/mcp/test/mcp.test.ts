@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { after, before, test } from 'node:test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -93,7 +94,7 @@ test('route.plan planifica con el enrutador real', async () => {
 });
 
 test('las herramientas sin implementación devuelven NOT_IMPLEMENTED', async () => {
-  for (const name of ['preview.render', 'preview.inspect', 'project.export']) {
+  for (const name of ['preview.inspect', 'project.export']) {
     const r = await call(client, name);
     assert.equal(r.isError, true, name);
     assert.equal(r.body.error.code, 'NOT_IMPLEMENTED', name);
@@ -176,5 +177,65 @@ test('la entrada real (main.ts) arranca por stdio sin adaptadores y exige --root
     assert.equal((await call(c, 'project.open', { path: 'prueba-hibrida-10s/project.fme.json' })).isError, false);
   } finally {
     await c.close();
+  }
+});
+
+// --- preview.render (FDN-080b) ---------------------------------------------------------------------------
+
+test('preview.render entrega al adaptador un proyecto derivado a la resolución del perfil de 4 GB', async () => {
+  const r = await call(client, 'preview.render', { path: 'prueba-hibrida-10s/project.fme.json', layerId: 'capa-titulo', startFrame: 10, endFrame: 50 });
+  try {
+    assert.equal(r.isError, false);
+    assert.equal(r.body.connectorId, 'revideo');
+    assert.deepEqual([r.body.profile.width, r.body.profile.height], [960, 540]);
+    assert.deepEqual(r.body.range, { startFrame: 10, endFrameExclusive: 50 });
+    assert.ok(r.body.segments.length > 0);
+    assert.equal(r.body.result.diagnostics[0].code, 'TEST_DOUBLE');
+    const derived = JSON.parse(readFileSync(r.body.previewProject, 'utf8'));
+    assert.equal(derived.width, 960);
+    assert.equal(derived.sequences[0].scenes[0].layers[0].durationFrames, 40);
+    assert.ok(r.body.previewProject.startsWith(join(examples, '.fme-jobs')));
+    const entrada = JSON.parse(readFileSync(join(r.body.result.diagnostics[0].message.replace('workDir=', ''), 'out.txt'), 'utf8'));
+    assert.equal(entrada.inputs[0].uri, r.body.previewProject, 'el job usa el proyecto derivado, no el original');
+  } finally {
+    rmSync(join(examples, '.fme-jobs'), { recursive: true, force: true });
+  }
+});
+
+test('preview.render: errores estructurados (capa, rango, ruta, sin conector)', async () => {
+  const base = { path: 'prueba-hibrida-10s/project.fme.json' };
+  assert.equal((await call(client, 'preview.render', { ...base, layerId: 'nadie' })).body.error.code, 'LAYER_NOT_FOUND');
+  assert.equal((await call(client, 'preview.render', { ...base, layerId: 'capa-titulo', startFrame: 100, endFrame: 200 })).body.error.code, 'INVALID_RANGE');
+  assert.equal((await call(client, 'preview.render', { path: '../package.json', layerId: 'x' })).body.error.code, 'PATH_OUTSIDE_ROOT');
+  assert.equal((await call(client, 'preview.render', { ...base, layerId: 'capa-3d' })).body.error.code, 'NO_CONNECTOR');
+  rmSync(join(examples, '.fme-jobs'), { recursive: true, force: true });
+});
+
+test('preview.render con el motor real: MP4 a resolución de preview (skip con motivo sin motor)', { timeout: 300_000 }, async (t) => {
+  const c = new Client({ name: 'fme-test', version: '0.0.0' });
+  await c.connect(new StdioClientTransport({
+    command: process.execPath,
+    args: [join(import.meta.dirname, '..', 'src', 'main.ts'), '--root', examples],
+    env: { ...(process.env as Record<string, string>), FME_MCP_ADAPTERS: 'revideo' },
+    stderr: 'pipe',
+  }));
+  try {
+    const r = await call(c, 'preview.render', { path: 'prueba-hibrida-10s/project.fme.json', layerId: 'capa-titulo', timeoutMs: 240_000 });
+    if (r.body.error?.code === 'ENGINE_UNAVAILABLE') {
+      t.skip(`motor de Revideo no disponible: ${r.body.error.details?.map((d: any) => d.message).join(' | ')}`);
+      return;
+    }
+    assert.equal(r.isError, false, JSON.stringify(r.body));
+    assert.equal(r.body.result.status, 'ok');
+    assert.deepEqual(r.body.conformance, []);
+    const { probeMedia } = await import(pathToFileURL(join(repo, 'scripts', 'probe-media.mjs')).href);
+    const file = fileURLToPath(r.body.result.outputs[0].uri);
+    const media = await probeMedia(file);
+    assert.equal(media.width, 960);
+    assert.equal(media.height, 540);
+    assert.equal(media.frames, 120);
+  } finally {
+    await c.close();
+    rmSync(join(examples, '.fme-jobs'), { recursive: true, force: true });
   }
 });
