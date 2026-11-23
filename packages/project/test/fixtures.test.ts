@@ -11,7 +11,9 @@ const hibrida = join(import.meta.dirname, "..", "..", "..", "examples", "prueba-
 const archivos = [...readdirSync(dir).filter((f) => f.endsWith(".fme.json")).map((f) => join(dir, f)), hibrida];
 
 function cargar(ruta: string): Project {
-  const r = deserialize(readFileSync(ruta, "utf8"));
+  const r = deserialize(readFileSync(ruta, "utf8").replace(/
+/g, "
+"));
   assert.ok(r.ok, r.ok ? "" : JSON.stringify(r.errors));
   return r.value;
 }
@@ -22,7 +24,9 @@ test("hay al menos 3 fixtures (mínima, 29,97 e híbrida)", () => {
 
 for (const ruta of archivos) {
   test(`fixture válida y con round-trip idéntico: ${ruta.split(/[\/]/).slice(-2).join("/")}`, () => {
-    const texto = readFileSync(ruta, "utf8");
+    const texto = readFileSync(ruta, "utf8").replace(/
+/g, "
+"); // autocrlf en Windows
     const p = cargar(ruta);
     assert.equal(parseProject(JSON.parse(texto)).ok, true);
     assert.equal(serialize(p), texto);
