@@ -41,6 +41,10 @@
 | FDN-042b | CL-A2 Sonnet 5.5 | ~17:25 → 17:30 UTC | ~5 min | 184 pass ✔ | 0 | — | 0 | 0 | 2 (impact) / 0 | no medido | Arregló consumidores ajenos para mantener el verde y los declaró |
 | FDN-061b | CX-C0+C1+C2 Sol | 17:25 → 17:33 UTC | ~8 min | Blender real (A0: 7/7) | 0 | — | 0 | 0 | sí / 1 | no medido | Primera tarea con los tres Sol a la vez |
 | FDN-042a | AG-B0+B1+B2 | 17:31 → 17:45 UTC | ~14 min | FreeCut real 14/14 (A0 lo reprodujo) | 0 | — | 0 | 0 | 3 / 1 | no medido | Hallazgo empírico valioso: alpha por formato en FreeCut |
+| FDN-042c | CL-A1 Sonnet 5.5 | 17:54 → 18:16 UTC | ~22 min | pipeline 3 motores ×3 (A0 lo reprodujo, 87 s) | 0 | encontró un bug propio (SVG vacío en FDN-032) | sí (FDN-032) | 0 | — | no medido | La métrica de píxeles destapó un bug que el recuento de fotogramas no veía |
+| FDN-074a | AG-B0+B1+B2 | 17:55 → 18:11 UTC | ~16 min | FreeCut real 20/20; desfase A/V 0 ms | 0 | — | 0 | 0 | 3 / 1 | no medido | Su test de integración tiene un fallo intermitente upstream (→ 074b) |
+| FDN-080b | CL-A2 Sonnet 5.5 | ~17:55 → 18:00 UTC | ~5 min | 200 pass; preview con motor real | 0 | — | 0 | 0 | — | no medido | Eliminó la duplicación MCP/CLI |
+| FDN-073a | CX-C0+C1+C2 Sol | 17:56 → 18:04 UTC | ~8 min | 10 pass + 3 TODO | 0 | — | 0 | 0 | — | no medido | Señaló los huecos como TODO en lugar de ocultarlos |
 | FDN-004 | CL-A3 Haiku 5.5 | 05:51 → 05:56 UTC | ~5 min | n/a (documento) | 0 | — | 0 | 0 | 0 / 0 | no medido | Calidad alta; contradijo con fuentes la hipótesis «Sonnet ≥ Opus en terminal» |
 
 ## Tiempo de coordinación (A0)

@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-23 (integración 7)._
+> _Última consolidación: 2026-11-23 (integración 8; **Fase 4 cerrada**, criterios 4/8)._
 
 ## Resumen
 
@@ -41,11 +41,11 @@
 | FDN-033 | Cierre de la Fase 3: descubrimiento → job real → procedencia, de extremo a extremo | CL-A1 (A0 valida) | 030, 032 | DONE (13606e6; Fase 3 cerrada) |
 | FDN-040 | Adaptador Blender (nivel A) | CX | 011, 030, 031 | DONE (ab6e780; A0 verificó con Blender real 6/6) |
 | FDN-041 | Adaptador FreeCut (nivel A, recomendado por FDN-012) | AG | 012, 030, 031 | DONE (7bdca83; A0: FreeCut real 7/7) |
-| FDN-042 | Rutas A/B/C + `ExternalProjectRef`/`RenderArtifact` enlazados | a decidir | 021, 032, 040, 041 | READY (dividida en 042a/042b/042c) |
-| FDN-043 | Cierre de la Fase 4 (criterio #3) | CL-A0 | 042 | BACKLOG |
+| FDN-042 | Rutas A/B/C + `ExternalProjectRef`/`RenderArtifact` enlazados | a decidir | 021, 032, 040, 041 | DONE (042a/b/c) |
+| FDN-043 | Cierre de la Fase 4 (criterio #3) | CL-A0 | 042 | DONE (criterio #3 ☑) |
 | FDN-050 | Núcleo del router (8 pasos, modos, restricciones duras) con tarjetas simuladas | AG | 030 | DONE (3ef734e) |
 | FDN-051 | Medición de tokens: tarjeta simple frente a avanzada | CL-A3 | 050 | DONE (3366479) |
-| FDN-052 | Fallbacks con adaptadores reales | a decidir | 050, 043 | BACKLOG |
+| FDN-052 | Fallbacks con adaptadores reales | AG | 050, 043 | READY |
 | FDN-053 | Cierre de la Fase 5 (criterios #4 y #5) | CL-A0 | 051, 052 | BACKLOG |
 | FDN-060 | Dirección artística: perfiles de estilo y reglas | libre (el primero que quede libre) | 021 | DONE (b78af00, AG) |
 | FDN-061 | Gradientes y técnicas → operaciones por backend | CL-A1 | 060, 032, 040 | DONE (ed40273; Revideo, A0: 9/9 con motor) |
@@ -61,12 +61,16 @@
 | FDN-090 | Protocolo de relevo entre equipos (equipo sin cuota → otro lo releva; reincorporación con nota de lo avanzado) + ADR-0013 | CL-A0 | — | DONE (ADR-0013 aceptada; `coord.mjs equipos/caida/relevar/reincorporar`) |
 | FDN-042a | FreeCut: componer pistas y overlays (vídeo de fondo + MOV ProRes alpha + secuencia PNG RGBA) y exportar | AG | 041 | DONE (58c752b; A0: FreeCut real 14/14) |
 | FDN-042b | `Project` guarda los `RenderArtifact` y los enlaza (ADR-0015 + `schemaVersion` 3 + migración) | CL-A2 | 028 | DONE (8aaa304; schemaVersion 3) |
-| FDN-042c | Pipeline de la ruta híbrida: router → Revideo + Blender → FreeCut → vídeo final con fuentes enlazadas | CL-A1 | 042a, 042b | READY |
+| FDN-042c | Pipeline de la ruta híbrida: router → Revideo + Blender → FreeCut → vídeo final con fuentes enlazadas | CL-A1 | 042a, 042b | DONE (cb2d404; A0 lo reprodujo con 3 motores) |
 | FDN-061b | Gradientes en Blender (mapeo propuesto en `art-direction/backends/blender.ts`) con métrica de píxeles | CX | 040, 061 | DONE (81bad19; A0: Blender real 7/7) |
 | FDN-063 | Técnicas pendientes en los backends: `2.5d`, `3d-with-2d` y `guide3DLayerId` (2D guiado por cámara 3D) | por asignar | 061, 061b | BACKLOG |
-| FDN-073a | Pruebas técnicas independientes de la ruta: seguridad (rutas, comandos, permisos) y regresión de salidas por hash de contenido | CX | 040, 041, 032 | READY |
-| FDN-074a | Audio en `edit.compose`: pista de audio, sample rate explícito y sincronía A/V medida | AG | 042a | READY |
-| FDN-080b | MCP y CLI: `preview.render` y `project.export` reales (render-plan + adaptadores), sin simular | CL-A2 | 071, 080, 081 | READY |
+| FDN-073a | Pruebas técnicas independientes de la ruta: seguridad (rutas, comandos, permisos) y regresión de salidas por hash de contenido | CX | 040, 041, 032 | DONE (b5bfe85; 3 TODO → 073b) |
+| FDN-074a | Audio en `edit.compose`: pista de audio, sample rate explícito y sincronía A/V medida | AG | 042a | DONE (ea2df61) |
+| FDN-080b | MCP y CLI: `preview.render` y `project.export` reales (render-plan + adaptadores), sin simular | CL-A2 | 071, 080, 081 | DONE (991f1f5) |
+| FDN-074b | FreeCut: tratar `ATOMIC_REPLACE_UNAVAILABLE` (EPERM en `.freecut-headless/atomic-test`, ~1 de cada 6) como transitorio y reintentar el job | AG | 074a | READY |
+| FDN-073b | Endurecimiento: `--root` en la CLI, raíces de anfitrión en las llamadas directas a Revideo y FreeCut, y raíces permitidas en `edit.compose` (los 3 TODO de 073a) | CX | 073a | READY |
+| FDN-075a | Criterio #8: reabrir el proyecto, cambiar una capa y re-renderizar **solo** lo afectado (caché + render-plan en el pipeline) | CL-A1 | 042c, 070, 071 | READY |
+| FDN-080c | `project.export` real en MCP y CLI con `@fme/pipeline` | CL-A2 | 042c, 080b | READY |
 | FDN-091 | Modo ausencia del usuario (ADR-0014) | CL-A0 | 090 | DONE |
 | FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | IN_PROGRESS |
 
@@ -130,6 +134,45 @@ Cada ficha es el contrato de la tarea: si algo no está aquí, pregúntalo antes
 - **Aceptación:** tests de alta y baja, duplicados, filtros, `unknown` y secciones; `npm run typecheck` + `npm test` en verde.
 
 ---
+
+## Fichas de la Tanda 9 (READY desde el 2026-11-23, integración 8): hacia la prueba híbrida completa
+
+Quedan los criterios **#4 y #5** (router), **#7** (exportación con audio y sincronía) y **#8** (cambiar una parte sin rehacerlo todo).
+
+### FDN-075a · Cambio parcial sin rehacer todo (CL-A1) → criterio #8
+- **Rutas:** `packages/pipeline/**` (y `packages/render-plan` o `packages/cache` solo mediante una `solicitud`).
+- **Hacer:**
+  - `runHybrid` usa `DiskCache` + `dependencyHash` por capa o segmento (de `@fme/render-plan`): la segunda ejecución sin cambios no re-renderiza nada;
+  - al cambiar el texto o un canal de una capa, solo se re-renderizan esa capa y la composición final;
+  - los artefactos no afectados conservan su `dependencyHash` y su archivo;
+  - «reabrir la fuente externa»: el `ExternalProjectRef` de la capa permite volver a su documento nativo (escena de Revideo o script/parámetros de Blender) y cambiarlo.
+- **Aceptación (criterio #8):** con los motores reales, la ejecución 1 es completa; la 2 sin cambios ejecuta 0 jobs de motor; la 3, tras cambiar el texto del título, ejecuta 1 job de Revideo + la composición, y el resto viene de la caché (contado en la procedencia). Además, el vídeo final cambia **solo** en el rango del título (diferencia de píxeles fuera de 180–299 = 0 o despreciable, con el umbral declarado).
+
+### FDN-080c · `project.export` real (CL-A2)
+- **Rutas:** `apps/mcp/**` y `apps/cli/**`.
+- **Hacer:** `project.export` (MCP) y `fme project export` (CLI) llaman a `runHybrid` de `@fme/pipeline`, con validación de rutas en la raíz, `ENGINE_UNAVAILABLE` sin motor y progreso por pasos en la salida JSON.
+- **Aceptación:** con los motores reales, la exportación de la fixture híbrida produce el MP4 de 300 fotogramas y el proyecto enlazado; sin motor, skip con motivo.
+
+### FDN-052 · Fallbacks con adaptadores reales (AG) → base de los criterios #4 y #5
+- **Rutas:** `packages/router/**` y `packages/recovery/**`.
+- **Hacer:** con el registro de los **tres adaptadores reales** (tarjetas de `packages/adapters/*/src/cards.ts`), demostrar:
+  - (#4) que el router elige una ruta compatible leyendo primero solo las tarjetas simples;
+  - (#5) que solo inspecciona secciones avanzadas cuando una restricción crítica lo exige (p. ej. alpha);
+  - y el fallback real: si un adaptador falla (`probe` no disponible o error del motor), `@fme/recovery` usa la alternativa compatible o escala al usuario si no la hay.
+- **Aceptación:** tests con las métricas del router (`simpleCardsRead`, `advancedSectionsRequested`) sobre las tarjetas reales, y un test con motor real que fuerza un fallo y comprueba el fallback, con skip con motivo sin motor.
+
+### FDN-074b · FreeCut: `ATOMIC_REPLACE_UNAVAILABLE` transitorio (AG)
+- **Evidencia (A0):** `npm test` 1 de cada 6 falla en `audio-sync.integration.test.ts:214` con `ATOMIC_REPLACE_UNAVAILABLE … EPERM … rename '….freecut-headless\.atomic-test.<pid>.<uuid>.tmp' -> '…atomic-test'`. Es la comprobación de arranque del headless de FreeCut (upstream); en Windows otro proceso bloquea el archivo un instante.
+- **Hacer (sin forkear FreeCut):** el adaptador clasifica ese código como transitorio y reintenta el job completo con un `workDir` nuevo (hasta 3 veces, con backoff); el diagnóstico conserva los intentos.
+- **Aceptación:** `npm test` 6 veces seguidas sin ese fallo, con el comando citado.
+
+### FDN-073b · Endurecimiento de rutas (CX)
+- **Rutas:** `apps/cli/src/**`, `packages/adapters/{revideo,freecut}/src/**` (solo validación de rutas; avisa a sus dueños, A1 y AG, por mensaje) y `tests/seguridad/**`.
+- **Hacer:** los 3 TODO de FDN-073a:
+  - `--root` en la CLI, validado como en MCP;
+  - opción `allowedRoots` en los adaptadores Revideo y FreeCut cuando se llaman directamente;
+  - raíces permitidas para las entradas de `edit.compose`.
+- **Aceptación:** los 3 TODO pasan a tests en verde y el resto de la suite sigue en verde.
 
 ## Fichas de la Tanda 8 (READY desde el 2026-11-23, integración 7)
 

@@ -64,10 +64,10 @@ Orden de construcción (spec §19.1): **verificar software → archivo universal
 ## Mediano plazo: prueba híbrida de 10 s (Fases 4–7)
 
 ### Fase 4: Integración real
-- [ ] Adaptadores de FreeCut y Blender (nivel A: archivo/CLI; nivel B donde se pueda).
-- [ ] Rutas A, B y C del catálogo (Revideo→FreeCut, Blender→FreeCut, originales→FreeCut).
-- [ ] `ExternalProjectRef` y `RenderArtifact` enlazados en el proyecto.
-- **Cierre:** vídeo final con fuentes enlazadas (criterio #3).
+- [x] Adaptadores de FreeCut y Blender (nivel A: archivo/CLI; nivel B donde se pueda). → FDN-040 y FDN-041 (nivel A), verificados con los motores reales.
+- [x] Rutas A, B y C del catálogo (Revideo→FreeCut, Blender→FreeCut, originales→FreeCut). → `@fme/pipeline` (FDN-042c): A con MOV ProRes alpha; B con PNG RGBA precodificado a ProRes 4444; C con el fondo original y su audio.
+- [x] `ExternalProjectRef` y `RenderArtifact` enlazados en el proyecto. → `schemaVersion` 3 (FDN-042b, ADR-0015).
+- **Cierre:** vídeo final con fuentes enlazadas (criterio #3). ✅ **Cerrada el 2026-11-23** (FDN-043; A0 reprodujo el pipeline con los tres motores reales).
 
 ### Fase 5: Enrutador
 - [ ] Modos automático, manual e híbrido.

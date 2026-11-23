@@ -167,3 +167,15 @@ Tanda 7 abierta: Fase 4, con 042a (AG), 042b (A2) y 061b (CX). 042c (A1) queda p
 | FDN-042a compose en FreeCut | 58c752b | 192 pass; `node --test packages/adapters/freecut/test/*.test.ts` con FreeCut real → 14/14, 18 s | fusionada |
 
 Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (A1, criterio #3), 080b (A2), 074a (AG) y 073a (CX).
+
+
+## 2026-11-23 · Integración 8: cierre de la Fase 4 (A0)
+| Rama | Commit | Verificación de A0 | Resultado |
+|---|---|---|---|
+| FDN-042c pipeline | cb2d404 | ref + lockfile; 192 pass. **Con los 3 motores reales:** `node --test packages/pipeline/test/*.test.ts` → 1/1 en 87 s. Inspección propia del `hybrid.mp4` con `probe-media`: 300 fotogramas, 30 FPS, 1280×720, con audio. Proyecto v3 con 5 artefactos y `renderArtifactId` resueltos (2D, 3D y título). Mosaico de los fotogramas 15/120/200/290: cada capa en su rango | fusionada |
+| FDN-074a audio | ea2df61 | 198 pass | fusionada |
+| FDN-080b preview y ops | 991f1f5 | 206 pass (un reintento por EPERM) | fusionada |
+| FDN-073a seguridad y regresión | b5bfe85 | globs `tests/**` en npm test y typecheck → 215 pass + 12 skip + 3 TODO | fusionada |
+
+**Criterio #3 ☑ y Fase 4 cerrada.**
+**Nuevo fallo intermitente diagnosticado:** `ATOMIC_REPLACE_UNAVAILABLE` (EPERM en `.freecut-headless/atomic-test`, la comprobación de arranque del headless de FreeCut) en `audio-sync.integration.test.ts:214`, 1 de cada 6 ejecuciones → FDN-074b (reintento en el adaptador, sin forkear). El EPERM de `DiskCache` (070b) no ha vuelto a aparecer.

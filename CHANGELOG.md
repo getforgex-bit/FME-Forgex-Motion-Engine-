@@ -6,6 +6,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 ## [Unreleased]
 
 ### Added
+- **Fase 4 cerrada (criterio #3):** `@fme/pipeline` (FDN-042c). Audio y sincronía en `edit.compose` (FDN-074a). `preview.render` real (FDN-080b). Pruebas de seguridad y regresión (FDN-073a). Corregido: las capas SVG de Revideo salían vacías.
 - `schemaVersion` 3: `Project.artifacts` con validación referencial (FDN-042b, ADR-0015). FreeCut `edit.compose` con overlays alpha (FDN-042a). Gradientes en Blender (FDN-061b).
 - `@fme/adapter-freecut` (FDN-041), `@fme/render-plan` (FDN-071), `@fme/recovery` (FDN-072) y `@fme/cli` (FDN-081).
 - Gradientes → operaciones de Revideo (FDN-061, **criterio #6**). `DiskCache` robusta en Windows (FDN-070b).

@@ -10,13 +10,13 @@ _Última actualización: 2026-11-22: repositorio preparado (Fase 0)._
 | 1 | Verificar software | **Hecha** (2026-11-23, criterio #1) | Tres pruebas individuales repetibles |
 | 2 | Modelo universal | **Hecha** (2026-11-23, criterio #2) | Guardar/abrir sin perder estado |
 | 3 | Conectores | **Hecha** (2026-11-23, E2E con job real) | Descubrimiento y job de extremo a extremo |
-| 4 | Integración real | **En curso** | Vídeo final con fuentes enlazadas |
+| 4 | Integración real | **Hecha** (2026-11-23, criterio #3) | Vídeo final con fuentes enlazadas |
 | 5 | Enrutador | **En curso** (núcleo con tarjetas reales) | Selección justificada y verificable |
 | 6 | Dirección artística | **En curso** (criterio #6 ☑ en Revideo y Blender; faltan técnicas, FDN-063) | Cambios reales y reproducibles en la escena |
 | 7 | Calidad | Pendiente | Prueba híbrida de 10 s superada |
 | 8 | Evolución | Pendiente | Cada pieza nueva demuestra valor concreto |
 
-Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (3/8).
+Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (4/8).
 
 ## Qué existe hoy (verificado)
 
@@ -38,7 +38,9 @@ Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-acept
 - **Tres adaptadores reales** (Revideo, Blender y FreeCut), CLI (`apps/cli`), plan de render por segmentos, recuperación de errores y caché robusta en Windows.
 - **Criterio #6 ☑:** los gradientes cambian una métrica de píxeles de forma monótona en un render real de Revideo.
 - **`schemaVersion` 3:** el proyecto guarda los artefactos generados y valida sus enlaces (FDN-042b, ADR-0015). FreeCut compone pistas con alpha (FDN-042a).
-- `npm test` 192 pass + 8 skip (integraciones sin motor en este checkout).
+- **Fase 4 CERRADA (criterio #3):** `@fme/pipeline` produce la prueba híbrida de 10 s con los tres motores reales y las fuentes enlazadas en el proyecto (FDN-042c).
+- Audio y sincronía A/V en la composición, con desfase medido de 0 ms (FDN-074a); `preview.render` real en MCP y CLI (FDN-080b); pruebas de seguridad y regresión (FDN-073a).
+- `npm test` 215 pass + 12 skip + 3 TODO (endurecimientos señalados por FDN-073a).
 - FORGEX Stack instalado y verificado en el entorno de preparación (ver la bitácora del 2026-11-22). Cada persona debe instalarlo en su máquina.
 
 ## Qué NO existe todavía
