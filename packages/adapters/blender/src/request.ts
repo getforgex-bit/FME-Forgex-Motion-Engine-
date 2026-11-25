@@ -24,6 +24,7 @@ type PreparedJob = {
   request: RenderRequest;
   modelPath: string | undefined;
   layer: Layer;
+  cameraGuide: boolean;
 };
 
 function readProject(projectPath: string): Project {
@@ -79,8 +80,12 @@ export function prepareJob(job: JobRequest, roots: readonly string[]): PreparedJ
   }
   const layerId = job.requirements.layerId;
   if (typeof layerId !== 'string' || layerId.length === 0) throw new Error('requirements.layerId es obligatorio.');
-  if (Object.keys(job.requirements).some((key) => key !== 'layerId' && key !== 'resolution')) {
-    throw new Error('Solo se admiten los requisitos layerId y resolution.');
+  if (Object.keys(job.requirements).some((key) => key !== 'layerId' && key !== 'resolution' && key !== 'cameraGuide')) {
+    throw new Error('Solo se admiten los requisitos cameraGuide, layerId y resolution.');
+  }
+  const cameraGuide = job.requirements.cameraGuide;
+  if (cameraGuide !== undefined && typeof cameraGuide !== 'boolean') {
+    throw new Error('requirements.cameraGuide debe ser booleano.');
   }
   if (job.seed !== undefined && !Number.isSafeInteger(job.seed)) throw new Error('seed debe ser un entero seguro.');
 
@@ -92,6 +97,7 @@ export function prepareJob(job: JobRequest, roots: readonly string[]): PreparedJ
   const gradientOps = prepareGradientOps(layer);
   return {
     layer,
+    cameraGuide: cameraGuide === true,
     modelPath,
     request: {
       ...resolution(project, job.requirements.resolution),

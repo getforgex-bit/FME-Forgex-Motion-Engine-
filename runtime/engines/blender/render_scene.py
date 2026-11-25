@@ -8,6 +8,7 @@ import sys
 import zlib
 
 import bpy
+from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Matrix, Vector
 
 
@@ -348,12 +349,22 @@ def main():
     output.mkdir(exist_ok=False)
 
     frames = []
+    camera_frames = []
     for relative_frame in range(params["durationFrames"]):
         blender_frame = relative_frame + 1
         scene.frame_set(blender_frame)
         set_camera(scene.camera, focus, radius, curves, relative_frame)
         if operations is not None:
             apply_gradients(scene, light, base_energy, contour, materials, operations[relative_frame])
+        bpy.context.view_layer.update()
+        projected = world_to_camera_view(scene, scene.camera, focus)
+        camera_frames.append({
+            "frame": relative_frame,
+            "x": projected.x,
+            "y": 1 - projected.y,
+            "depth": projected.z,
+            "lens": scene.camera.data.lens,
+        })
         path = output / f"frame-{blender_frame:04d}.png"
         scene.render.filepath = str(path)
         bpy.ops.render.render(write_still=True)
@@ -362,9 +373,18 @@ def main():
             "contentSha256": rgba_sha256(path, params["width"], params["height"]),
         })
 
-    metadata = {"engineVersion": ".".join(map(str, bpy.app.version)), "frames": frames}
+    metadata = {
+        "engineVersion": ".".join(map(str, bpy.app.version)),
+        "frames": frames,
+        "camera": {
+            "version": 1,
+            "width": scene.render.resolution_x,
+            "height": scene.render.resolution_y,
+            "frames": camera_frames,
+        },
+    }
     (Path.cwd() / "render.json").write_text(
-        json.dumps(metadata, separators=(",", ":")) + "\n", encoding="utf-8",
+        json.dumps(metadata, separators=(",", ":"), allow_nan=False) + "\n", encoding="utf-8",
     )
 
 

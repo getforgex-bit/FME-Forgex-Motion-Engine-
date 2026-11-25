@@ -10,7 +10,7 @@ const result = await adapter.run({
   projectId: 'mi-proyecto',
   operation: 'render.image-sequence',
   inputs: [{ type: 'fme/project+json', uri: projectFileUri }],
-  requirements: { layerId: 'capa-3d', resolution: '256x144' },
+  requirements: { layerId: 'capa-3d', resolution: '256x144', cameraGuide: true },
 }, { jobId, workDir: jobDirectory, timeoutMs: 60_000 });
 ```
 
@@ -18,7 +18,9 @@ const result = await adapter.run({
 
 Se puede pasar el proyecto con una ruta absoluta o una URI `file:`. El modelo puede estar referenciado por ruta relativa al proyecto. Los modelos existentes admitidos son `.glb` y `.blend` autocontenidos. Si falta el modelo, se devuelve un aviso `BLENDER_ASSET_MISSING` y se renderiza un primitivo. `resolution` es opcional y usa `ANCHOxALTO`. Su valor por omisión viene de las dimensiones del proyecto.
 
-La salida contiene un `image/png` por fotograma. El frame relativo 0 de FME corresponde a `frame-0001.png`. Cada procedencia contiene la versión real de Blender, parámetros de render, hash SHA-256 del archivo y hash SHA-256 de los píxeles RGBA decodificados.
+Por defecto la salida contiene un `image/png` por fotograma. Con el requisito booleano cameraGuide activado, se añade al final `camera.json` (`application/json`). El frame relativo 0 de FME corresponde a `frame-0001.png`. Cada procedencia incluye la versión real de Blender, parámetros y el SHA-256 del archivo. Los PNG incluyen también el SHA-256 de sus píxeles RGBA decodificados.
+
+El JSON de cámara lleva `version: 1`, `width`, `height` y una entrada por fotograma local en `frames`. Cada entrada contiene `frame`, posición `x` e `y` normalizada desde la esquina superior izquierda, `depth` en unidades Blender y `lens` en milímetros. Las coordenadas pueden quedar fuera del lienzo. Los consumidores de medios deben seleccionar las salidas `image/png`.
 
 ## Gradientes de dirección artística
 
