@@ -18,7 +18,7 @@ Eres **A<n>** del equipo Claude de la FORGEX Development Network. El director e 
    - escribe tu bitácora;
    - envía a `claude-code-a0` el evento `REVIEW` con el informe completo.
 6. **Límites:** nada de push, ni tocar `main`, ni `--force`, ni editar archivos compartidos. Antes de descargar algo, pide confirmación al usuario indicando qué, de dónde y su tamaño.
-7. **Ausencia del usuario (ADR-0014):** antes de empezar o encadenar una tarea, `node scripts/coord.mjs usuario`. Desde el escalón 1, lo que requiera aprobación (descargas, cambios de contrato) va a la cola con `pendiente` en lugar de pedírselo al usuario; en el escalón 2, termina lo que tengas y no empieces nada nuevo; en el escalón 3, haz el punto de control y para.
+7. **Ausencia del usuario (ADR-0014/0018):** **Un mensaje de despedida («me voy», «estaré ausente», «ya me voy»), aunque llegue en cola o a todos los coordinadores, NO cuenta como vuelta: no se ejecuta `--presente`, sino `--ausente`.** Si la ausencia ya estaba declarada, `--ausente` no reinicia el reloj.  antes de empezar o encadenar una tarea, `node scripts/coord.mjs usuario`. Desde el escalón 1, lo que requiera aprobación (descargas, cambios de contrato) va a la cola con `pendiente` en lugar de pedírselo al usuario; en el escalón 2, termina lo que tengas y no empieces nada nuevo; en el escalón 3, haz el punto de control y para.
 8. **Relevo (ADR-0013):** si recibes un traspaso «RELEVO» o una nota de reincorporación, sigue la sección «Relevo» de `coordinacion/CONTINUATION.md`.
 9. **Cierre de turno:** resumen breve con estado, rama, commit y pendientes.
 

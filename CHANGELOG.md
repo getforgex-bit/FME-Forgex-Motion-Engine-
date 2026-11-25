@@ -6,6 +6,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 ## [Unreleased]
 
 ### Added
+- **Especificación FME v0.1 aprobada formalmente por el usuario** (FDN-005): Fase 0 cerrada y **v0.1 completa (34/34 hitos, 8/8 criterios)**.
+- `PROGRESO.md` generado por hitos (`scripts/progreso.mjs`, FDN-092, ADR-0019). `coord.mjs usuario --ausente` (ADR-0018). DiskCache: coordinación de lecturas y publicaciones en Windows (FDN-070c, parcial). Referencia de regresión de Revideo actualizada (FDN-073c).
 - **Prueba híbrida de 10 s superada: 8/8 criterios** (`scripts/prueba-hibrida.mjs`, FDN-075). Criterio #7: sincronía A/V medida sobre la exportación híbrida (FDN-074). Técnicas `2.5d` y `2d-guided-by-3d` (FDN-063). Endurecimiento de rutas (FDN-073b). **Fases 6 y 7 cerradas.**
 - Turnos de coordinadores dentro de un equipo (ADR-0017): `coord.mjs turno` (recomendar, tomar, ceder, sin-cuota, disponible), `coordinacion/turnos.json` con perfiles por modelo; la sospecha de caída cuenta desde la vuelta del usuario.
 - **Fase 5 cerrada (criterios #4 y #5)** y **criterio #8**: re-render incremental con caché (FDN-075a), fallbacks reales (FDN-052), `project.export` real (FDN-080c) y reintento de FreeCut (FDN-074b). ADR-0016 (asistente de A0).

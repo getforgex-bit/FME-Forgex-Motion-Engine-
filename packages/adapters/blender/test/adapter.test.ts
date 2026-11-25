@@ -79,6 +79,7 @@ test('rechaza operación, opciones, capa y rutas de trabajo no autorizadas antes
     { ...projectJob, requirements: { layerId: 'capa-fondo' } },
     { ...projectJob, requirements: { layerId: 'capa-3d', resolution: '256/144' } },
     { ...projectJob, requirements: { layerId: 'capa-3d', script: 'load.py' } },
+    { ...projectJob, requirements: { layerId: 'capa-3d', cameraGuide: 'true' } },
     { ...projectJob, inputs: [{ type: 'text/x-python', uri: examplePath }] },
     { ...projectJob, inputs: [{ type: 'fme/project+json', uri: pathToFileURL(invalidAssetProject).href }] },
     { ...projectJob, inputs: [{ type: 'fme/project+json', uri: pathToFileURL(invalidAssetProject).href.replace(
@@ -241,7 +242,7 @@ test('un GLB local existente se entrega al motor y desactiva el primitivo de sus
 
   const run = await adapter.run({
     projectId: 'local-model', operation: projectJob.operation,
-    inputs: [{ type: 'fme/project+json', uri: projectPath }], requirements: { layerId: layer.id }, seed: 15,
+    inputs: [{ type: 'fme/project+json', uri: projectPath }], requirements: { layerId: layer.id, cameraGuide: false }, seed: 15,
   }, work('glb-local'));
   assert.equal(run.status, 'ok', JSON.stringify(run.diagnostics));
   assert.deepEqual(checkAdapterResult(run, adapter), []);

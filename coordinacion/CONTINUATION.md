@@ -7,6 +7,9 @@
 - **Si el usuario te acaba de escribir** (incluido «Continúa»): `$env:FME_SESION="<tu id>"; node scripts/coord.mjs usuario --presente` **antes que nada**.
   - Si la respuesta empieza por **«VUELTA DEL USUARIO»**: muéstrale primero un resumen de lo ocurrido en su ausencia (integraciones, tareas terminadas y bloqueos).
   - Después, las decisiones de `node scripts/coord.mjs pendientes`, **una a una** y por orden de impacto, para que las apruebe, rechace o aplace (`decidir --id … --resolucion … --cita "<sus palabras>"`).
+- **El usuario puede avisar** (y conviene que lo haga). **Un mensaje de despedida («me voy», «estaré ausente», «ya me voy»), aunque llegue en cola o a todos los coordinadores, NO cuenta como vuelta: no se ejecuta `--presente`, sino `--ausente`.** Si la ausencia ya estaba declarada, `--ausente` no reinicia el reloj.
+  - **«Me voy» / «me ausento»** → el coordinador ejecuta `node scripts/coord.mjs usuario --ausente --sesion <su id> --nota "<sus palabras>"`. El escalón 1 empieza ya, sin esperar 2 h; el 2 llega a las 2 h y el 3 (punto de control y parada) a las 4 h del aviso. Su siguiente mensaje registra la vuelta.
+  - **«El equipo X se quedó sin cuota»** → si X tiene turnos, `turno --sin-cuota --coordinador <id>` (el otro coordinador toma el relevo dentro del equipo). Si se queda sin cuota **todo** el equipo, `caida --equipo X --cita "<sus palabras>"` y A0 propone el relevo (ADR-0013). Ambos exigen que el usuario esté presente, porque lo está diciendo él.
 - **Si actúas sin un mensaje nuevo del usuario** (A0 reanudado por los avisos de A1–A3, o un trabajador que encadena tareas): `node scripts/coord.mjs usuario` y obedece el escalón.
 
 | Escalón | Sin presencia | Qué puedes hacer |

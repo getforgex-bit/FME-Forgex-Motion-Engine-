@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-25 (integración 10; **prueba híbrida 8/8**, fases 0–7 cerradas)._
+> _Última consolidación: 2026-11-25 (integración 13, vuelta del usuario)._
 
 ## Resumen
 
@@ -13,7 +13,7 @@
 | FDN-002 | Carpeta operativa `FME-ops` + `coord.mjs` (eventos, solicitudes, raíz) | CL-A0 | — | DONE (arranque) |
 | FDN-003 | Infraestructura de tests de paquetes + typecheck en verde | CL-A0 | — | DONE (arranque) |
 | FDN-004 | Benchmarks verificados por modelo | CL-A3 | — | DONE (7cdfd04, VERIFICADO PARCIAL) |
-| FDN-005 | Aprobación formal de la spec v0.1 | **Usuario** | — | BLOCKED (humano) |
+| FDN-005 | Aprobación formal de la spec v0.1 | **Usuario** | — | DONE (2026-11-25, «Sí, la apruebo») |
 | FDN-006 | `develop`, worktrees, política de índices | CL-A0 | 001–003 | DONE (arranque) |
 | FDN-010 | Verificar Revideo | CL-A1 | 003 | DONE (6ee5826) |
 | FDN-011 | Verificar Blender 5.2 headless | CX | — | DONE (b0a7db7; A0 reprodujo el SHA-256 de píxeles) |
@@ -71,15 +71,69 @@
 | FDN-073b | Endurecimiento: `--root` en la CLI, raíces de anfitrión en las llamadas directas a Revideo y FreeCut, y raíces permitidas en `edit.compose` (los 3 TODO de 073a) | CX | 073a | DONE (d7c625e; 0 TODO) |
 | FDN-075a | Criterio #8: reabrir el proyecto, cambiar una capa y re-renderizar **solo** lo afectado (caché + render-plan en el pipeline) | CL-A1 | 042c, 070, 071 | DONE (d68149e; A0: criterio #8 reproducido) |
 | FDN-080c | `project.export` real en MCP y CLI con `@fme/pipeline` | CL-A2 | 042c, 080b | DONE (7a873f1) |
-| FDN-070c | `DiskCache`: el test «escrituras concurrentes» sigue fallando con la suite completa en carga (~1 de cada 5); revisar el presupuesto de reintentos o el diseño del test | CX | 070b | IN_PROGRESS (CX) |
-| FDN-073c | Regresión: actualizar `tests/regresion/expected/revideo.json` (la referencia se fijó con el SVG vacío, antes de la corrección de cb2d404) según el procedimiento de 073a | CX | 073a, 042c | IN_PROGRESS (candidato aprobado por A0) |
-| FDN-092 | Trazabilidad por hitos (propuesta v2 del asistente a0s): ADR-0017, § Hitos en BACKLOG, `scripts/progreso.mjs` + `PROGRESO.md` | A0 + A3 | 075 | READY (desbloqueada: la prueba híbrida ya está superada) |
-| FDN-063b | Blender exporta `camera.json` nativo (posición del modelo en pantalla por fotograma) para `guide3DLayerId` | CX | 063 | READY |
-| FDN-063c | `3d-with-2d` integrado en `runHybrid` (overlay 2D sobre el render 3D en la composición) | CL-A1 | 063 | READY |
+| FDN-070c | `DiskCache`: el test «escrituras concurrentes» sigue fallando con la suite completa en carga (~1 de cada 5); revisar el presupuesto de reintentos o el diseño del test | CX | 070b | DONE (a73aeed Codex + bitácora del relevo: 8 npm test seguidos sin el fallo de concurrencia) |
+| FDN-073c | Regresión: actualizar `tests/regresion/expected/revideo.json` (la referencia se fijó con el SVG vacío, antes de la corrección de cb2d404) según el procedimiento de 073a | CX | 073a, 042c | DONE (f2e4e19 relevo + 1cbb1a0 Codex; regresión real 3/3) |
+| FDN-092 | Trazabilidad por hitos (propuesta v2 del asistente a0s): ADR-0017, § Hitos en BACKLOG, `scripts/progreso.mjs` + `PROGRESO.md` | A0 + A3 | 075 | DONE (df7077e; A0 escribió la sección Hitos y ADR-0019) |
+| FDN-063b | Blender exporta `camera.json` nativo (posición del modelo en pantalla por fotograma) para `guide3DLayerId` | CX | 063 | DONE (6a293da, relevo AG; Blender real 10/10) |
+| FDN-063c | `3d-with-2d` integrado en `runHybrid` (overlay 2D sobre el render 3D en la composición) | CL-A1 | 063 | DONE (c4b7a2d; motor real 2/2) |
+| FDN-070d | Caché: intermitente «rechaza un enlace de directorio, una entrada enlazada y una raíz sustituida» (visto 1 de 6 tras FDN-070c) | AG-relevo | 070c | DONE (f9c479c relevo AG; A0: npm test 5/5 seguidos) |
+| FDN-063d | `art-direction/backends/techniques.ts`: Revideo `3d-with-2d` de partial a yes (propuesta de A1 tras FDN-063c) | CL-A1 | 063c | IN_PROGRESS |
 | FDN-091 | Modo ausencia del usuario (ADR-0014) | CL-A0 | 090 | DONE |
-| FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | IN_PROGRESS |
-
+| FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | DONE (09a5b72 AG; consolidado por A0 en licencias-seguridad.md) |
 ---
+
+## Hitos
+
+> Trazabilidad por hitos (ADR-0019). **Solo A0** la edita; los hitos menores de B0 y C0 viven en `FME-ops/hitos/<equipo>.md` y A0 los consolida aquí. Un hito es algo que debe ser cierto en `develop`, con evidencia. Las tareas «aportan» a uno o varios hitos.
+> `PROGRESO.md` lo genera `node scripts/progreso.mjs`; `--check` bloquea la integración de A0 si hay incoherencias. Largo plazo: catálogo condicionado, fuera del %.
+
+| id | plazo | parte | fase | clase | estado | evidencia | aportan |
+|---|---|---|---|---|---|---|---|
+| H-spec-v01-aprobada | 1 | 1.A | 0 | critico | [x] | aprobada por el usuario en el chat de A0 el 2026-11-25: «Sí, la apruebo» | 005 |
+| H-red-fdn-operativa | 1 | 1.A | 0 | normal | [x] | bitácora A0 2026-11-22..25; ADR-0007, 0013, 0014, 0016, 0017, 0018 y 0019 | 001, 002, 003, 004, 006, 090, 091, 092 |
+| H-criterio-1 | 1 | 1.B | 1 | critico | [x] | pruebas-aceptacion #1 | 010, 011, 012, 013, 014, 015, 016 |
+| H-criterio-2 | 1 | 1.B | 2 | critico | [x] | pruebas-aceptacion #2 | 020, 021, 022, 023, 024, 025, 026, 028 |
+| H-cierre-f3-job-e2e | 1 | 1.C | 3 | critico | [x] | roadmap F3 (FDN-033 E2E) | 027, 030, 031, 032, 032b, 033, 034, 034b |
+| H-adaptadores-reales | 2 | 2.A | 4 | normal | [x] | FDN-040/041 con motores reales (bitácora A0) | 040, 041 |
+| H-artefactos-enlazados | 2 | 2.A | 4 | normal | [x] | schemaVersion 3, ADR-0015 | 042b |
+| H-composicion-alpha | 2 | 2.A | 4 | normal | [x] | FreeCut real 14/14 (bitácora A0) | 042a |
+| H-criterio-3 | 2 | 2.A | 4 | critico | [x] | pruebas-aceptacion #3 | 042, 042c, 043 |
+| H-router-nucleo | 2 | 2.B | 5 | normal | [x] | FDN-050 | 050 |
+| H-medicion-tokens | 2 | 2.B | 5 | normal | [x] | FDN-051 (222 frente a 503 tok) | 051 |
+| H-fallbacks-reales | 2 | 2.B | 5 | normal | [x] | real-fallbacks 3/3 (A0) | 052, 074b |
+| H-criterio-4 | 2 | 2.B | 5 | critico | [x] | pruebas-aceptacion #4 | 052, 053 |
+| H-criterio-5 | 2 | 2.B | 5 | critico | [x] | pruebas-aceptacion #5 | 052, 053 |
+| H-perfiles-estilo | 2 | 2.B | 6 | normal | [x] | FDN-060 | 060 |
+| H-criterio-6 | 2 | 2.B | 6 | critico | [x] | pruebas-aceptacion #6 | 061, 061b |
+| H-tecnicas-compuestas | 2 | 2.B | 6 | normal | [x] | FDN-063: parallax 0,50/0,25; seguimiento < 1 px | 063 |
+| H-guia-3d-nativa | 2 | 2.B | 6 | normal | [x] | camera.json nativo, Blender real 10/10 (A0) | 063b |
+| H-3d-con-2d-en-pipeline | 2 | 2.B | 6 | normal | [x] | overlay-order con motor real 2/2 (A0) | 063c, 063d |
+| H-cierre-f6 | 2 | 2.B | 6 | critico | [x] | roadmap F6 cerrada 2026-11-25 | 062 |
+| H-cache-segmentos-preview | 2 | 2.C | 7 | normal | [x] | FDN-070/070b/071 | 070, 070b, 071 |
+| H-cache-robusta-windows | 2 | 2.C | 7 | normal | [x] | npm test 5/5 seguidos sin intermitentes (A0, 2026-11-25) | 070c, 070d |
+| H-recuperacion-errores | 2 | 2.C | 7 | normal | [x] | FDN-072 | 072 |
+| H-audio-sync-compose | 2 | 2.C | 7 | normal | [x] | FDN-074a: desfase 0 ms | 074a |
+| H-seguridad-regresion | 2 | 2.C | 7 | normal | [x] | tests/seguridad 10/10, 0 TODO | 073a, 073b |
+| H-regresion-actualizada | 2 | 2.C | 7 | normal | [x] | tests/regresion 3/3 con motores reales (A0) | 073c |
+| H-criterio-7 | 2 | 2.C | 7 | critico | [x] | pruebas-aceptacion #7 | 074, 080c |
+| H-criterio-8 | 2 | 2.C | 7 | critico | [x] | pruebas-aceptacion #8 | 075a |
+| H-prueba-hibrida-10s | 2 | 2.C | 7 | critico | [x] | INFORME.md 8/8 (A0, 2026-11-25) | 075 |
+| H-mcp-minimo | 2 | 2.C | T | normal | [x] | FDN-080 | 080 |
+| H-cli | 2 | 2.C | T | normal | [x] | FDN-081 | 081 |
+| H-mcp-preview-real | 2 | 2.C | T | normal | [x] | FDN-080b | 080b |
+| H-export-real | 2 | 2.C | T | normal | [x] | FDN-080c | 080c |
+| H-licencias-v01 | 2 | 2.C | T | normal | [x] | licencias-seguridad.md consolidado (FDN-082) | 082 |
+| H-largo-acabado-artesanal | 3 | 3.A | 8 | normal | [ ] | — | — |
+| H-largo-edicion-vfx | 3 | 3.A | 8 | normal | [ ] | — | — |
+| H-largo-color | 3 | 3.A | 8 | normal | [ ] | — | — |
+| H-largo-interoperabilidad | 3 | 3.B | 8 | normal | [ ] | — | — |
+| H-largo-audio | 3 | 3.B | 8 | normal | [ ] | — | — |
+| H-largo-rendimiento | 3 | 3.B | 8 | normal | [ ] | — | — |
+| H-largo-forks | 3 | 3.B | 8 | normal | [ ] | — | — |
+| H-largo-interfaz | 3 | 3.C | 8 | normal | [ ] | — | — |
+| H-largo-escala | 3 | 3.C | 8 | normal | [ ] | — | — |
+| H-largo-comercializacion | 3 | 3.C | 8 | normal | [ ] | — | — |
+| H-largo-productizacion | 3 | 3.C | 8 | normal | [ ] | — | — |
 
 ## Fichas de las tareas READY
 

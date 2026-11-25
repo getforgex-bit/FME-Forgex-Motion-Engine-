@@ -4,3 +4,5 @@ export { encodeProRes, readFfmpegVersion, findInPath, PRORES_STEP_ID, PRORES_STE
 export type { ProResStepInput, ProResStepResult } from './prores.ts';
 export { StepCache } from './stepcache.ts';
 export type { CacheManifest, CachedFile, CachedStep } from './stepcache.ts';
+export { guideFromBlenderFrames, overlayZIndexes, pngAlphaCentroid } from './guide.ts';
+export type { GuideJson } from './guide.ts';

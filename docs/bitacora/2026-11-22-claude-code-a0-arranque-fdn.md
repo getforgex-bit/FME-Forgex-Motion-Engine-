@@ -229,3 +229,62 @@ Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (
 - **FDN-073c:** revisión visual de A0 (fotograma 0: antes vacío; después, figura naranja) → candidato aprobado.
 - El «fallo» de recovery que vio A1 no se reproduce en `develop` (3/3): es de su entorno.
 - **Fases 6 y 7 cerradas.** FDN-092 queda desbloqueada (el usuario la pidió para después de la prueba híbrida).
+
+
+## 2026-11-25 · `develop` → `main`: hito v0.1 (A0)
+- **Aprobación del usuario** en el chat: «Sí, fusiona a main».
+- `git branch main origin/main` (Initial commit 6c86237, ancestro de develop) → `git switch main` → `git merge --no-ff develop` → **`6ff846f`**. El árbol es idéntico al de `develop` (`git diff --stat develop main` vacío).
+- **Verificado en `main`:** `npm run typecheck` OK; `npm test` → 234 pass, 18 skip, 0 fail al tercer intento. Los dos primeros fallaron en «publica una entrada completa con escrituras concurrentes» (FDN-070c, intermitente de la caché, más frecuente) → prioridad para Codex.
+- **Sin push:** `main` y `develop` solo existen en local; el remoto sigue en el Initial commit.
+
+
+## 2026-11-25 · Relevo de Codex (ADR-0013), ejecutado desde una sesión bifurcada de A0
+- Aviso entre sesiones de la bifurcación `local_62488f53…`. El usuario declaró caído a Codex y pidió trasladar sus tareas a una sesión de Antigravity aparte. Cita: «codex se quedó sin cuota, traslada sus tareas a Antigravity … como un relevo en antigravity en otra sesion separada a la del equipo de antigravity».
+- **Verificado por A0 en `FME-ops`:**
+  - `equipos` → codex `caido`;
+  - acta `20261125T080133842Z-codex-caida.md`, con dos `.patch` de los 9 archivos sin commit de FDN-063b;
+  - `relevos/codex.md` registra el paso de FDN-063b, 070c y 073c a `antigravity-relevo`, con 2 reclamos liberados;
+  - el prompt para el usuario está en `FME-ops/relevos/PROMPT-antigravity-relevo.md`.
+- A0 lo refleja en BACKLOG, CURRENT_SPRINT y TEAM_STATUS. Cuando Codex vuelva: `reincorporar --equipo codex` y `turno --disponible`.
+- La «ausencia de archivos» que vio la bifurcación fue el instante en que el checkout estaba en `main` (Initial commit), antes de `git merge --no-ff develop`. El checkout vuelve a estar en `develop` y completo.
+
+
+## 2026-11-25 · Push a `origin` (A0)
+- **Aprobación del usuario** en el chat: «Sí, haz push».
+- **Revisión previa:** sin secretos versionados (`git ls-files` filtrado; las dos coincidencias son los archivos de medición de tokens), sin archivos de más de 1 MB, y las dos ramas en fast-forward (`git merge-base --is-ancestor`).
+- `git push origin main develop` → `6c86237..6ff846f main`, `cd92a71..e7bf194 develop`. Sin `--force`.
+- **Antecedente:** `origin/develop` ya existía en cd92a71 por un push del 2026-11-23 16:49 UTC sin autorización del usuario (probablemente Codex al volver). Queda anotado.
+
+
+## 2026-11-25 · Integración 11 y preparación de la ausencia del usuario (A0)
+- **ADR-0018:** `usuario --ausente` (escalón 1 inmediato) y avisos de cuota; test 10/10. ADR-0014 no se tocó: un ADR aceptado no se edita (una enmienda inicial se revirtió).
+- **FDN-070c (Codex, a73aeed):** el test de concurrencia ya no falla; `npm test` 5/6, con otro intermitente («rechaza un enlace de directorio…»). Se integra como mejora y 070c sigue abierta en el relevo.
+- **FDN-092 (A3) + sección `## Hitos` (A0, 45 hitos) + ADR-0019:** `progreso.mjs --check` → conforme; **PROGRESO.md: v0.1 28/34 (82 %)**, criterios 8/8, bloqueo humano FDN-005.
+- **FDN-073c:** integrada la rama del relevo (incluye el commit de Codex); `tests/regresion` con motores reales → 3/3.
+- Codex entregó 070c y 073c **antes** de su caída (07:44 y 07:46 frente a 08:01): la bifurcación relevó tareas que ya estaban en REVIEW; no hubo pérdida.
+
+
+## 2026-11-25 · Integración 12, en ausencia del usuario (escalón 1, ADR-0014/0018) (A0)
+Arranque por el «Continúa» único de A1. Solo se integraron REVIEW en verde, sin cambios de contrato ni dependencias nuevas:
+
+| Rama | Verificación de A0 | Resultado |
+|---|---|---|
+| FDN-063c (A1) | 249 pass; `overlay-order.integration` con motor real 2/2 | fusionada |
+| FDN-070c, relevo (bitácora) | 249 pass | fusionada → 070c DONE (8 npm test seguidos sin el fallo de concurrencia, según el relevo) |
+| FDN-082 (AG, borrador de licencias en la bitácora) | 249 pass | fusionada; falta que A0 consolide `licencias-seguridad.md` |
+| FDN-063b, relevo (camera.json de Blender) | 252 pass (un reintento por EPERM); `node --test packages/adapters/blender/test/*.test.ts` con Blender real → 10/10 | fusionada |
+
+Abiertas: FDN-070d (otro intermitente de la caché) y FDN-063d (marcar `3d-with-2d` como yes). Ninguna decisión del usuario encolada. Sin push.
+
+
+## 2026-11-25 · Vuelta del usuario (12,6 h) e integración 13 (A0)
+- Vuelta registrada (escalón 3 → 0); cola de decisiones vacía; se dio el resumen al usuario.
+- **FDN-070d** (relevo AG, f9c479c): solo el test (reintentos en la preparación con `rename` y en la limpieza); no debilita lo que comprueba. `npm test` 5/5 seguidos en verde → H-cache-robusta-windows [x].
+- **Codex reincorporado** (`reincorporar --equipo codex`; `turno --disponible` para c0 y c0a). El usuario dijo que tiene la cuota de 5 h llena pero solo un 4 % de la semanal → **en reserva**, sin tareas nuevas.
+- **FDN-082** consolidado en `docs/licencias-seguridad.md` (tabla de AG + lista de control antes de distribuir) → H-licencias-v01 [x].
+- **FDN-063d** asignada a A1.
+
+
+## 2026-11-25 · Spec v0.1 aprobada; v0.1 completa (A0)
+- El usuario, en el chat de A0, ante la pregunta «¿Apruebas formalmente la especificación v0.1 (FDN-005)?»: **«Sí, la apruebo»**.
+- FDN-005 DONE; H-spec-v01-aprobada [x]; Fase 0 cerrada formalmente; `progreso.mjs --check` conforme → **v0.1 34/34 hitos (100 %)**, criterios 8/8, sin bloqueos humanos.
