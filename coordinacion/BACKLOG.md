@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-25 (integración 11; `PROGRESO.md` v0.1 en el 82 %)._
+> _Última consolidación: 2026-11-25 (integración 12, en ausencia del usuario, escalón 1)._
 
 ## Resumen
 
@@ -71,14 +71,15 @@
 | FDN-073b | Endurecimiento: `--root` en la CLI, raíces de anfitrión en las llamadas directas a Revideo y FreeCut, y raíces permitidas en `edit.compose` (los 3 TODO de 073a) | CX | 073a | DONE (d7c625e; 0 TODO) |
 | FDN-075a | Criterio #8: reabrir el proyecto, cambiar una capa y re-renderizar **solo** lo afectado (caché + render-plan en el pipeline) | CL-A1 | 042c, 070, 071 | DONE (d68149e; A0: criterio #8 reproducido) |
 | FDN-080c | `project.export` real en MCP y CLI con `@fme/pipeline` | CL-A2 | 042c, 080b | DONE (7a873f1) |
-| FDN-070c | `DiskCache`: el test «escrituras concurrentes» sigue fallando con la suite completa en carga (~1 de cada 5); revisar el presupuesto de reintentos o el diseño del test | CX | 070b | IN_PROGRESS (a73aeed integrada: concurrencia resuelta; queda el intermitente «rechaza un enlace de directorio» → relevo AG) |
+| FDN-070c | `DiskCache`: el test «escrituras concurrentes» sigue fallando con la suite completa en carga (~1 de cada 5); revisar el presupuesto de reintentos o el diseño del test | CX | 070b | DONE (a73aeed Codex + bitácora del relevo: 8 npm test seguidos sin el fallo de concurrencia) |
 | FDN-073c | Regresión: actualizar `tests/regresion/expected/revideo.json` (la referencia se fijó con el SVG vacío, antes de la corrección de cb2d404) según el procedimiento de 073a | CX | 073a, 042c | DONE (f2e4e19 relevo + 1cbb1a0 Codex; regresión real 3/3) |
 | FDN-092 | Trazabilidad por hitos (propuesta v2 del asistente a0s): ADR-0017, § Hitos en BACKLOG, `scripts/progreso.mjs` + `PROGRESO.md` | A0 + A3 | 075 | DONE (df7077e; A0 escribió la sección Hitos y ADR-0019) |
-| FDN-063b | Blender exporta `camera.json` nativo (posición del modelo en pantalla por fotograma) para `guide3DLayerId` | CX | 063 | RELEVADA → AG-relevo (Codex caído, 2026-11-25; .patch con 9 archivos sin commit en el acta) |
-| FDN-063c | `3d-with-2d` integrado en `runHybrid` (overlay 2D sobre el render 3D en la composición) | CL-A1 | 063 | READY |
+| FDN-063b | Blender exporta `camera.json` nativo (posición del modelo en pantalla por fotograma) para `guide3DLayerId` | CX | 063 | DONE (6a293da, relevo AG; Blender real 10/10) |
+| FDN-063c | `3d-with-2d` integrado en `runHybrid` (overlay 2D sobre el render 3D en la composición) | CL-A1 | 063 | DONE (c4b7a2d; motor real 2/2) |
+| FDN-070d | Caché: intermitente «rechaza un enlace de directorio, una entrada enlazada y una raíz sustituida» (visto 1 de 6 tras FDN-070c) | por asignar | 070c | READY |
+| FDN-063d | `art-direction/backends/techniques.ts`: Revideo `3d-with-2d` de partial a yes (propuesta de A1 tras FDN-063c) | por asignar | 063c | READY |
 | FDN-091 | Modo ausencia del usuario (ADR-0014) | CL-A0 | 090 | DONE |
-| FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | IN_PROGRESS |
-
+| FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | REVIEW (borrador 09a5b72 integrado; falta que A0 consolide licencias-seguridad.md) |
 ---
 
 ## Hitos
@@ -105,11 +106,11 @@
 | H-perfiles-estilo | 2 | 2.B | 6 | normal | [x] | FDN-060 | 060 |
 | H-criterio-6 | 2 | 2.B | 6 | critico | [x] | pruebas-aceptacion #6 | 061, 061b |
 | H-tecnicas-compuestas | 2 | 2.B | 6 | normal | [x] | FDN-063: parallax 0,50/0,25; seguimiento < 1 px | 063 |
-| H-guia-3d-nativa | 2 | 2.B | 6 | normal | [ ] | — | 063b |
-| H-3d-con-2d-en-pipeline | 2 | 2.B | 6 | normal | [ ] | — | 063c |
+| H-guia-3d-nativa | 2 | 2.B | 6 | normal | [x] | camera.json nativo, Blender real 10/10 (A0) | 063b |
+| H-3d-con-2d-en-pipeline | 2 | 2.B | 6 | normal | [x] | overlay-order con motor real 2/2 (A0) | 063c, 063d |
 | H-cierre-f6 | 2 | 2.B | 6 | critico | [x] | roadmap F6 cerrada 2026-11-25 | 062 |
 | H-cache-segmentos-preview | 2 | 2.C | 7 | normal | [x] | FDN-070/070b/071 | 070, 070b, 071 |
-| H-cache-robusta-windows | 2 | 2.C | 7 | normal | [ ] | — | 070c |
+| H-cache-robusta-windows | 2 | 2.C | 7 | normal | [ ] | — | 070c, 070d |
 | H-recuperacion-errores | 2 | 2.C | 7 | normal | [x] | FDN-072 | 072 |
 | H-audio-sync-compose | 2 | 2.C | 7 | normal | [x] | FDN-074a: desfase 0 ms | 074a |
 | H-seguridad-regresion | 2 | 2.C | 7 | normal | [x] | tests/seguridad 10/10, 0 TODO | 073a, 073b |

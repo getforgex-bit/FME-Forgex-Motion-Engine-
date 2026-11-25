@@ -262,3 +262,16 @@ Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (
 - **FDN-092 (A3) + sección `## Hitos` (A0, 45 hitos) + ADR-0019:** `progreso.mjs --check` → conforme; **PROGRESO.md: v0.1 28/34 (82 %)**, criterios 8/8, bloqueo humano FDN-005.
 - **FDN-073c:** integrada la rama del relevo (incluye el commit de Codex); `tests/regresion` con motores reales → 3/3.
 - Codex entregó 070c y 073c **antes** de su caída (07:44 y 07:46 frente a 08:01): la bifurcación relevó tareas que ya estaban en REVIEW; no hubo pérdida.
+
+
+## 2026-11-25 · Integración 12, en ausencia del usuario (escalón 1, ADR-0014/0018) (A0)
+Arranque por el «Continúa» único de A1. Solo se integraron REVIEW en verde, sin cambios de contrato ni dependencias nuevas:
+
+| Rama | Verificación de A0 | Resultado |
+|---|---|---|
+| FDN-063c (A1) | 249 pass; `overlay-order.integration` con motor real 2/2 | fusionada |
+| FDN-070c, relevo (bitácora) | 249 pass | fusionada → 070c DONE (8 npm test seguidos sin el fallo de concurrencia, según el relevo) |
+| FDN-082 (AG, borrador de licencias en la bitácora) | 249 pass | fusionada; falta que A0 consolide `licencias-seguridad.md` |
+| FDN-063b, relevo (camera.json de Blender) | 252 pass (un reintento por EPERM); `node --test packages/adapters/blender/test/*.test.ts` con Blender real → 10/10 | fusionada |
+
+Abiertas: FDN-070d (otro intermitente de la caché) y FDN-063d (marcar `3d-with-2d` como yes). Ninguna decisión del usuario encolada. Sin push.
