@@ -6,6 +6,7 @@ import { syncBuiltinESMExports } from 'node:module';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { test, type TestContext } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 import { DependencyGraph, DiskCache, dependencyHash } from '../src/index.ts';
 import type { JsonValue } from '../src/index.ts';
 
@@ -75,8 +76,30 @@ test('termina en ciclos, deduplica aristas y reemplaza dependencias sin dejar en
 
 async function temporaryRoot(context: TestContext): Promise<string> {
   const root = await mkdtemp(join(realpathSync.native(tmpdir()), 'fme-cache-'));
-  context.after(() => rm(root, { recursive: true, force: true }));
+  // En Windows, filtros del sistema o cierres diferidos sobre junctions/enlaces pueden devolver EBUSY/EPERM breves al borrar.
+  context.after(() => rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   return root;
+}
+
+/** Renombra un directorio tolerando bloqueos transitorios de lectura en Windows (antivirus/indexador sobre hijos recién creados). */
+async function renameDirectory(from: string, to: string): Promise<void> {
+  const deadline = performance.now() + 2_000;
+  let backoff = 10;
+  while (true) {
+    try {
+      await rename(from, to);
+      return;
+    } catch (error) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+      if (process.platform !== 'win32' || (code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES')) {
+        throw error;
+      }
+      const remaining = deadline - performance.now();
+      if (remaining <= 0) throw error;
+      await delay(Math.min(backoff, remaining));
+      backoff = Math.min(backoff * 2, 200);
+    }
+  }
 }
 
 const key = dependencyHash(inputs);
@@ -168,7 +191,7 @@ test('rechaza un enlace de directorio, una entrada enlazada y una raíz sustitui
   await assert.rejects(cache.set(key, Buffer.from('datos')), /sin enlaces/);
   assert.equal(await readFile(outsideFile, 'utf8'), 'reservado');
 
-  await rename(nested, join(root, 'original'));
+  await renameDirectory(nested, join(root, 'original'));
   await mkdir(nested);
   await assert.rejects(cache.get(key), /cambió/);
   await assert.rejects(cache.set(key, Buffer.from('datos')), /cambió/);
