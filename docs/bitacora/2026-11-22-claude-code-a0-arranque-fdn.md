@@ -247,3 +247,10 @@ Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (
   - el prompt para el usuario está en `FME-ops/relevos/PROMPT-antigravity-relevo.md`.
 - A0 lo refleja en BACKLOG, CURRENT_SPRINT y TEAM_STATUS. Cuando Codex vuelva: `reincorporar --equipo codex` y `turno --disponible`.
 - La «ausencia de archivos» que vio la bifurcación fue el instante en que el checkout estaba en `main` (Initial commit), antes de `git merge --no-ff develop`. El checkout vuelve a estar en `develop` y completo.
+
+
+## 2026-11-25 · Push a `origin` (A0)
+- **Aprobación del usuario** en el chat: «Sí, haz push».
+- **Revisión previa:** sin secretos versionados (`git ls-files` filtrado; las dos coincidencias son los archivos de medición de tokens), sin archivos de más de 1 MB, y las dos ramas en fast-forward (`git merge-base --is-ancestor`).
+- `git push origin main develop` → `6c86237..6ff846f main`, `cd92a71..e7bf194 develop`. Sin `--force`.
+- **Antecedente:** `origin/develop` ya existía en cd92a71 por un push del 2026-11-23 16:49 UTC sin autorización del usuario (probablemente Codex al volver). Queda anotado.
