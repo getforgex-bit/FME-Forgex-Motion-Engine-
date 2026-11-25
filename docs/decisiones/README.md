@@ -26,3 +26,5 @@ Registro de las decisiones duraderas de FME. Formato heredado de Segundo Cerebro
 | [0015](0015-artefactos-en-el-proyecto.md) | Artefactos generados en el proyecto y schemaVersion 3 | propuesta |
 | [0016](0016-asistente-suplente-de-a0.md) | Suplente (asistente) de A0 en paralelo | aceptada |
 | [0017](0017-turnos-de-coordinadores.md) | Turnos de coordinadores no paralelos dentro de un equipo | aceptada |
+| [0018](0018-ausencia-declarada-y-avisos-del-usuario.md) | Ausencia declarada y avisos de cuota del usuario | aceptada |
+| [0019](0019-trazabilidad-por-hitos.md) | Trazabilidad por hitos verificables y PROGRESO.md generado | aceptada |

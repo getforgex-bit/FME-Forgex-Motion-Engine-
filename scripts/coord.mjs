@@ -101,11 +101,14 @@ function ultimaVuelta() {
 /** Nivel de ausencia 0–3 según las horas transcurridas desde la última presencia. Sin registro previo, 0 (no se presupone ausencia). */
 export function nivelAusencia() {
   const u = ultimaPresencia();
-  if (!u) return { nivel: 0, ultima: null, horas: null };
-  const horas = minutosDesde(u) / 60;
+  if (!u) return { nivel: 0, ultima: null, horas: null, declarada: false };
   const x = umbralAusenciaH();
+  // Ausencia declarada por el usuario («me voy», ADR-0018): el escalón 1 empieza ya y la escalera avanza desde ese momento.
+  const decl = listar("usuario").filter((f) => f.startsWith("presencia-")).map((f) => leer(join(dir("usuario"), f)).meta.ausente).filter(Boolean).sort().at(-1);
+  const declarada = !!decl && decl >= u;
+  const horas = declarada ? x + minutosDesde(decl) / 60 : minutosDesde(u) / 60;
   const nivel = horas >= 3 * x ? 3 : horas >= 2 * x ? 2 : horas >= x ? 1 : 0;
-  return { nivel, ultima: u, horas };
+  return { nivel, ultima: u, horas, declarada };
 }
 function decisionesPendientes() {
   const resueltas = new Set(listar("decisiones").filter((f) => f.endsWith(".resolucion.md")).map((f) => f.replace(/\.resolucion\.md$/, ".md")));
@@ -340,6 +343,18 @@ export const comandos = {
    * sin él, muestra el escalón de ausencia y qué está permitido. Al volver de una ausencia, avisa de las decisiones en cola.
    */
   usuario(o) {
+    if (o.ausente) {
+      // El usuario avisa de que se va: escalón 1 desde ya (sin esperar 2 h); 2 a las X h y 3 a las 2X h de su aviso.
+      requerir(o, "sesion");
+      sesionFile(o.sesion);
+      const t = ahora();
+      const f = join(dir("usuario"), `presencia-${slug(o.sesion)}.md`);
+      const previo = existsSync(f) ? leer(f).meta : {};
+      escribir(f, { ...previo, sesion: o.sesion, ultima: t, ausente: t, ...(o.nota ? { nota_ausencia: o.nota } : {}) });
+      const x = umbralAusenciaH();
+      return `Ausencia del usuario declarada (${t}). Escalón 1 desde ahora; escalón 2 a las ${x} h y escalón 3 (punto de control y parada) a las ${2 * x} h. `
+        + `Su próximo mensaje registrará la vuelta (\`usuario --presente\`).`;
+    }
     if (o.presente) {
       requerir(o, "sesion");
       sesionFile(o.sesion);
@@ -358,7 +373,7 @@ export const comandos = {
     }
     const a = nivelAusencia();
     const pend = decisionesPendientes().length;
-    return [`Usuario: escalón ${a.nivel} · última presencia: ${a.ultima ?? "sin registro"}${a.horas === null ? "" : ` (hace ${a.horas.toFixed(1)} h)`} · umbral ${umbralAusenciaH()} h`,
+    return [`Usuario: escalón ${a.nivel}${a.declarada ? " (ausencia DECLARADA por el usuario)" : ""} · última presencia: ${a.ultima ?? "sin registro"}${a.horas === null || a.declarada ? "" : ` (hace ${a.horas.toFixed(1)} h)`} · umbral ${umbralAusenciaH()} h`,
       `Permitido: ${NIVELES_AUSENCIA[a.nivel]}`, `Decisiones pendientes: ${pend}`].join("\n");
   },
   /** Encola una decisión que necesita la aprobación del usuario (en vez de tomarla). Impacto: alto | medio | bajo. */
@@ -583,7 +598,7 @@ Relevo entre equipos (ADR-0013; solo el integrador, con la cita literal del usua
   relevar      --tarea FDN-xxx --de <x> --a <y> --cita "<usuario>" [--rama <r>]
   reincorporar --equipo <x>                       genera la nota de reincorporación y la envía
 Presencia del usuario (ADR-0014; escalones a X, 2X y 3X horas, con X = FME_AUSENCIA_H, 2 por defecto):
-  usuario [--presente]                            registra la presencia (en cada mensaje del usuario) o muestra el escalón
+  usuario [--presente | --ausente [--nota "<..>"]]  registra la presencia (en cada mensaje), la AUSENCIA declarada («me voy»: escalón 1 desde ya) o muestra el escalón
   pendiente --asunto "<..>" --texto "<..>" [--impacto alto|medio|bajo] [--tarea FDN-xxx]   encola una decisión
   pendientes                                      lista la cola (alto primero)
   decidir   --id <archivo> --resolucion aprobada|rechazada|aplazada --cita "<usuario>"

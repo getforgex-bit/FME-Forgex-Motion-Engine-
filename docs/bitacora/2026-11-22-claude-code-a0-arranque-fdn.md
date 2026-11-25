@@ -229,3 +229,36 @@ Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (
 - **FDN-073c:** revisión visual de A0 (fotograma 0: antes vacío; después, figura naranja) → candidato aprobado.
 - El «fallo» de recovery que vio A1 no se reproduce en `develop` (3/3): es de su entorno.
 - **Fases 6 y 7 cerradas.** FDN-092 queda desbloqueada (el usuario la pidió para después de la prueba híbrida).
+
+
+## 2026-11-25 · `develop` → `main`: hito v0.1 (A0)
+- **Aprobación del usuario** en el chat: «Sí, fusiona a main».
+- `git branch main origin/main` (Initial commit 6c86237, ancestro de develop) → `git switch main` → `git merge --no-ff develop` → **`6ff846f`**. El árbol es idéntico al de `develop` (`git diff --stat develop main` vacío).
+- **Verificado en `main`:** `npm run typecheck` OK; `npm test` → 234 pass, 18 skip, 0 fail al tercer intento. Los dos primeros fallaron en «publica una entrada completa con escrituras concurrentes» (FDN-070c, intermitente de la caché, más frecuente) → prioridad para Codex.
+- **Sin push:** `main` y `develop` solo existen en local; el remoto sigue en el Initial commit.
+
+
+## 2026-11-25 · Relevo de Codex (ADR-0013), ejecutado desde una sesión bifurcada de A0
+- Aviso entre sesiones de la bifurcación `local_62488f53…`. El usuario declaró caído a Codex y pidió trasladar sus tareas a una sesión de Antigravity aparte. Cita: «codex se quedó sin cuota, traslada sus tareas a Antigravity … como un relevo en antigravity en otra sesion separada a la del equipo de antigravity».
+- **Verificado por A0 en `FME-ops`:**
+  - `equipos` → codex `caido`;
+  - acta `20261125T080133842Z-codex-caida.md`, con dos `.patch` de los 9 archivos sin commit de FDN-063b;
+  - `relevos/codex.md` registra el paso de FDN-063b, 070c y 073c a `antigravity-relevo`, con 2 reclamos liberados;
+  - el prompt para el usuario está en `FME-ops/relevos/PROMPT-antigravity-relevo.md`.
+- A0 lo refleja en BACKLOG, CURRENT_SPRINT y TEAM_STATUS. Cuando Codex vuelva: `reincorporar --equipo codex` y `turno --disponible`.
+- La «ausencia de archivos» que vio la bifurcación fue el instante en que el checkout estaba en `main` (Initial commit), antes de `git merge --no-ff develop`. El checkout vuelve a estar en `develop` y completo.
+
+
+## 2026-11-25 · Push a `origin` (A0)
+- **Aprobación del usuario** en el chat: «Sí, haz push».
+- **Revisión previa:** sin secretos versionados (`git ls-files` filtrado; las dos coincidencias son los archivos de medición de tokens), sin archivos de más de 1 MB, y las dos ramas en fast-forward (`git merge-base --is-ancestor`).
+- `git push origin main develop` → `6c86237..6ff846f main`, `cd92a71..e7bf194 develop`. Sin `--force`.
+- **Antecedente:** `origin/develop` ya existía en cd92a71 por un push del 2026-11-23 16:49 UTC sin autorización del usuario (probablemente Codex al volver). Queda anotado.
+
+
+## 2026-11-25 · Integración 11 y preparación de la ausencia del usuario (A0)
+- **ADR-0018:** `usuario --ausente` (escalón 1 inmediato) y avisos de cuota; test 10/10. ADR-0014 no se tocó: un ADR aceptado no se edita (una enmienda inicial se revirtió).
+- **FDN-070c (Codex, a73aeed):** el test de concurrencia ya no falla; `npm test` 5/6, con otro intermitente («rechaza un enlace de directorio…»). Se integra como mejora y 070c sigue abierta en el relevo.
+- **FDN-092 (A3) + sección `## Hitos` (A0, 45 hitos) + ADR-0019:** `progreso.mjs --check` → conforme; **PROGRESO.md: v0.1 28/34 (82 %)**, criterios 8/8, bloqueo humano FDN-005.
+- **FDN-073c:** integrada la rama del relevo (incluye el commit de Codex); `tests/regresion` con motores reales → 3/3.
+- Codex entregó 070c y 073c **antes** de su caída (07:44 y 07:46 frente a 08:01): la bifurcación relevó tareas que ya estaban en REVIEW; no hubo pérdida.
