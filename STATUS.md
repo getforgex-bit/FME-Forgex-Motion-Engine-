@@ -90,4 +90,5 @@ Fase 1: fijar las versiones de FreeCut, Revideo y Blender y ejecutar una prueba 
 | 2026-11-25 | El usuario puede declarar su ausencia (`usuario --ausente`) y avisar de cuotas agotadas; trabajo encadenado durante su ausencia | ADR-0018 |
 | 2026-11-25 | Trazabilidad por hitos con PROGRESO.md generado; `--check` bloquea solo la integración de A0 | ADR-0019 |
 | 2026-11-25 | **Especificación FME v0.1 aprobada formalmente** por el usuario (cierra la Fase 0) | FDN-005; ADR-0002 |
+| 2026-11-25 | `main` = **v0.1 completa** (1af87af) y push de `main` y `develop` a `origin`, aprobados por el usuario | chat de A0 |
 | 2026-11-25 | `develop` → `main` como hito v0.1 (8/8 criterios); push a `origin` aprobado | aprobación del usuario en el chat de A0 |

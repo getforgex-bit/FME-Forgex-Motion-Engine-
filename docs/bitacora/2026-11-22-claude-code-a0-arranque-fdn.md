@@ -288,3 +288,10 @@ Abiertas: FDN-070d (otro intermitente de la caché) y FDN-063d (marcar `3d-with-
 ## 2026-11-25 · Spec v0.1 aprobada; v0.1 completa (A0)
 - El usuario, en el chat de A0, ante la pregunta «¿Apruebas formalmente la especificación v0.1 (FDN-005)?»: **«Sí, la apruebo»**.
 - FDN-005 DONE; H-spec-v01-aprobada [x]; Fase 0 cerrada formalmente; `progreso.mjs --check` conforme → **v0.1 34/34 hitos (100 %)**, criterios 8/8, sin bloqueos humanos.
+
+
+## 2026-11-25 · `main` = v0.1 completa y push (A0)
+- **Aprobación del usuario:** «Sí, fusiona y sube».
+- `git merge --no-ff develop` en `main` → **1af87af**; árbol idéntico a `develop` (fa15b46).
+- **Verificado en `main`:** typecheck OK; `npm test` 252 pass + 19 skip + 0 fail **al primer intento**; `progreso.mjs --check` conforme.
+- `git push origin main develop` → `6ff846f..1af87af main`, `abbb646..fa15b46 develop` (fast-forward, sin `--force`; sin secretos ni archivos de más de 1 MB).
