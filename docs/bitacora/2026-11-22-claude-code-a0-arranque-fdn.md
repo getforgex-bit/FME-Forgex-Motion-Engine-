@@ -275,3 +275,11 @@ Arranque por el «Continúa» único de A1. Solo se integraron REVIEW en verde, 
 | FDN-063b, relevo (camera.json de Blender) | 252 pass (un reintento por EPERM); `node --test packages/adapters/blender/test/*.test.ts` con Blender real → 10/10 | fusionada |
 
 Abiertas: FDN-070d (otro intermitente de la caché) y FDN-063d (marcar `3d-with-2d` como yes). Ninguna decisión del usuario encolada. Sin push.
+
+
+## 2026-11-25 · Vuelta del usuario (12,6 h) e integración 13 (A0)
+- Vuelta registrada (escalón 3 → 0); cola de decisiones vacía; se dio el resumen al usuario.
+- **FDN-070d** (relevo AG, f9c479c): solo el test (reintentos en la preparación con `rename` y en la limpieza); no debilita lo que comprueba. `npm test` 5/5 seguidos en verde → H-cache-robusta-windows [x].
+- **Codex reincorporado** (`reincorporar --equipo codex`; `turno --disponible` para c0 y c0a). El usuario dijo que tiene la cuota de 5 h llena pero solo un 4 % de la semanal → **en reserva**, sin tareas nuevas.
+- **FDN-082** consolidado en `docs/licencias-seguridad.md` (tabla de AG + lista de control antes de distribuir) → H-licencias-v01 [x].
+- **FDN-063d** asignada a A1.

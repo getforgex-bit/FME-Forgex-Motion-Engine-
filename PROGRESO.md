@@ -1,6 +1,6 @@
 # Progreso de FME  (generado por scripts/progreso.mjs; no editar a mano)
 
-**v0.1: 31/34 hitos (91 %)** · Corto 4/5 · Mediano 27/29 · Largo: catálogo condicionado (0/11, fuera del %)
+**v0.1: 33/34 hitos (97 %)** · Corto 4/5 · Mediano 29/29 · Largo: catálogo condicionado (0/11, fuera del %)
 Criterios: 8/8 ☑ · Bloqueos humanos: FDN-005
 +0 hitos nuevos desde la última generación.
 
@@ -31,7 +31,7 @@ El % no tiene pesos: cuenta hitos vivos (no retirados) cerrados con evidencia.
 
 - [x] H-cierre-f3-job-e2e **(crítico)** ← FDN-027, FDN-030, FDN-031, FDN-032, FDN-032B, FDN-033, FDN-034, FDN-034B
 
-## Plazo 2 · Mediano  (27/29)
+## Plazo 2 · Mediano  (29/29)
 
 ### Parte 2.A
 
@@ -66,7 +66,7 @@ El % no tiene pesos: cuenta hitos vivos (no retirados) cerrados con evidencia.
 #### Fase 7
 
 - [x] H-cache-segmentos-preview ← FDN-070, FDN-070B, FDN-071
-- [ ] H-cache-robusta-windows ← FDN-070C, FDN-070D
+- [x] H-cache-robusta-windows ← FDN-070C, FDN-070D
 - [x] H-recuperacion-errores ← FDN-072
 - [x] H-audio-sync-compose ← FDN-074A
 - [x] H-seguridad-regresion ← FDN-073A, FDN-073B
@@ -81,7 +81,7 @@ El % no tiene pesos: cuenta hitos vivos (no retirados) cerrados con evidencia.
 - [x] H-cli ← FDN-081
 - [x] H-mcp-preview-real ← FDN-080B
 - [x] H-export-real ← FDN-080C
-- [ ] H-licencias-v01 ← FDN-082
+- [x] H-licencias-v01 ← FDN-082
 
 ## Plazo 3 · Largo  (0/11, condicionado)
 
@@ -118,9 +118,8 @@ La vista por rol (B1/B2, C1/C2, A1/A2) queda pendiente: el BACKLOG no registra e
 - ****USUARIO****: en curso en reposo · integradas 0/1
 - **A DECIDIR**: en curso en reposo · integradas 1/2
 - **A0 + A3**: en curso en reposo · integradas 1/1
-- **AG**: en curso en reposo · integradas 9/9
-- **CL**: en curso FDN-082 (REVIEW) · integradas 38/39
+- **AG**: en curso en reposo · integradas 10/10
+- **CL**: en curso FDN-063D (IN_PROGRESS) · integradas 39/40
 - **CX**: en curso en reposo · integradas 15/15
 - **LIBRE**: en curso en reposo · integradas 1/1
 - **LIBRE (EL PRIMERO QUE QUEDE LIBRE)**: en curso en reposo · integradas 1/1
-- **POR ASIGNAR**: en curso en reposo · integradas 0/2

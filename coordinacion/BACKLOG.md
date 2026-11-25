@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-25 (integración 12, en ausencia del usuario, escalón 1)._
+> _Última consolidación: 2026-11-25 (integración 13, vuelta del usuario)._
 
 ## Resumen
 
@@ -76,10 +76,10 @@
 | FDN-092 | Trazabilidad por hitos (propuesta v2 del asistente a0s): ADR-0017, § Hitos en BACKLOG, `scripts/progreso.mjs` + `PROGRESO.md` | A0 + A3 | 075 | DONE (df7077e; A0 escribió la sección Hitos y ADR-0019) |
 | FDN-063b | Blender exporta `camera.json` nativo (posición del modelo en pantalla por fotograma) para `guide3DLayerId` | CX | 063 | DONE (6a293da, relevo AG; Blender real 10/10) |
 | FDN-063c | `3d-with-2d` integrado en `runHybrid` (overlay 2D sobre el render 3D en la composición) | CL-A1 | 063 | DONE (c4b7a2d; motor real 2/2) |
-| FDN-070d | Caché: intermitente «rechaza un enlace de directorio, una entrada enlazada y una raíz sustituida» (visto 1 de 6 tras FDN-070c) | por asignar | 070c | READY |
-| FDN-063d | `art-direction/backends/techniques.ts`: Revideo `3d-with-2d` de partial a yes (propuesta de A1 tras FDN-063c) | por asignar | 063c | READY |
+| FDN-070d | Caché: intermitente «rechaza un enlace de directorio, una entrada enlazada y una raíz sustituida» (visto 1 de 6 tras FDN-070c) | AG-relevo | 070c | DONE (f9c479c relevo AG; A0: npm test 5/5 seguidos) |
+| FDN-063d | `art-direction/backends/techniques.ts`: Revideo `3d-with-2d` de partial a yes (propuesta de A1 tras FDN-063c) | CL-A1 | 063c | IN_PROGRESS |
 | FDN-091 | Modo ausencia del usuario (ADR-0014) | CL-A0 | 090 | DONE |
-| FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | REVIEW (borrador 09a5b72 integrado; falta que A0 consolide licencias-seguridad.md) |
+| FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | DONE (09a5b72 AG; consolidado por A0 en licencias-seguridad.md) |
 ---
 
 ## Hitos
@@ -110,7 +110,7 @@
 | H-3d-con-2d-en-pipeline | 2 | 2.B | 6 | normal | [x] | overlay-order con motor real 2/2 (A0) | 063c, 063d |
 | H-cierre-f6 | 2 | 2.B | 6 | critico | [x] | roadmap F6 cerrada 2026-11-25 | 062 |
 | H-cache-segmentos-preview | 2 | 2.C | 7 | normal | [x] | FDN-070/070b/071 | 070, 070b, 071 |
-| H-cache-robusta-windows | 2 | 2.C | 7 | normal | [ ] | — | 070c, 070d |
+| H-cache-robusta-windows | 2 | 2.C | 7 | normal | [x] | npm test 5/5 seguidos sin intermitentes (A0, 2026-11-25) | 070c, 070d |
 | H-recuperacion-errores | 2 | 2.C | 7 | normal | [x] | FDN-072 | 072 |
 | H-audio-sync-compose | 2 | 2.C | 7 | normal | [x] | FDN-074a: desfase 0 ms | 074a |
 | H-seguridad-regresion | 2 | 2.C | 7 | normal | [x] | tests/seguridad 10/10, 0 TODO | 073a, 073b |
@@ -122,7 +122,7 @@
 | H-cli | 2 | 2.C | T | normal | [x] | FDN-081 | 081 |
 | H-mcp-preview-real | 2 | 2.C | T | normal | [x] | FDN-080b | 080b |
 | H-export-real | 2 | 2.C | T | normal | [x] | FDN-080c | 080c |
-| H-licencias-v01 | 2 | 2.C | T | normal | [ ] | — | 082 |
+| H-licencias-v01 | 2 | 2.C | T | normal | [x] | licencias-seguridad.md consolidado (FDN-082) | 082 |
 | H-largo-acabado-artesanal | 3 | 3.A | 8 | normal | [ ] | — | — |
 | H-largo-edicion-vfx | 3 | 3.A | 8 | normal | [ ] | — | — |
 | H-largo-color | 3 | 3.A | 8 | normal | [ ] | — | — |
