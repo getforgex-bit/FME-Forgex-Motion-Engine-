@@ -143,3 +143,53 @@ test("modo ausencia del usuario (ADR-0014): escalones, sin falsas caídas, cola 
     delete process.env.FME_AHORA;
   }
 });
+
+test("turnos de coordinadores alternos (ADR-0017) y sospecha contada desde la vuelta del usuario", async () => {
+  const { writeFileSync } = await import("node:fs");
+  const cfgPath = join(process.env.FME_COORD_DIR, "turnos-test.json");
+  writeFileSync(cfgPath, JSON.stringify({
+    equipos: { tur: { codigo: "TU", coordinadores: [{ id: "antigravity-tn", modelo: "neon" }, { id: "antigravity-tc", modelo: "carbon" }] } },
+    dominios: { terminal: ["depur", "flaky"], orquestacion: ["pipeline", "router"] },
+    perfiles: { neon: { orquestacion: 3, terminal: 2 }, carbon: { terminal: 3, orquestacion: 1 } },
+    coste_relativo: { neon: 6, carbon: 7 },
+  }));
+  process.env.FME_TURNOS = cfgPath;
+  process.env.FME_AHORA = "2032-01-01T08:00:00.000Z";
+  try {
+    reg("antigravity", "tn", "tur");
+    reg("antigravity", "tc", "tur");
+    // Recomendación por perfil: depuración → Carbon; pipeline → Neon.
+    assert.match(c.turno({ equipo: "tur", texto: "Depurar test flaky en Windows" }), /Pon a trabajar a: antigravity-tc \(carbon\)/);
+    assert.match(c.turno({ equipo: "tur", texto: "Pipeline y router" }), /Pon a trabajar a: antigravity-tn \(neon\)/);
+    // No paralelos: Neon toma; Carbon no puede tomar sin que Neon ceda.
+    assert.match(c.turno({ tomar: true, sesion: "antigravity-tn" }), /tomado por antigravity-tn/);
+    assert.throws(() => c.turno({ tomar: true, sesion: "antigravity-tc" }), /lo tiene antigravity-tn/);
+    // Con titular, se recomienda seguir con él aunque el perfil favorezca al otro.
+    assert.match(c.turno({ equipo: "tur", texto: "Depurar test flaky" }), /Pon a trabajar a: antigravity-tn[\s\S]*no lo ha cedido/);
+    // Neon cede por cuota: queda excluido; Carbon toma y recibe la nota del traspaso.
+    process.env.FME_AHORA = "2032-01-01T09:00:00.000Z";
+    assert.match(c.turno({ ceder: true, sesion: "antigravity-tn", nota: "FDN-074 a medias: falta medir pulsos", motivo: "cuota" }), /cedido/);
+    process.env.FME_AHORA = "2032-01-01T09:01:00.000Z";
+    assert.match(c.turno({ equipo: "tur", texto: "Pipeline y router" }), /SIN CUOTA[\s\S]*Pon a trabajar a: antigravity-tc/);
+    assert.match(c.turno({ tomar: true, sesion: "antigravity-tc" }), /tomado por antigravity-tc[\s\S]*falta medir pulsos/);
+    // Mismo equipo: los dos coordinadores cuentan como «tur» en la tabla de equipos.
+    assert.match(c.equipos(), /tur \| activo/);
+    process.env.FME_AHORA = "2032-01-01T10:00:00.000Z";
+    c.turno({ ceder: true, sesion: "antigravity-tc", nota: "hecho" });
+    process.env.FME_AHORA = "2032-01-01T10:01:00.000Z";
+    c.turno({ disponible: true, coordinador: "antigravity-tn" });
+    assert.doesNotMatch(c.turno({ equipo: "tur", texto: "router" }), /SIN CUOTA/);
+
+    // Vuelta del usuario tras una ausencia: los equipos no son «sospechosos» hasta que pase el umbral desde la vuelta.
+    c.usuario({ presente: true, sesion: "antigravity-tn" });
+    process.env.FME_AHORA = "2032-01-03T08:00:00.000Z"; // 48 h después
+    assert.match(c.usuario({ presente: true, sesion: "antigravity-tn" }), /VUELTA DEL USUARIO/);
+    reg("codex", "tx", "tur-x");
+    process.env.FME_AHORA = "2032-01-03T09:30:00.000Z"; // el equipo creado a las 08:00 lleva 90 min; el usuario volvió a las 08:00
+    c.usuario({ presente: true, sesion: "antigravity-tn" });
+    assert.match(c.equipos(), /tur-x \| sospechoso/);
+  } finally {
+    delete process.env.FME_AHORA;
+    delete process.env.FME_TURNOS;
+  }
+});

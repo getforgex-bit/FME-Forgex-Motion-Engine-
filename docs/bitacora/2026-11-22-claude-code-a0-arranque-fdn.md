@@ -196,3 +196,22 @@ Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (
   - migración retroactiva con la tabla del §4, verificando que cada `[x]` enlace evidencia existente;
   - FDN-004 y las tareas de operación, con la etiqueta «operación» y fuera del %.
 - **Intermitente:** el test de concurrencia de la caché vuelve a fallar con la suite completa en carga → FDN-070c. La referencia de regresión de Revideo quedó obsoleta tras la corrección del SVG → FDN-073c.
+
+
+## 2026-11-25 · Turnos de coordinadores (ADR-0017) y vuelta del usuario (A0)
+- **Vuelta del usuario tras 36,2 h** (escalón 3): no hubo eventos, REVIEW ni decisiones en cola; `develop` sigue en e64f992.
+- **Defecto detectado:** AG y CX salían «sospechosos» al volver el usuario, porque sin él no pueden latir. Corregido: el plazo cuenta desde la vuelta y, mientras tanto, se muestra «esperando al usuario».
+- **Petición del usuario:**
+  - Antigravity añade una sesión **Carbon** (+2 Hydrogen) en turno con Neon, no paralela;
+  - Codex usa **Astra** de forma temporal porque Sol se queda sin cuota semanal;
+  - se tienen en cuenta sus tablas de benchmarks.
+- **Hecho:**
+  - `coordinacion/turnos.json` (perfiles por modelo a partir de las tablas del usuario);
+  - `coord.mjs turno` (recomendar, tomar, ceder, sin-cuota, disponible), con desempate por coste y alternancia y nota de traspaso;
+  - tomar o ceder renueva el latido;
+  - las claves cortas solo cuentan como palabra completa;
+  - ADR-0017, BENCHMARKS §6, MODEL_ROUTING, CONTINUATION y las variantes Carbon y Astra de los prompts.
+- **Verificado:**
+  - `node --test scripts/coord.test.mjs` → 9/9;
+  - sobre el `FME-ops` real: FDN-074 → Neon, FDN-070c → Carbon y Codex → Astra (`codex-c0` marcado sin cuota por lo que dijo el usuario);
+  - `equipos` muestra «esperando al usuario» en lugar de «sospechoso».

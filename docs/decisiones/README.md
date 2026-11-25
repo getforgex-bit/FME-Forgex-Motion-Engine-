@@ -25,3 +25,4 @@ Registro de las decisiones duraderas de FME. Formato heredado de Segundo Cerebro
 | [0014](0014-modo-ausencia-del-usuario.md) | Modo ausencia del usuario: parada gradual y cola de decisiones | aceptada |
 | [0015](0015-artefactos-en-el-proyecto.md) | Artefactos generados en el proyecto y schemaVersion 3 | propuesta |
 | [0016](0016-asistente-suplente-de-a0.md) | Suplente (asistente) de A0 en paralelo | aceptada |
+| [0017](0017-turnos-de-coordinadores.md) | Turnos de coordinadores no paralelos dentro de un equipo | aceptada |

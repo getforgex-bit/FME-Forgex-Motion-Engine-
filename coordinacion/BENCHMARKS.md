@@ -339,3 +339,24 @@ Hay dos variantes en uso: **HLE** (2 500 preguntas, con o sin herramientas, seg�
 - **No se leyeron:** las system cards (PDF de Anthropic, `deploymentsafety.openai.com` de OpenAI) ni las páginas de metodología de Google (`evals-methodology`). Ahí podría haber esfuerzo, intentos y arnés por modelo. Es el siguiente paso recomendado.
 - **No se pudieron leer:** gráficos de imagen (OpenAI), tablas renderizadas por JavaScript (leaderboard de ALE, AA, SWE-bench) y leaderboards con filas parciales.
 - Se usaron búsquedas web para localizar páginas; las cifras de agregadores no se usaron como dato.
+
+## 6. Datos aportados por el usuario (2026-11-25), POR VALIDAR
+
+El usuario aportó dos tablas: «Los 3 mejores dominios de cada modelo» y «Podio por tarea». Aquí se recogen **sin verificar fuente por fuente**. Son la base de los perfiles de `coordinacion/turnos.json` (ADR-0017) y se contrastarán con las métricas reales de `AGENT_PERFORMANCE.md`.
+
+| Modelo | Mejores dominios (según el usuario) | Cifras citadas |
+|---|---|---|
+| Claude Opus 5.5 | Web/UI y código 3D/CAD · repositorios y code review · agentes autónomos y computer use | WebDev ~1815–1820 Elo; FrontierCode 2.0 46,9 %; Agent Arena 1336; OSWorld 2.1 81,8 % |
+| Claude Sonnet 5.5 | Oficina agéntica · terminal rápido · web intermedia | AutomationBench 71,8 %; TB 4.1 65,2 %; 133–153 tok/s |
+| GPT-6.2 Astra | Ciencia dura y terminal científico · razonamiento abstracto · legal; eficiente en tareas extremas | TB-Science 77,1 %; GPQA 97 %; ARC-AGI-2 95,8 %; ~4,00 $/tarea en `max` |
+| GPT-6.2 Sol | Mejor coste/inteligencia · seguimiento estricto de instrucciones · gráficos densos y salidas largas | AA 57 a ~1,01 $/tarea; Alignment 85,2; Chartography 75,1 % |
+| Gemini 4 Carbon | **Terminal complejo y horizonte largo** · redacción · verificación factual y razonamiento crítico | TB 4.1 66,2 %; Arena Text 1526; SimpleQA Verified 77,7 % |
+| Gemini 4 Neon | Automatización y finanzas · **contexto largo (1M) y multimodal** · redacción con baja alucinación · **parcheo de seguridad** · orquestación (≈ Opus en la mitad de tiempo) | AutomationBench 79,3 %; GraphWalks 95,2 %; CWE-bench 70,7 %; Agent Arena 1333 |
+| Gemini 4 Hydrogen | Velocidad y volumen · enjambres de subagentes · prototipado | 162–164 tok/s; ~1,50 $/tarea |
+
+**Discrepancias con §1–§4 (POR VALIDAR):**
+- Sonnet 5.5 en TB 4.1: 65,2 % (usuario) frente a la fuente de A3.
+- La tabla del usuario sitúa a Carbon (66,2 %) por encima de Opus en TB 4.1; A3 tenía a Opus con 65,8 %.
+- No se ha comprobado si las cifras usan el mismo arnés y esfuerzo.
+
+**Uso en FDN:** solo orientan la elección del coordinador de turno (ADR-0017) y nunca sustituyen las métricas propias.

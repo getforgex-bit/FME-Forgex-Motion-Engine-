@@ -43,6 +43,7 @@ $env:FME_SESION = "codex-fase1-blender"   # bash: export FME_SESION=...
 | `buzon [--todo]` | Lee lo nuevo dirigido a ti, a tu equipo o a todos, y lo marca como leído. |
 | `reclamar --ruta a,b --motivo "…"` / `liberar [--ruta a,b]` | Exclusividad sobre rutas; falla si otra sesión ya tiene una ruta solapada. |
 | `cerrar --resumen "…"` | Cierra la sesión y libera sus reclamos. |
+| `turno --equipo <x>` / `turno --tomar` / `turno --ceder` | Turnos de coordinadores que se alternan en un mismo equipo y recomendación de a quién activar ([ADR-0017](decisiones/0017-turnos-de-coordinadores.md)). |
 | `usuario [--presente]` / `pendiente` / `pendientes` / `decidir` | Presencia del usuario, escalones de ausencia y cola de decisiones ([ADR-0014](decisiones/0014-modo-ausencia-del-usuario.md)). |
 | `equipos` / `caida` / `relevar` / `reincorporar` | Relevo entre equipos cuando uno se queda sin cuota ([ADR-0013](decisiones/0013-relevo-entre-equipos.md)); solo el integrador, y la caída y el relevo, con la cita literal del usuario. |
 

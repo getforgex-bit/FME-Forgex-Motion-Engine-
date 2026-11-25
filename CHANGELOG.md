@@ -6,6 +6,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 ## [Unreleased]
 
 ### Added
+- Turnos de coordinadores dentro de un equipo (ADR-0017): `coord.mjs turno` (recomendar, tomar, ceder, sin-cuota, disponible), `coordinacion/turnos.json` con perfiles por modelo; la sospecha de caída cuenta desde la vuelta del usuario.
 - **Fase 5 cerrada (criterios #4 y #5)** y **criterio #8**: re-render incremental con caché (FDN-075a), fallbacks reales (FDN-052), `project.export` real (FDN-080c) y reintento de FreeCut (FDN-074b). ADR-0016 (asistente de A0).
 - **Fase 4 cerrada (criterio #3):** `@fme/pipeline` (FDN-042c). Audio y sincronía en `edit.compose` (FDN-074a). `preview.render` real (FDN-080b). Pruebas de seguridad y regresión (FDN-073a). Corregido: las capas SVG de Revideo salían vacías.
 - `schemaVersion` 3: `Project.artifacts` con validación referencial (FDN-042b, ADR-0015). FreeCut `edit.compose` con overlays alpha (FDN-042a). Gradientes en Blender (FDN-061b).

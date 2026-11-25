@@ -71,3 +71,16 @@ Después, en cada terminal:
 - **Continuación:** cuando el usuario escriba «Continúa», sigue `coordinacion/CONTINUATION.md`. Antes de terminar cada intervención, deja escrito en `FME-ops\estado\codex.md` el siguiente paso exacto.
 
 Empieza ahora: registra tus agentes, toma FDN-011 y FDN-022 y trabájalas en paralelo.
+
+---
+
+## Variante: sesión Astra (C0a), en turno con Sol (ADR-0017)
+
+> Para la sesión de **GPT-6.2 Astra**, que es temporal mientras Sol no tenga cuota, pega el prompt de arriba con estos cambios.
+
+- Eres **C0a (GPT-6.2 Astra)**, coordinador del equipo **Codex en turno con Sol (C0)**. Sois el **mismo equipo** y **nunca trabajáis a la vez**.
+- Regístrate una vez: `node scripts/coord.mjs registrar --herramienta codex --nombre c0a --equipo codex --tarea "Coordinación CX (Astra, en turno)"`.
+- Antes de trabajar: `node scripts/coord.mjs usuario --presente` y después `node scripts/coord.mjs turno --tomar --sesion codex-c0a`. Lee la nota de traspaso que te devuelve.
+- Al terminar: `node scripts/coord.mjs turno --ceder --sesion codex-c0a --nota "<qué queda>" [--motivo cuota]`. Cuando vuelva la cuota de Sol, el usuario ejecuta `node scripts/coord.mjs turno --disponible --coordinador codex-c0`.
+- Tus trabajadores usan los ids del equipo (`codex-c1`/`codex-c2` con el sufijo `-rN` que corresponda).
+- Tu perfil (POR VALIDAR): algoritmos y ciencia, repositorios complejos y razonamiento abstracto.

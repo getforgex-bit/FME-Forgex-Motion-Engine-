@@ -18,6 +18,13 @@
 
 Mientras el usuario está ausente, ningún equipo se marca «sospechoso» («en pausa (usuario ausente)») y `caida`, `relevar` y `decidir` se rechazan.
 
+## Turnos de coordinadores (ADR-0017): Antigravity (Neon ↔ Carbon) y Codex (Sol ↔ Astra)
+
+- **El usuario decide a quién activar:** `node scripts/coord.mjs turno --equipo antigravity` (o `codex`). Responde con el coordinador recomendado y el motivo: titular sin ceder, cuota o perfil frente a las tareas.
+- **El coordinador activado**, justo después del Paso 0: `node scripts/coord.mjs turno --tomar --sesion <su id>`. Si otro tiene el turno, **no trabaja** y se lo dice al usuario. Al tomar el turno recibe la nota del traspaso anterior.
+- **Al terminar o al quedarse sin cuota:** `turno --ceder --sesion <id> --nota "<qué queda exactamente>" [--motivo cuota]`, además de actualizar `FME-ops/estado/<equipo>.md` como siempre. Ese archivo es **del equipo**: lo comparten ambos coordinadores, porque nunca trabajan a la vez.
+- **Ids:** Neon `antigravity-b0`, Carbon `antigravity-b0c`, Sol `codex-c0`, Astra `codex-c0a`. Las reanudaciones usan `-r2`, `-r3`… Los trabajadores mantienen `b1`/`b2` o `c1`/`c2`.
+
 ## Para cualquier equipo (A0, B0 Neon, C0 Sol y trabajadores)
 
 1. **Ubícate.** Tu worktree es el de [MASTER_PLAN.md](MASTER_PLAN.md#rutas-reales). `cd` a él.

@@ -6,11 +6,14 @@
 
 | Equipo | Tarea | Criterio | Rama (nueva desde `develop`) |
 |---|---|---|---|
-| **Antigravity** | FDN-074 Exportación híbrida con sincronía medida | **#7** | `fdn/FDN-074-av-sync-hibrida` |
+| **Antigravity** (Neon ↔ Carbon en turno) | FDN-074 Exportación híbrida con sincronía medida (`turno` recomienda Neon) | **#7** | `fdn/FDN-074-av-sync-hibrida` |
 | **Claude A2** | FDN-075 Prueba híbrida final (informe de los 8 criterios) | todos | `fdn/FDN-075-prueba-final` |
 | **Claude A1** | FDN-063 Técnicas compuestas → cierre de la F6 | — | `fdn/FDN-063-tecnicas` |
-| **Codex** | FDN-073b (en curso), después FDN-070c y FDN-073c | — | sus ramas |
+| **Codex** (Astra en turno; Sol sin cuota) | FDN-073b (en curso), después FDN-070c y FDN-073c | — | sus ramas |
 | **Claude A3** | — (reservado para FDN-092 tras la prueba híbrida) | — | — |
+
+## Turnos (ADR-0017)
+- ¿A quién activar? `node scripts/coord.mjs turno --equipo antigravity` / `--equipo codex`. Al empezar, `turno --tomar`; al terminar, `turno --ceder --nota`.
 
 ## Decisiones del usuario pendientes de aplicar
 - **FDN-092 (trazabilidad por hitos):** después de la prueba híbrida; `PROGRESO.md` versionado; `--check` bloquea solo la integración de A0.
