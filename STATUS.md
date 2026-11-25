@@ -24,6 +24,8 @@ Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-acept
 
 **`main` = hito v0.1** (`6ff846f`, fusión `--no-ff` de `develop` en `cbd3256` con la aprobación del usuario, 2026-11-25). En `main`: typecheck OK y `npm test` 234 pass (al tercer intento por el intermitente de la caché, FDN-070c). **Publicado en `origin`** el 2026-11-25 con la aprobación del usuario («Sí, haz push»): `main` = 6ff846f y `develop` = e7bf194, ambos en fast-forward y sin `--force`.
 
+**Progreso por hitos:** [`PROGRESO.md`](PROGRESO.md), generado por `node scripts/progreso.mjs` (ADR-0019).
+
 ## Qué existe hoy (verificado)
 
 - Documentación completa derivada de la spec v0.1.
@@ -85,4 +87,6 @@ Fase 1: fijar las versiones de FreeCut, Revideo y Blender y ejecutar una prueba 
 | 2026-11-23 | Modo ausencia del usuario: presencia en cada mensaje; escalones a 2, 4 y 6 h (solo lo asignado → solo lo en curso → punto de control y parada); sin relevos falsos; cola de decisiones con resumen y revisión una a una al volver; A0 integra solo lo verde | ADR-0014 |
 | 2026-11-23 | Suplente/asistente de A0 en paralelo: solo crea archivos con la autorización del usuario; no decide ni edita lo compartido | ADR-0016 |
 | 2026-11-25 | Turnos de coordinadores no paralelos (Neon ↔ Carbon en AG; Sol ↔ Astra en CX), recomendación con `coord.mjs turno`; la sospecha de caída cuenta desde la vuelta del usuario | ADR-0017 |
+| 2026-11-25 | El usuario puede declarar su ausencia (`usuario --ausente`) y avisar de cuotas agotadas; trabajo encadenado durante su ausencia | ADR-0018 |
+| 2026-11-25 | Trazabilidad por hitos con PROGRESO.md generado; `--check` bloquea solo la integración de A0 | ADR-0019 |
 | 2026-11-25 | `develop` → `main` como hito v0.1 (8/8 criterios); push a `origin` aprobado | aprobación del usuario en el chat de A0 |

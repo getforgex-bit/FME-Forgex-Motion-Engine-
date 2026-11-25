@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-25 (integración 10; **prueba híbrida 8/8**, fases 0–7 cerradas)._
+> _Última consolidación: 2026-11-25 (integración 11; `PROGRESO.md` v0.1 en el 82 %)._
 
 ## Resumen
 
@@ -71,8 +71,8 @@
 | FDN-073b | Endurecimiento: `--root` en la CLI, raíces de anfitrión en las llamadas directas a Revideo y FreeCut, y raíces permitidas en `edit.compose` (los 3 TODO de 073a) | CX | 073a | DONE (d7c625e; 0 TODO) |
 | FDN-075a | Criterio #8: reabrir el proyecto, cambiar una capa y re-renderizar **solo** lo afectado (caché + render-plan en el pipeline) | CL-A1 | 042c, 070, 071 | DONE (d68149e; A0: criterio #8 reproducido) |
 | FDN-080c | `project.export` real en MCP y CLI con `@fme/pipeline` | CL-A2 | 042c, 080b | DONE (7a873f1) |
-| FDN-070c | `DiskCache`: el test «escrituras concurrentes» sigue fallando con la suite completa en carga (~1 de cada 5); revisar el presupuesto de reintentos o el diseño del test | CX | 070b | RELEVADA → AG-relevo (prioritaria: falló 2 de 3 al verificar main) |
-| FDN-073c | Regresión: actualizar `tests/regresion/expected/revideo.json` (la referencia se fijó con el SVG vacío, antes de la corrección de cb2d404) según el procedimiento de 073a | CX | 073a, 042c | RELEVADA → AG-relevo (candidato 2e8e4a9d… ya aprobado por A0) |
+| FDN-070c | `DiskCache`: el test «escrituras concurrentes» sigue fallando con la suite completa en carga (~1 de cada 5); revisar el presupuesto de reintentos o el diseño del test | CX | 070b | IN_PROGRESS (a73aeed integrada: concurrencia resuelta; queda el intermitente «rechaza un enlace de directorio» → relevo AG) |
+| FDN-073c | Regresión: actualizar `tests/regresion/expected/revideo.json` (la referencia se fijó con el SVG vacío, antes de la corrección de cb2d404) según el procedimiento de 073a | CX | 073a, 042c | DONE (f2e4e19 relevo + 1cbb1a0 Codex; regresión real 3/3) |
 | FDN-092 | Trazabilidad por hitos (propuesta v2 del asistente a0s): ADR-0017, § Hitos en BACKLOG, `scripts/progreso.mjs` + `PROGRESO.md` | A0 + A3 | 075 | DONE (df7077e; A0 escribió la sección Hitos y ADR-0019) |
 | FDN-063b | Blender exporta `camera.json` nativo (posición del modelo en pantalla por fotograma) para `guide3DLayerId` | CX | 063 | RELEVADA → AG-relevo (Codex caído, 2026-11-25; .patch con 9 archivos sin commit en el acta) |
 | FDN-063c | `3d-with-2d` integrado en `runHybrid` (overlay 2D sobre el render 3D en la composición) | CL-A1 | 063 | READY |
@@ -113,7 +113,7 @@
 | H-recuperacion-errores | 2 | 2.C | 7 | normal | [x] | FDN-072 | 072 |
 | H-audio-sync-compose | 2 | 2.C | 7 | normal | [x] | FDN-074a: desfase 0 ms | 074a |
 | H-seguridad-regresion | 2 | 2.C | 7 | normal | [x] | tests/seguridad 10/10, 0 TODO | 073a, 073b |
-| H-regresion-actualizada | 2 | 2.C | 7 | normal | [ ] | — | 073c |
+| H-regresion-actualizada | 2 | 2.C | 7 | normal | [x] | tests/regresion 3/3 con motores reales (A0) | 073c |
 | H-criterio-7 | 2 | 2.C | 7 | critico | [x] | pruebas-aceptacion #7 | 074, 080c |
 | H-criterio-8 | 2 | 2.C | 7 | critico | [x] | pruebas-aceptacion #8 | 075a |
 | H-prueba-hibrida-10s | 2 | 2.C | 7 | critico | [x] | INFORME.md 8/8 (A0, 2026-11-25) | 075 |
