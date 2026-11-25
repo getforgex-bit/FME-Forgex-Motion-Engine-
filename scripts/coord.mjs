@@ -347,6 +347,9 @@ export const comandos = {
       // El usuario avisa de que se va: escalón 1 desde ya (sin esperar 2 h); 2 a las X h y 3 a las 2X h de su aviso.
       requerir(o, "sesion");
       sesionFile(o.sesion);
+      // Idempotente: si la ausencia ya está declarada (por cualquier coordinador), no se reinicia el reloj.
+      const yaDecl = nivelAusencia();
+      if (yaDecl.declarada) return `La ausencia del usuario ya estaba declarada (escalón ${yaDecl.nivel}); se mantiene el momento del primer aviso. No se registra nada nuevo.`;
       const t = ahora();
       const f = join(dir("usuario"), `presencia-${slug(o.sesion)}.md`);
       const previo = existsSync(f) ? leer(f).meta : {};

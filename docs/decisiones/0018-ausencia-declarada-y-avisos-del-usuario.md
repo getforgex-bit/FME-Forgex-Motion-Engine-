@@ -21,6 +21,10 @@ ADR-0014 detecta la ausencia del usuario **por tiempo**: 2 h sin presencia. El u
    - A0 integra lo que esté en verde y asigna la siguiente tarea **ya autorizada**, siempre obedeciendo el escalón;
    - cuando no quedan tareas coordinadas o se llega al escalón 3, A0 hace el punto de control y para.
 
+4. **Despedidas y avisos repetidos** (nota del usuario, 2026-11-25):
+   - un mensaje de despedida («me voy», «estaré ausente»), aunque llegue en cola o a varios coordinadores, **no** es una vuelta: se ejecuta `--ausente`, nunca `--presente`;
+   - `--ausente` es idempotente: si ya está declarada, se mantiene el primer aviso.
+
 ## Consecuencias
 
 - **Positivas:** el modo ausencia es preciso, no hay que esperar 2 h, y se aprovecha el tiempo sin decisiones arriesgadas.

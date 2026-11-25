@@ -202,6 +202,10 @@ test("ausencia declarada por el usuario (ADR-0018): escalón 1 inmediato y escal
     assert.match(c.usuario({}), /escalón 0/);
     assert.match(c.usuario({ ausente: true, sesion: "claude-code-decl0", nota: "me voy a dormir" }), /Escalón 1 desde ahora/);
     assert.match(c.usuario({}), /escalón 1 \(ausencia DECLARADA/);
+    // Un segundo aviso de otro coordinador no reinicia el reloj.
+    process.env.FME_AHORA = "2033-01-01T22:30:00.000Z";
+    assert.match(c.usuario({ ausente: true, sesion: "claude-code-decl0" }), /ya estaba declarada/);
+    process.env.FME_AHORA = "2033-01-01T22:00:00.000Z";
     assert.throws(() => c.caida({ sesion: "claude-code-decl0", equipo: "x", cita: "y" }), /necesita al usuario presente/);
     process.env.FME_AHORA = "2033-01-02T00:30:00.000Z"; // +2,5 h desde el aviso → escalón 2
     assert.match(c.usuario({}), /escalón 2/);
