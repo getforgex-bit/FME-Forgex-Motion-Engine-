@@ -229,3 +229,10 @@ Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (
 - **FDN-073c:** revisión visual de A0 (fotograma 0: antes vacío; después, figura naranja) → candidato aprobado.
 - El «fallo» de recovery que vio A1 no se reproduce en `develop` (3/3): es de su entorno.
 - **Fases 6 y 7 cerradas.** FDN-092 queda desbloqueada (el usuario la pidió para después de la prueba híbrida).
+
+
+## 2026-11-25 · `develop` → `main`: hito v0.1 (A0)
+- **Aprobación del usuario** en el chat: «Sí, fusiona a main».
+- `git branch main origin/main` (Initial commit 6c86237, ancestro de develop) → `git switch main` → `git merge --no-ff develop` → **`6ff846f`**. El árbol es idéntico al de `develop` (`git diff --stat develop main` vacío).
+- **Verificado en `main`:** `npm run typecheck` OK; `npm test` → 234 pass, 18 skip, 0 fail al tercer intento. Los dos primeros fallaron en «publica una entrada completa con escrituras concurrentes» (FDN-070c, intermitente de la caché, más frecuente) → prioridad para Codex.
+- **Sin push:** `main` y `develop` solo existen en local; el remoto sigue en el Initial commit.
