@@ -106,6 +106,26 @@ async function retryFileOperation(
   }
 }
 
+// Un FileHandle de lectura puede impedir que Windows reemplace su destino.
+// Se comparte la cola entre instancias que usan la misma ruta canónica.
+const pendingWindowsEntries = new Map<string, Promise<void>>();
+
+async function withEntryAccess<T>(path: string, perform: () => Promise<T>): Promise<T> {
+  if (!windows) return perform();
+
+  const previous = pendingWindowsEntries.get(path);
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  pendingWindowsEntries.set(path, pending);
+  try {
+    if (previous) await previous;
+    return await perform();
+  } finally {
+    if (pendingWindowsEntries.get(path) === pending) pendingWindowsEntries.delete(path);
+    release();
+  }
+}
+
 function checkEntry(path: string): boolean {
   try {
     const entry = lstatSync(path);
@@ -160,6 +180,12 @@ export class DiskCache {
 
   async get(key: string): Promise<Buffer | undefined> {
     const path = this.#entryPath(key);
+    return withEntryAccess(path, () => this.#readEntry(path));
+  }
+
+  async #readEntry(path: string): Promise<Buffer | undefined> {
+    // La raíz pudo cambiar mientras otra operación retenía la entrada.
+    if (windows) this.#verifyDirectories();
     if (!checkEntry(path)) return undefined;
     // O_NOFOLLOW protege la apertura en plataformas que lo implementan.
     const flags = constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
@@ -202,11 +228,11 @@ export class DiskCache {
       }
       await file.close();
 
-      await retryFileOperation('rename', () => {
+      await withEntryAccess(target, () => retryFileOperation('rename', () => {
         this.#verifyDirectories();
         checkEntry(temporary);
         checkEntry(target);
-      }, () => rename(temporary, target));
+      }, () => rename(temporary, target)));
     } catch (error) {
       try {
         await retryFileOperation('unlink', () => {

@@ -102,6 +102,7 @@ test('guarda los bytes, reemplaza entradas completas y deja el valor anterior si
 test('publica una entrada completa con escrituras concurrentes', async (context) => {
   const root = await temporaryRoot(context);
   const cache = new DiskCache({ allowedRoot: root });
+  const reader = new DiskCache({ allowedRoot: root });
   const first = Buffer.alloc(256 * 1024, 0);
   const versions = Array.from({ length: 12 }, (_, index) => Buffer.alloc(256 * 1024, index + 1));
   const validVersions = [first, ...versions];
@@ -109,7 +110,7 @@ test('publica una entrada completa con escrituras concurrentes', async (context)
 
   const readers = Array.from({ length: 12 }, async () => {
     for (let iteration = 0; iteration < 8; iteration++) {
-      const observed = await cache.get(key);
+      const observed = await reader.get(key);
       assert.ok(observed && validVersions.some((value) => value.equals(observed)));
     }
   });
