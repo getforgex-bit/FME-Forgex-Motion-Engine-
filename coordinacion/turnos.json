@@ -1,0 +1,47 @@
+{
+  "_doc": "Configuración de turnos de coordinadores (ADR-0017). Solo la edita A0. Los perfiles salen de los benchmarks aportados por el usuario el 2026-11-25 (POR VALIDAR; ver BENCHMARKS.md §6) y de AGENT_PERFORMANCE.md. Puntuación de 0 a 3 por dominio.",
+  "equipos": {
+    "antigravity": {
+      "codigo": "AG",
+      "coordinadores": [
+        { "id": "antigravity-b0", "modelo": "gemini-4-neon", "nota": "Neon; trabajadores B1/B2 Hydrogen" },
+        { "id": "antigravity-b0c", "modelo": "gemini-4-carbon", "nota": "Carbon; trabajadores Hydrogen (sesión aparte, en turno con Neon)" }
+      ]
+    },
+    "codex": {
+      "codigo": "CX",
+      "coordinadores": [
+        { "id": "codex-c0", "modelo": "gpt-6.2-sol", "nota": "Sol (habitual)" },
+        { "id": "codex-c0a", "modelo": "gpt-6.2-astra", "nota": "Astra; temporal mientras Sol no tenga cuota" }
+      ]
+    },
+    "claude": {
+      "codigo": "CL",
+      "coordinadores": [
+        { "id": "claude-code-a0", "modelo": "claude-opus-5.5", "nota": "Director e integrador" }
+      ]
+    }
+  },
+  "dominios": {
+    "terminal": ["terminal", "depur", "flaky", "intermitente", "eperm", "windows", "proceso", "script", "regresión", "regresion", "caché", "cache", "concurren", "test de", "reintento"],
+    "seguridad": ["seguridad", "endurec", "rutas", "permis", "sandbox", "raíz", "raiz", "parche", "vulnerab"],
+    "orquestacion": ["pipeline", "orquest", "router", "fallback", "flujo", "integración", "integracion", "coordin", "workflow"],
+    "multimodal": ["audio", "vídeo", "video", "sincron", "imagen", "render", "composición", "compose", "freecut", "fotograma", "a/v"],
+    "contexto_largo": ["auditor", "trazabilidad", "informe", "revisión", "revision", "documenta", "hitos", "progreso"],
+    "ciencia": ["algoritm", "matem", "métrica", "metrica", "física", "fisica", "geometr", "cámara", "camara", "3d", "parallax", "deriva", "técnica", "tecnica"],
+    "redaccion": ["adr", "redacción", "redaccion", "bitácora", "bitacora", "doc"],
+    "web": ["ui", "web", "frontend", "interfaz", "navegador"],
+    "repositorio": ["adaptador", "refactor", "contrato", "esquema", "migración", "migracion", "api"]
+  },
+  "perfiles": {
+    "gemini-4-neon": { "orquestacion": 3, "multimodal": 3, "contexto_largo": 3, "seguridad": 3, "redaccion": 2, "web": 2, "repositorio": 2, "terminal": 2, "ciencia": 1 },
+    "gemini-4-carbon": { "terminal": 3, "redaccion": 3, "ciencia": 2, "seguridad": 2, "contexto_largo": 2, "multimodal": 2, "orquestacion": 1, "repositorio": 1, "web": 1 },
+    "gpt-6.2-sol": { "repositorio": 2, "terminal": 2, "orquestacion": 2, "multimodal": 1, "contexto_largo": 1, "seguridad": 1, "ciencia": 1, "redaccion": 1, "web": 2 },
+    "gpt-6.2-astra": { "ciencia": 3, "repositorio": 3, "terminal": 2, "seguridad": 2, "contexto_largo": 2, "orquestacion": 2, "redaccion": 2, "multimodal": 1, "web": 1 },
+    "claude-opus-5.5": { "repositorio": 3, "web": 3, "orquestacion": 3, "terminal": 2, "seguridad": 2, "contexto_largo": 2, "redaccion": 2, "ciencia": 2, "multimodal": 1 }
+  },
+  "coste_relativo": {
+    "_doc": "Coste por tarea aportado por el usuario (USD aprox.). Solo desempata: a igual puntuación, gana el más barato.",
+    "gpt-6.2-sol": 1.01, "gemini-4-neon": 6.44, "gpt-6.2-astra": 4.0, "gemini-4-carbon": 7.76, "claude-opus-5.5": 10.04
+  }
+}

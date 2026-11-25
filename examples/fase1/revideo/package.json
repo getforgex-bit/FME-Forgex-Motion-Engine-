@@ -1,0 +1,20 @@
+{
+  "name": "fme-fase1-revideo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "FDN-010: verificación aislada de Revideo (no pertenece a los workspaces de la raíz).",
+  "scripts": {
+    "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File ./run.ps1"
+  },
+  "dependencies": {
+    "@revideo/2d": "0.11.0",
+    "@revideo/core": "0.11.0",
+    "@revideo/ffmpeg": "0.11.0",
+    "@revideo/renderer": "0.11.0",
+    "@revideo/ui": "0.11.0",
+    "@revideo/vite-plugin": "0.11.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "adapter.freecut",
+  "name": "FreeCut",
+  "version": "0.0.0+5ceeeb3",
+  "contractVersion": "0.1",
+  "capabilities": [
+    "edit.timeline",
+    "compose.video",
+    "render.video"
+  ],
+  "accepts": [
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
+    "audio/mpeg",
+    "audio/aac",
+    "audio/wav",
+    "image/png",
+    "image/svg+xml",
+    "application/json"
+  ],
+  "produces": [
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
+    "audio/mpeg",
+    "audio/wav",
+    "image/png"
+  ],
+  "executor": "cli"
+}

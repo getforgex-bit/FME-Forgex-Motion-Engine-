@@ -1,0 +1,16 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "types": ["node"],
+    "rewriteRelativeImportExtensions": true
+  },
+  "references": [
+    { "path": "../../art-direction" },
+    { "path": "../../connectors" },
+    { "path": "../../project" },
+    { "path": "../../../runtime/workers" }
+  ],
+  "include": ["src"]
+}

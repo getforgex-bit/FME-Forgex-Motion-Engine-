@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "allowImportingTsExtensions": true,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "packages/*/test/**/*.ts",
+    "packages/adapters/*/test/**/*.ts",
+    "runtime/*/test/**/*.ts",
+    "apps/*/test/**/*.ts",
+    "tests/**/*.ts"
+  ]
+}

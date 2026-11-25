@@ -1,0 +1,40 @@
+{
+  "pluginId": "adapter.freecut",
+  "technical": {
+    "alpha": "no",
+    "depth": "no",
+    "keyframes": "unknown",
+    "audio": "yes",
+    "mp4Export": "yes",
+    "h264Export": "yes",
+    "aacAudioExport": "yes",
+    "webmExport": "unknown",
+    "webgpu": "yes",
+    "webcodecs": "yes",
+    "headlessCli": "yes",
+    "headlessHttpApi": "unknown",
+    "projectJsonImportExport": "yes",
+    "reopenEditable": "yes",
+    "deterministicContainer": "no",
+    "deterministicOutput": "unknown"
+  },
+  "limits": {
+    "verifiedWidth": 1280,
+    "verifiedHeight": 720,
+    "verifiedFps": 30,
+    "verifiedFrames": 150,
+    "peakNodeRamMiB": 180.83,
+    "peakBrowserRamMiB": 953.76,
+    "browserUsed": "msedge (Edge 157.0.4341.42); fallback playwright chromium-1243",
+    "upstreamChannelQuirk": "headless/*.mjs hardcodes channel:'chrome'; wrapper uses msedge/playwright without forking",
+    "gpuAdapterObserved": "amd gcn-5 (WebGPU via ANGLE d3d11); nvidia-smi RTX 3050 VRAM 0 MiB"
+  },
+  "permissions": [
+    "fs:workspace",
+    "spawn:node",
+    "spawn:browser-headless",
+    "net:loopback-harness"
+  ],
+  "editability": "native",
+  "licenseReview": "pending"
+}

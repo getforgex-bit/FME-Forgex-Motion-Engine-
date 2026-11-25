@@ -1,0 +1,41 @@
+# Dependencias y builds
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Artefactos de render y caché (se regeneran; no versionar binarios pesados)
+runtime/cache/*
+!runtime/cache/README.md
+runtime/workers/tmp/
+*.mp4
+*.mov
+*.exr
+*.blend1
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# FORGEX Stack: configuración local con rutas absolutas (cada persona ejecuta el setup)
+pctx.json
+.mcp.json
+.agents/
+.codex/
+*.bak-*
+# La memoria (.forgex/memory.jsonl) SÍ se versiona
+.gitnexus/
+
+# Índices de grafos de código: uno por worktree, nunca se versionan (coordinacion/GRAPH_TOOLS.md)
+.codegraph/
+graphify-out/
+# Salidas de las verificaciones de la Fase 1
+examples/**/out/

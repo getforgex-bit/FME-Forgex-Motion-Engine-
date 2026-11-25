@@ -1,0 +1,28 @@
+{
+  "pluginId": "revideo",
+  "technical": {
+    "alpha": "yes",
+    "depth": "no",
+    "keyframes": "yes",
+    "pngSequenceHeadless": "no",
+    "wasmMp4Headless": "no",
+    "gpuAcceleration": "no",
+    "audio": "unknown",
+    "variableFps": "unknown",
+    "ntscFractionalFps": "unknown",
+    "deterministicOutput": "yes",
+    "reopenEditable": "no"
+  },
+  "limits": {
+    "verifiedResolution": "1280x720",
+    "verifiedFps": 30,
+    "verifiedFrames": 90,
+    "ramPeakMB": 1078,
+    "alphaContainer": "ProRes 4444 .mov (yuva444p12le)",
+    "alphaRequires": "background 'rgba(0,0,0,0)' (null queda opaco en 0.11.0)",
+    "lastFrameInclusive": "range [0,2.96] s para 90 fotogramas (range [0,3] da 91)"
+  },
+  "permissions": ["spawn:chrome-headless", "spawn:ffmpeg", "fs:write-out", "net:localhost-vite"],
+  "editability": "native",
+  "licenseReview": "approved"
+}

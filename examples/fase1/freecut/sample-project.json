@@ -1,0 +1,114 @@
+{
+  "id": "fdn012-sample",
+  "name": "FDN-012 FreeCut Sample",
+  "description": "Verificacion Fase 1 FME",
+  "createdAt": 1795416257313,
+  "updatedAt": 1795416257515,
+  "duration": 0,
+  "schemaVersion": 15,
+  "metadata": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "backgroundColor": "#000000"
+  },
+  "timeline": {
+    "tracks": [
+      {
+        "id": "track-209c3d73-bdf9-4382-ba2b-8185e179adaa",
+        "name": "V2",
+        "height": 100,
+        "locked": false,
+        "visible": true,
+        "muted": false,
+        "solo": false,
+        "order": -1,
+        "kind": "video",
+        "syncLock": true,
+        "volume": 0,
+        "items": []
+      },
+      {
+        "id": "track-1",
+        "name": "V1",
+        "height": 100,
+        "locked": false,
+        "visible": true,
+        "muted": false,
+        "solo": false,
+        "order": 0,
+        "kind": "video",
+        "syncLock": true,
+        "volume": 0,
+        "items": []
+      },
+      {
+        "id": "track-2",
+        "name": "A1",
+        "height": 100,
+        "locked": false,
+        "visible": true,
+        "muted": false,
+        "solo": false,
+        "order": 1,
+        "kind": "audio",
+        "syncLock": true,
+        "volume": 0,
+        "items": []
+      }
+    ],
+    "items": [
+      {
+        "id": "afc3ef0a-9b25-4452-990a-c280f8d84012",
+        "trackId": "track-1",
+        "from": 0,
+        "durationInFrames": 150,
+        "label": "test-clip-5s.mp4",
+        "mediaId": "clip-5s",
+        "linkedGroupId": "35518d14-00d5-40f8-89a8-0aa00c6297df",
+        "type": "video",
+        "src": "",
+        "sourceStart": 0,
+        "sourceEnd": 150,
+        "sourceDuration": 150,
+        "sourceFps": 30,
+        "speed": 1,
+        "sourceWidth": 1280,
+        "sourceHeight": 720,
+        "volume": 0
+      },
+      {
+        "id": "8d53dbb5-4fd0-458b-89e3-a75cf34af0ba",
+        "trackId": "track-2",
+        "from": 0,
+        "durationInFrames": 150,
+        "label": "test-clip-5s.mp4 audio",
+        "mediaId": "clip-5s",
+        "linkedGroupId": "35518d14-00d5-40f8-89a8-0aa00c6297df",
+        "type": "audio",
+        "src": "",
+        "sourceStart": 0,
+        "sourceEnd": 150,
+        "sourceDuration": 150,
+        "sourceFps": 30,
+        "speed": 1,
+        "volume": 0
+      },
+      {
+        "id": "46402127-e885-43ff-953c-26401b336aae",
+        "trackId": "track-209c3d73-bdf9-4382-ba2b-8185e179adaa",
+        "from": 15,
+        "durationInFrames": 90,
+        "label": "Text",
+        "type": "text",
+        "text": "FDN-012 FreeCut",
+        "fontSize": 48,
+        "color": "#ffffff"
+      }
+    ],
+    "currentFrame": 0,
+    "zoomLevel": 1,
+    "scrollPosition": 0,
+    "masterBusDb": 0
+  }
+}

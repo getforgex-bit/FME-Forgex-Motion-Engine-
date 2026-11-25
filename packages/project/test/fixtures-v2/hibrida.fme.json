@@ -1,0 +1,284 @@
+{
+  "assets": [
+    {
+      "id": "fondo",
+      "type": "video",
+      "uri": "assets/fondo.mp4"
+    },
+    {
+      "id": "audio-base",
+      "type": "audio",
+      "uri": "assets/base.wav"
+    },
+    {
+      "id": "ilustracion",
+      "type": "drawing",
+      "uri": "assets/ilustracion.svg"
+    },
+    {
+      "id": "objeto3d",
+      "type": "model3d",
+      "uri": "assets/objeto.glb"
+    }
+  ],
+  "fps": {
+    "den": 1,
+    "num": 30
+  },
+  "height": 1080,
+  "id": "prueba-hibrida-10s",
+  "name": "Prueba híbrida de 10 s",
+  "schemaVersion": 2,
+  "seed": 2026,
+  "sequences": [
+    {
+      "id": "seq-1",
+      "scenes": [
+        {
+          "durationFrames": 300,
+          "id": "esc-1",
+          "layers": [
+            {
+              "assetId": "fondo",
+              "channels": {
+                "expression": {
+                  "defaultValue": 0,
+                  "keyframes": [
+                    {
+                      "frame": 0,
+                      "value": 0
+                    },
+                    {
+                      "easing": "smooth",
+                      "frame": 299,
+                      "value": 0.2
+                    }
+                  ]
+                },
+                "opacity": {
+                  "defaultValue": 1,
+                  "keyframes": []
+                }
+              },
+              "durationFrames": 300,
+              "id": "capa-fondo",
+              "kind": "video",
+              "startFrame": 0,
+              "techniques": [
+                "2d"
+              ],
+              "zIndex": 0
+            },
+            {
+              "assetId": "audio-base",
+              "channels": {
+                "volume": {
+                  "defaultValue": 1,
+                  "keyframes": [
+                    {
+                      "easing": "linear",
+                      "frame": 0,
+                      "value": 0
+                    },
+                    {
+                      "easing": "linear",
+                      "frame": 15,
+                      "value": 1
+                    },
+                    {
+                      "easing": "hold",
+                      "frame": 285,
+                      "value": 1
+                    },
+                    {
+                      "easing": "linear",
+                      "frame": 299,
+                      "value": 0
+                    }
+                  ]
+                }
+              },
+              "durationFrames": 300,
+              "id": "capa-audio",
+              "kind": "audio",
+              "startFrame": 0,
+              "techniques": [
+                "2d"
+              ],
+              "zIndex": 1
+            },
+            {
+              "assetId": "ilustracion",
+              "channels": {
+                "expression": {
+                  "defaultValue": 0.3,
+                  "keyframes": [
+                    {
+                      "frame": 0,
+                      "value": 0.3
+                    },
+                    {
+                      "easing": "smooth",
+                      "frame": 100,
+                      "value": 0.9
+                    },
+                    {
+                      "easing": "smooth",
+                      "frame": 209,
+                      "value": 0.5
+                    }
+                  ]
+                },
+                "integration": {
+                  "defaultValue": 0.2,
+                  "keyframes": [
+                    {
+                      "frame": 0,
+                      "value": 0.2
+                    },
+                    {
+                      "easing": "linear",
+                      "frame": 209,
+                      "value": 0.8
+                    }
+                  ]
+                },
+                "x": {
+                  "defaultValue": 0,
+                  "keyframes": [
+                    {
+                      "easing": "smooth",
+                      "frame": 0,
+                      "value": -200
+                    },
+                    {
+                      "easing": "smooth",
+                      "frame": 209,
+                      "value": 200
+                    }
+                  ]
+                }
+              },
+              "durationFrames": 210,
+              "externalProject": {
+                "engineVersion": "por-validar",
+                "pluginId": "revideo",
+                "uri": "adapters/revideo/ilustracion.tsx"
+              },
+              "id": "capa-2d",
+              "kind": "drawing",
+              "startFrame": 30,
+              "techniques": [
+                "2d",
+                "2.5d"
+              ],
+              "zIndex": 2
+            },
+            {
+              "assetId": "objeto3d",
+              "channels": {
+                "integration": {
+                  "defaultValue": 0.5,
+                  "keyframes": [
+                    {
+                      "frame": 0,
+                      "value": 0.5
+                    },
+                    {
+                      "easing": "linear",
+                      "frame": 149,
+                      "value": 1
+                    }
+                  ]
+                },
+                "scale": {
+                  "defaultValue": 1,
+                  "keyframes": [
+                    {
+                      "easing": "smooth",
+                      "frame": 0,
+                      "value": 0.5
+                    },
+                    {
+                      "easing": "smooth",
+                      "frame": 149,
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "durationFrames": 150,
+              "externalProject": {
+                "engineVersion": "por-validar",
+                "pluginId": "blender",
+                "renderArtifactId": "render-3d",
+                "uri": "adapters/blender/escena.blend"
+              },
+              "id": "capa-3d",
+              "kind": "model3d",
+              "startFrame": 105,
+              "techniques": [
+                "3d",
+                "3d-with-2d"
+              ],
+              "zIndex": 3
+            },
+            {
+              "channels": {
+                "expression": {
+                  "defaultValue": 0.6,
+                  "keyframes": [
+                    {
+                      "frame": 0,
+                      "value": 0.6
+                    },
+                    {
+                      "easing": "linear",
+                      "frame": 119,
+                      "value": 1
+                    }
+                  ]
+                },
+                "opacity": {
+                  "defaultValue": 0,
+                  "keyframes": [
+                    {
+                      "easing": "smooth",
+                      "frame": 0,
+                      "value": 0
+                    },
+                    {
+                      "easing": "smooth",
+                      "frame": 20,
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "durationFrames": 120,
+              "externalProject": {
+                "pluginId": "revideo",
+                "uri": "adapters/revideo/titulo.tsx"
+              },
+              "guide3DLayerId": "capa-3d",
+              "id": "capa-titulo",
+              "kind": "text",
+              "startFrame": 180,
+              "techniques": [
+                "2d-guided-by-3d"
+              ],
+              "text": {
+                "color": "#ffffff",
+                "content": "Forgex Motion Engine",
+                "fontFamily": "Inter",
+                "fontSize": 96
+              },
+              "zIndex": 4
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "width": 1920
+}

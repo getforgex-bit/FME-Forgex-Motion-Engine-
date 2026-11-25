@@ -1,0 +1,59 @@
+{
+  "assets": [
+    {
+      "id": "img",
+      "type": "image",
+      "uri": "assets/img.png"
+    }
+  ],
+  "fps": {
+    "den": 1001,
+    "num": 30000
+  },
+  "height": 720,
+  "id": "ntsc-2997",
+  "name": "29,97 FPS",
+  "schemaVersion": 3,
+  "seed": 1,
+  "sequences": [
+    {
+      "id": "s",
+      "scenes": [
+        {
+          "durationFrames": 30000,
+          "id": "sc",
+          "layers": [
+            {
+              "assetId": "img",
+              "channels": {
+                "opacity": {
+                  "defaultValue": 1,
+                  "keyframes": [
+                    {
+                      "frame": 0,
+                      "value": 0
+                    },
+                    {
+                      "easing": "linear",
+                      "frame": 29999,
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "durationFrames": 30000,
+              "id": "l",
+              "kind": "image",
+              "startFrame": 0,
+              "techniques": [
+                "2d"
+              ],
+              "zIndex": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "width": 1280
+}

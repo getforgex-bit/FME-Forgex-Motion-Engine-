@@ -1,0 +1,623 @@
+#!/usr/bin/env node
+// Coordinación entre sesiones/agentes IA mediante archivos en la carpeta operativa compartida (ADR-0007).
+// La carpeta es FME_COORD_DIR o, por defecto, `FME-ops` junto al checkout principal (la misma desde cualquier worktree).
+// Un archivo por sesión, mensaje, evento o reclamo: así dos sesiones nunca editan el mismo archivo.
+// Uso: node scripts/coord.mjs <comando> [--opción valor]   (ver `ayuda`)
+import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+export const HERRAMIENTAS = ["claude-code", "claude-desktop", "codex", "antigravity", "humano", "otra"];
+export const TIPOS = ["info", "pregunta", "respuesta", "bloqueo", "traspaso", "evento", "solicitud"];
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+/** Carpeta operativa: FME_COORD_DIR, o `<padre del .git común>/../FME-ops`, idéntica para todos los worktrees. */
+export function resolverRaiz(env = process.env, cwd = SCRIPT_DIR) {
+  if (env.FME_COORD_DIR) return resolve(env.FME_COORD_DIR);
+  try {
+    const comun = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd, encoding: "utf8" }).trim();
+    return resolve(dirname(comun), "..", "FME-ops");
+  } catch {
+    return resolve(SCRIPT_DIR, "..", "..", "FME-ops");
+  }
+}
+const ROOT = resolverRaiz();
+const dir = (n) => join(ROOT, n);
+// FME_AHORA permite fijar el reloj en los tests (ISO 8601).
+const ahora = () => process.env.FME_AHORA ?? new Date().toISOString();
+/** Minutos sin latido a partir de los cuales un equipo con trabajo activo es «sospechoso de caída» (ADR-0013). */
+export const umbralCaidaMin = () => Number(process.env.FME_UMBRAL_CAIDA_MIN ?? 60);
+const minutosDesde = (iso) => (Date.parse(ahora()) - Date.parse(iso)) / 60000;
+const git = (args, cwd = SCRIPT_DIR) => {
+  try {
+    return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return null;
+  }
+};
+/** Worktree (ruta) donde está desprotegida una rama, según `git worktree list --porcelain`. */
+function worktreeDeRama(rama) {
+  const out = git(["worktree", "list", "--porcelain"]);
+  if (!out || !rama) return null;
+  let ruta = null;
+  for (const l of out.split(/\r?\n/)) {
+    if (l.startsWith("worktree ")) ruta = l.slice(9);
+    if (l === `branch refs/heads/${rama}`) return ruta;
+  }
+  return null;
+}
+const slug = (s) => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+/** Frontmatter `clave: valor` + cuerpo. */
+export function leer(file) {
+  const txt = readFileSync(file, "utf8").replace(/\r\n/g, "\n");
+  const m = txt.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+  if (!m) return { meta: {}, cuerpo: txt };
+  const meta = {};
+  for (const l of m[1].split("\n")) {
+    const i = l.indexOf(":");
+    if (i > 0) meta[l.slice(0, i).trim()] = l.slice(i + 1).trim();
+  }
+  return { meta, cuerpo: m[2] };
+}
+export function escribir(file, meta, cuerpo = "") {
+  mkdirSync(dirname(file), { recursive: true });
+  const fm = Object.entries(meta).map(([k, v]) => `${k}: ${String(v).replace(/\n/g, " ")}`).join("\n");
+  writeFileSync(file, `---\n${fm}\n---\n${cuerpo}`);
+}
+const listar = (n) => (existsSync(dir(n)) ? readdirSync(dir(n)).filter((f) => f.endsWith(".md") && !f.startsWith("_")).sort() : []);
+const requerir = (o, ...ks) => {
+  for (const k of ks) if (!o[k]) throw new Error(`Falta --${k}`);
+};
+const normRuta = (r) => r.trim().replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/+$/, "");
+// Dos rutas chocan si una es igual o está dentro de la otra.
+const chocan = (a, b) => a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`);
+
+function sesionFile(id) {
+  const f = join(dir("sesiones"), `${id}.md`);
+  if (!existsSync(f)) throw new Error(`La sesión "${id}" no está registrada (usa \`registrar\`).`);
+  return f;
+}
+const cargarSesion = (id) => leer(sesionFile(id));
+const guardarSesion = (id, meta, cuerpo) => escribir(sesionFile(id), meta, cuerpo);
+
+// --- Presencia del usuario y modo ausencia (ADR-0014) ---
+/** Horas sin presencia del usuario a partir de las cuales empieza el escalón 1 de ausencia (2X = escalón 2, 3X = escalón 3). */
+export const umbralAusenciaH = () => Number(process.env.FME_AUSENCIA_H ?? 2);
+export const NIVELES_AUSENCIA = [
+  "presente: trabajo normal",
+  "ausencia 1: solo tareas READY ya asignadas; toda decisión que requiera aprobación va a la cola (`pendiente`); sin descargas, sin relevos, sin aceptar ADR; A0 integra solo REVIEW en verde sin cambios de contrato ni dependencias nuevas",
+  "ausencia 2: solo terminar lo IN_PROGRESS; no tomar tareas nuevas; A0 sigue integrando solo lo verde",
+  "ausencia 3: punto de control (commit, bitácora, estado/<equipo>.md, traspaso) y PARADA total, incluida la integración",
+];
+/** Última presencia registrada del usuario (máximo entre los archivos `usuario/presencia-<sesion>.md`). */
+function ultimaPresencia() {
+  return listar("usuario").filter((f) => f.startsWith("presencia-")).map((f) => leer(join(dir("usuario"), f)).meta.ultima).filter(Boolean).sort().at(-1) ?? null;
+}
+/** Momento de la última vuelta del usuario tras una ausencia: los equipos no pueden latir sin él, así que la sospecha de caída cuenta desde aquí. */
+function ultimaVuelta() {
+  return listar("usuario").filter((f) => f.startsWith("presencia-")).map((f) => leer(join(dir("usuario"), f)).meta.vuelta).filter(Boolean).sort().at(-1) ?? null;
+}
+/** Nivel de ausencia 0–3 según las horas transcurridas desde la última presencia. Sin registro previo, 0 (no se presupone ausencia). */
+export function nivelAusencia() {
+  const u = ultimaPresencia();
+  if (!u) return { nivel: 0, ultima: null, horas: null };
+  const horas = minutosDesde(u) / 60;
+  const x = umbralAusenciaH();
+  const nivel = horas >= 3 * x ? 3 : horas >= 2 * x ? 2 : horas >= x ? 1 : 0;
+  return { nivel, ultima: u, horas };
+}
+function decisionesPendientes() {
+  const resueltas = new Set(listar("decisiones").filter((f) => f.endsWith(".resolucion.md")).map((f) => f.replace(/\.resolucion\.md$/, ".md")));
+  const peso = { alto: 0, medio: 1, bajo: 2 };
+  return listar("decisiones").filter((f) => !f.endsWith(".resolucion.md") && !resueltas.has(f))
+    .map((f) => ({ f, ...leer(join(dir("decisiones"), f)) }))
+    .sort((a, b) => (peso[a.meta.impacto] ?? 1) - (peso[b.meta.impacto] ?? 1) || a.f.localeCompare(b.f));
+}
+/** Las acciones que el usuario debe autorizar exigen que esté presente (escalón 0). */
+function exigirPresencia(accion) {
+  const a = nivelAusencia();
+  if (a.nivel > 0) throw new Error(`${accion} necesita al usuario presente, pero su última presencia fue hace ${a.horas.toFixed(1)} h (escalón ${a.nivel}). Si te acaba de escribir, registra primero \`usuario --presente\`.`);
+}
+
+// --- Turnos de coordinadores dentro de un equipo (ADR-0017) ---
+const REPO = resolve(SCRIPT_DIR, "..");
+/** Configuración versionada de turnos (coordinadores por equipo, perfiles por modelo y dominios). */
+export function configTurnos() {
+  const f = process.env.FME_TURNOS ?? join(REPO, "coordinacion", "turnos.json");
+  return JSON.parse(readFileSync(f, "utf8"));
+}
+/** Una sesión pertenece a un coordinador si su id es la base o la base con sufijo de reanudación (`-r2`, `-r3`…). */
+const esDe = (sesionId, base) => sesionId === base || sesionId.startsWith(`${base}-r`);
+function coordinadorDe(sesionId, cfg) {
+  for (const [equipo, e] of Object.entries(cfg.equipos)) for (const c of e.coordinadores) if (esDe(sesionId, c.id)) return { equipo, ...c };
+  return null;
+}
+function eventosTurno(equipo) {
+  // A igual marca de tiempo, el orden lógico es toma → cede → sin-cuota/disponible (una cesión nunca precede a la toma que cierra).
+  const peso = { toma: 0, cede: 1, "sin-cuota": 2, disponible: 3 };
+  return listar("turnos").map((f) => leer(join(dir("turnos"), f)).meta).filter((m) => m.equipo === equipo)
+    .sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : (peso[a.accion] ?? 9) - (peso[b.accion] ?? 9)));
+}
+function titularTurno(equipo) {
+  const u = eventosTurno(equipo).at(-1);
+  return u && u.accion === "toma" ? u : null;
+}
+/** Un coordinador está sin cuota si su último evento fue ceder por cuota o marcarlo «sin-cuota», sin un «disponible» o una «toma» posterior. */
+function sinCuota(equipo, coordId) {
+  const u = eventosTurno(equipo).filter((e) => e.coordinador === coordId).at(-1);
+  return !!u && ((u.accion === "cede" && u.motivo === "cuota") || u.accion === "sin-cuota");
+}
+function registrarEventoTurno(meta) {
+  const t = ahora();
+  const nombre = `${t.replace(/[-:.]/g, "")}-${slug(meta.coordinador)}-${meta.accion}.md`;
+  escribir(join(dir("turnos"), nombre), { ...meta, fecha: t }, meta.nota ? `\n${meta.nota}\n` : "");
+  return nombre;
+}
+/** Filas del backlog maestro: id, título, equipo y estado. */
+function filasBacklog() {
+  const f = join(REPO, "coordinacion", "BACKLOG.md");
+  if (!existsSync(f)) return [];
+  const out = [];
+  for (const l of readFileSync(f, "utf8").split(/\r?\n/)) {
+    const m = l.match(/^\| (FDN-[\w]+) \| (.*?) \| (.*?) \| (.*?) \| (.*?) \|\s*$/);
+    if (m) out.push({ id: m[1], titulo: m[2], equipo: m[3], estado: m[5] });
+  }
+  return out;
+}
+/** Puntúa un texto de tarea para un modelo: suma de su perfil en cada dominio detectado por palabras clave. */
+export function puntuarTarea(texto, modelo, cfg) {
+  const t = texto.toLowerCase();
+  // Las claves cortas (≤ 3 letras, p. ej. «ui», «3d», «api») solo cuentan como palabra completa: «ui» no debe casar con «suite».
+  const casa = (k) => (k.length <= 3 ? new RegExp(`(^|[^\\p{L}\\p{N}])${k.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}($|[^\\p{L}\\p{N}])`, "u").test(t) : t.includes(k));
+  const dominios = Object.entries(cfg.dominios).filter(([, claves]) => claves.some(casa)).map(([d]) => d);
+  const perfil = cfg.perfiles[modelo] ?? {};
+  return { puntos: dominios.reduce((s, d) => s + (perfil[d] ?? 0), 0), dominios };
+}
+
+// --- Relevo entre equipos (ADR-0013) ---
+/** Estado de relevo de un equipo (`relevos/<equipo>.md`); vacío si nunca se declaró caído. */
+function estadoRelevo(equipo) {
+  mkdirSync(dir("relevos"), { recursive: true });
+  const f = join(dir("relevos"), `${slug(equipo)}.md`);
+  return existsSync(f) ? leer(f) : { meta: {}, cuerpo: "" };
+}
+const guardarRelevo = (equipo, meta, cuerpo) => escribir(join(dir("relevos"), `${slug(equipo)}.md`), meta, cuerpo);
+/** Equipos conocidos con su latido más reciente y su estado: activo | sospechoso | caido | reincorporado | inactivo. */
+export function estadoEquipos() {
+  const sesiones = listar("sesiones").map((f) => leer(join(dir("sesiones"), f)).meta);
+  const reclamos = listar("reclamos").map((f) => leer(join(dir("reclamos"), f)).meta);
+  // Las sesiones `humano` no son equipos de agentes: no caen por cuota ni se relevan.
+  const equipos = [...new Set(sesiones.filter((s) => s.herramienta !== "humano").map((s) => s.equipo).filter(Boolean))].sort();
+  return equipos.map((equipo) => {
+    const suyas = sesiones.filter((s) => s.equipo === equipo);
+    const activas = suyas.filter((s) => s.estado !== "cerrada").map((s) => s.id);
+    const nRecl = reclamos.filter((r) => suyas.some((s) => s.id === r.sesion)).length;
+    const ultimo = suyas.map((s) => s.ultimo_latido).filter(Boolean).sort().at(-1) ?? null;
+    const minutos = ultimo ? minutosDesde(ultimo) : null;
+    // Tras la vuelta del usuario, el plazo de sospecha se cuenta desde esa vuelta (ADR-0014/0017): sin él los equipos no podían latir.
+    const vuelta = ultimaVuelta();
+    const minutosSospecha = ultimo ? minutosDesde(vuelta && vuelta > ultimo ? vuelta : ultimo) : null;
+    const rel = estadoRelevo(equipo).meta.estado;
+    let estado = activas.length || nRecl ? "activo" : "inactivo";
+    // Codex y Antigravity solo trabajan cuando el usuario les escribe: sin usuario no hay latido, y eso no es una caída (ADR-0014).
+    const ausente = nivelAusencia().nivel > 0;
+    if (estado === "activo" && minutosSospecha !== null && minutosSospecha >= umbralCaidaMin()) estado = ausente ? "en pausa (usuario ausente)" : "sospechoso";
+    else if (estado === "activo" && minutos !== null && minutos >= umbralCaidaMin()) estado = "esperando al usuario (volvió hace poco)";
+    if (rel === "caido") estado = "caido";
+    else if (rel === "reincorporado" && estado !== "sospechoso") estado = `${estado} (reincorporado)`;
+    return { equipo, estado, ultimo, minutos, activas, reclamos: nRecl };
+  });
+}
+
+export const comandos = {
+  /** Registra una sesión y devuelve su id. */
+  registrar(o) {
+    requerir(o, "herramienta", "nombre", "tarea");
+    if (!HERRAMIENTAS.includes(o.herramienta)) throw new Error(`--herramienta debe ser una de: ${HERRAMIENTAS.join(", ")}`);
+    const id = `${o.herramienta}-${slug(o.nombre)}`;
+    if (existsSync(join(dir("sesiones"), `${id}.md`))) throw new Error(`Ya existe la sesión "${id}". Elige otro --nombre.`);
+    const t = ahora();
+    escribir(join(dir("sesiones"), `${id}.md`), {
+      id, herramienta: o.herramienta, equipo: o.equipo ?? "general", tarea: o.tarea, rama: o.rama ?? "",
+      estado: "activa", inicio: t, ultimo_latido: t, buzon_leido_hasta: t,
+    }, `\n## Avance\n- ${t} · Sesión registrada.\n`);
+    return `Sesión registrada: ${id}\nExporta FME_SESION=${id} para no repetir --sesion.`;
+  },
+  /** Añade una línea al registro de avance de la sesión y renueva su latido. */
+  avance(o) {
+    requerir(o, "sesion", "texto");
+    const { meta, cuerpo } = cargarSesion(o.sesion);
+    const t = ahora();
+    guardarSesion(o.sesion, { ...meta, ultimo_latido: t }, `${cuerpo.replace(/\n*$/, "\n")}- ${t} · ${o.texto}\n`);
+    return `Avance anotado en ${o.sesion}.`;
+  },
+  /** Envía un mensaje a una sesión, a un equipo (`equipo:<x>`) o a `todos`. */
+  enviar(o) {
+    requerir(o, "de", "para", "asunto", "texto");
+    sesionFile(o.de);
+    const tipo = o.tipo ?? "info";
+    if (!TIPOS.includes(tipo)) throw new Error(`--tipo debe ser uno de: ${TIPOS.join(", ")}`);
+    if (o.para !== "todos" && !o.para.startsWith("equipo:")) sesionFile(o.para);
+    const t = ahora();
+    const nombre = `${t.replace(/[-:.]/g, "")}-${slug(o.de)}-a-${slug(o.para)}.md`;
+    escribir(join(dir("buzon"), nombre), { de: o.de, para: o.para, tipo, asunto: o.asunto, fecha: t, ...(o.responde_a ? { responde_a: o.responde_a } : {}) }, `\n${o.texto}\n`);
+    return `Mensaje enviado: ${nombre}`;
+  },
+  /** Muestra los mensajes dirigidos a la sesión (o a su equipo / a todos) desde la última lectura. */
+  buzon(o) {
+    requerir(o, "sesion");
+    const { meta, cuerpo } = cargarSesion(o.sesion);
+    const desde = o.todo ? "" : meta.buzon_leido_hasta;
+    const mios = [];
+    for (const f of listar("buzon")) {
+      const m = leer(join(dir("buzon"), f));
+      const dest = m.meta.para;
+      const paraMi = dest === o.sesion || dest === "todos" || dest === `equipo:${meta.equipo}`;
+      if (paraMi && m.meta.de !== o.sesion && m.meta.fecha > desde) mios.push({ f, ...m });
+    }
+    if (!o.todo && !o.sinmarcar) guardarSesion(o.sesion, { ...meta, ultimo_latido: ahora(), buzon_leido_hasta: ahora() }, cuerpo);
+    if (!mios.length) return "Sin mensajes nuevos.";
+    return mios.map((m) => `# ${m.f}\n[${m.meta.tipo}] ${m.meta.de} → ${m.meta.para} · ${m.meta.asunto}\n${m.cuerpo.trim()}`).join("\n\n");
+  },
+  /** Reclama rutas para editarlas en exclusiva; falla si otra sesión activa ya tiene una ruta solapada. */
+  reclamar(o) {
+    requerir(o, "sesion", "ruta", "motivo");
+    sesionFile(o.sesion);
+    const rutas = o.ruta.split(",").map(normRuta).filter(Boolean);
+    for (const f of listar("reclamos")) {
+      const r = leer(join(dir("reclamos"), f));
+      if (r.meta.sesion === o.sesion) continue;
+      for (const a of r.meta.rutas.split(",")) for (const b of rutas)
+        if (chocan(a, b)) throw new Error(`Conflicto: "${b}" choca con "${a}", reclamada por ${r.meta.sesion} (${r.meta.motivo}). Escríbele con \`enviar\` o elige otra ruta.`);
+    }
+    const t = ahora();
+    const nombre = `${slug(o.sesion)}-${slug(rutas[0])}.md`;
+    escribir(join(dir("reclamos"), nombre), { sesion: o.sesion, rutas: rutas.join(","), motivo: o.motivo, desde: t });
+    return `Reclamo creado: ${nombre} (${rutas.join(", ")})`;
+  },
+  /** Libera los reclamos de una sesión (todos, o solo los de `--ruta`). */
+  liberar(o) {
+    requerir(o, "sesion");
+    const rutas = o.ruta ? o.ruta.split(",").map(normRuta) : null;
+    let n = 0;
+    for (const f of listar("reclamos")) {
+      const r = leer(join(dir("reclamos"), f));
+      if (r.meta.sesion !== o.sesion) continue;
+      if (rutas && !r.meta.rutas.split(",").some((x) => rutas.includes(x))) continue;
+      unlinkSync(join(dir("reclamos"), f));
+      n++;
+    }
+    return `${n} reclamo(s) liberado(s).`;
+  },
+  /** Cierra la sesión: estado `cerrada`, resumen y liberación de sus reclamos. */
+  cerrar(o) {
+    requerir(o, "sesion", "resumen");
+    const { meta, cuerpo } = cargarSesion(o.sesion);
+    const t = ahora();
+    guardarSesion(o.sesion, { ...meta, estado: "cerrada", ultimo_latido: t }, `${cuerpo.replace(/\n*$/, "\n")}- ${t} · CIERRE: ${o.resumen}\n`);
+    return `Sesión ${o.sesion} cerrada. ${comandos.liberar({ sesion: o.sesion })}\nRecuerda: bitácora en docs/bitacora/ y evento de cierre para A0.`;
+  },
+  /** Tablero: sesiones, reclamos y mensajes pendientes. */
+  estado() {
+    const sesiones = listar("sesiones").map((f) => leer(join(dir("sesiones"), f)).meta);
+    const activas = sesiones.filter((s) => s.estado !== "cerrada");
+    const out = ["## Sesiones activas", activas.length ? "id | equipo | estado | tarea | último latido" : "(ninguna)"];
+    for (const s of activas) out.push(`${s.id} | ${s.equipo} | ${s.estado} | ${s.tarea} | ${s.ultimo_latido}`);
+    out.push("", "## Reclamos");
+    const reclamos = listar("reclamos").map((f) => leer(join(dir("reclamos"), f)).meta);
+    if (!reclamos.length) out.push("(ninguno)");
+    for (const r of reclamos) out.push(`${r.rutas} ← ${r.sesion} (${r.motivo})`);
+    out.push("", "## Sin leer");
+    for (const s of activas) {
+      const n = listar("buzon").map((f) => leer(join(dir("buzon"), f)).meta)
+        .filter((m) => (m.para === s.id || m.para === "todos" || m.para === `equipo:${s.equipo}`) && m.de !== s.id && m.fecha > s.buzon_leido_hasta).length;
+      if (n) out.push(`${s.id}: ${n}`);
+    }
+    out.push(`\n${sesiones.length - activas.length} sesión(es) cerrada(s).`);
+    out.push("", "## Usuario (ADR-0014)", comandos.usuario({}));
+    out.push("", "## Equipos (ADR-0013)", comandos.equipos());
+    try {
+      const cfg = configTurnos();
+      const lineas = Object.keys(cfg.equipos).filter((e) => cfg.equipos[e].coordinadores.length > 1)
+        .map((e) => { const t = titularTurno(e); return `${e}: ${t ? `turno de ${t.coordinador} (${t.modelo}) desde ${t.fecha}` : "sin titular"}`; });
+      if (lineas.length) out.push("", "## Turnos (ADR-0017)", ...lineas);
+    } catch { /* sin turnos.json: nada que mostrar */ }
+    return out.join("\n");
+  },
+  /** Estado de cada equipo: activo, sospechoso (sin latido ≥ umbral con trabajo activo) o caído/reincorporado (ADR-0013). */
+  equipos() {
+    const filas = estadoEquipos();
+    if (!filas.length) return "(sin equipos)";
+    const out = [`equipo | estado | último latido | min sin latido | sesiones activas | reclamos   (umbral ${umbralCaidaMin()} min)`];
+    for (const e of filas) out.push(`${e.equipo} | ${e.estado} | ${e.ultimo ?? "—"} | ${e.minutos === null ? "—" : Math.round(e.minutos)} | ${e.activas.join(", ") || "—"} | ${e.reclamos}`);
+    const sosp = filas.filter((e) => e.estado === "sospechoso");
+    if (sosp.length) out.push("", `⚠ Sospechosos de caída: ${sosp.map((e) => e.equipo).join(", ")}. Solo el usuario puede declararlos caídos (caida --cita).`);
+    return out.join("\n");
+  },
+  /**
+   * Presencia del usuario (ADR-0014). Con `--presente` la registra (cada coordinador, en cada mensaje del usuario);
+   * sin él, muestra el escalón de ausencia y qué está permitido. Al volver de una ausencia, avisa de las decisiones en cola.
+   */
+  usuario(o) {
+    if (o.presente) {
+      requerir(o, "sesion");
+      sesionFile(o.sesion);
+      const antes = nivelAusencia();
+      const t = ahora();
+      const fPres = join(dir("usuario"), `presencia-${slug(o.sesion)}.md`);
+      const vueltaPrevia = existsSync(fPres) ? leer(fPres).meta.vuelta : undefined;
+      const vuelta = antes.nivel > 0 ? t : vueltaPrevia;
+      escribir(fPres, { sesion: o.sesion, ultima: t, ...(vuelta ? { vuelta } : {}) });
+      const pend = decisionesPendientes();
+      if (antes.nivel > 0) {
+        return `VUELTA DEL USUARIO tras ${antes.horas.toFixed(1)} h (escalón ${antes.nivel}). Presencia registrada.\n`
+          + `Muéstrale primero un resumen de lo ocurrido y después las ${pend.length} decisión(es) pendiente(s), una a una (\`pendientes\`).`;
+      }
+      return `Presencia registrada (${t}).${pend.length ? ` Hay ${pend.length} decisión(es) pendiente(s): \`pendientes\`.` : ""}`;
+    }
+    const a = nivelAusencia();
+    const pend = decisionesPendientes().length;
+    return [`Usuario: escalón ${a.nivel} · última presencia: ${a.ultima ?? "sin registro"}${a.horas === null ? "" : ` (hace ${a.horas.toFixed(1)} h)`} · umbral ${umbralAusenciaH()} h`,
+      `Permitido: ${NIVELES_AUSENCIA[a.nivel]}`, `Decisiones pendientes: ${pend}`].join("\n");
+  },
+  /** Encola una decisión que necesita la aprobación del usuario (en vez de tomarla). Impacto: alto | medio | bajo. */
+  pendiente(o) {
+    requerir(o, "sesion", "asunto", "texto");
+    sesionFile(o.sesion);
+    const impacto = o.impacto ?? "medio";
+    if (!["alto", "medio", "bajo"].includes(impacto)) throw new Error("--impacto debe ser alto, medio o bajo");
+    const t = ahora();
+    const nombre = `${t.replace(/[-:.]/g, "")}-${slug(o.sesion)}.md`;
+    escribir(join(dir("decisiones"), nombre), { de: o.sesion, impacto, asunto: o.asunto, fecha: t, ...(o.tarea ? { tarea: o.tarea } : {}) }, `\n${o.texto}\n`);
+    return `Decisión encolada: ${nombre} (impacto ${impacto}).`;
+  },
+  /** Decisiones pendientes de aprobación, ordenadas por impacto (alto primero). */
+  pendientes() {
+    const p = decisionesPendientes();
+    if (!p.length) return "Sin decisiones pendientes.";
+    return p.map((d, i) => `${i + 1}. [${d.meta.impacto}] ${d.meta.asunto} · de ${d.meta.de}${d.meta.tarea ? ` · ${d.meta.tarea}` : ""} · ${d.f}\n   ${d.cuerpo.trim().replace(/\n/g, "\n   ")}`).join("\n");
+  },
+  /** Registra la respuesta del usuario a una decisión de la cola (archivo de resolución aparte: un archivo, un autor). */
+  decidir(o) {
+    requerir(o, "sesion", "id", "resolucion", "cita");
+    sesionFile(o.sesion);
+    if (!["aprobada", "rechazada", "aplazada"].includes(o.resolucion)) throw new Error("--resolucion debe ser aprobada, rechazada o aplazada");
+    exigirPresencia("Resolver una decisión");
+    const f = join(dir("decisiones"), o.id);
+    if (!existsSync(f) || o.id.endsWith(".resolucion.md")) throw new Error(`No existe la decisión "${o.id}".`);
+    const { meta } = leer(f);
+    const t = ahora();
+    if (o.resolucion !== "aplazada") escribir(join(dir("decisiones"), o.id.replace(/\.md$/, ".resolucion.md")), { decision: o.id, resolucion: o.resolucion, por: o.sesion, fecha: t, cita: o.cita });
+    comandos.enviar({ de: o.sesion, para: meta.de, tipo: "respuesta", asunto: `Decisión ${o.resolucion}: ${meta.asunto}`, texto: `El usuario respondió: «${o.cita}» (${o.id}).` });
+    return `Decisión ${o.id}: ${o.resolucion}. Avisado ${meta.de}.`;
+  },
+  /**
+   * Turnos de coordinadores que se alternan sin trabajar en paralelo dentro de un mismo equipo (ADR-0017).
+   * - `turno --equipo <x> [--tarea FDN-a,FDN-b | --texto "…"]`: recomienda a qué coordinador poner a trabajar y por qué.
+   * - `turno --tomar --sesion <id>` / `turno --ceder --sesion <id> --nota "…" [--motivo fin|cuota|pausa]`.
+   * - `turno --sin-cuota --coordinador <id>` / `turno --disponible --coordinador <id>`: estado de cuota que conoce el usuario.
+   */
+  turno(o) {
+    const cfg = configTurnos();
+    if (o.tomar || o.ceder) {
+      requerir(o, "sesion");
+      sesionFile(o.sesion);
+      const c = coordinadorDe(o.sesion, cfg);
+      if (!c) throw new Error(`La sesión "${o.sesion}" no es un coordinador declarado en coordinacion/turnos.json.`);
+      const titular = titularTurno(c.equipo);
+      { const s = cargarSesion(o.sesion); guardarSesion(o.sesion, { ...s.meta, ultimo_latido: ahora() }, s.cuerpo); } // tomar/ceder es actividad: renueva el latido
+      if (o.tomar) {
+        if (titular && titular.coordinador !== c.id && !o.forzar) {
+          throw new Error(`El turno de ${c.equipo} lo tiene ${titular.coordinador} (desde ${titular.fecha}) y no lo ha cedido. Debe ceder antes (\`turno --ceder\`), o el usuario lo autoriza con \`--forzar --cita "…"\`.`);
+        }
+        if (o.forzar) requerir(o, "cita");
+        const ev = registrarEventoTurno({ equipo: c.equipo, coordinador: c.id, sesion: o.sesion, modelo: c.modelo, accion: "toma", ...(o.forzar ? { forzado: "si", cita: o.cita } : {}) });
+        const ult = eventosTurno(c.equipo).filter((e) => e.accion === "cede").at(-1);
+        return `Turno de ${c.equipo} tomado por ${c.id} (${c.modelo}). ${ev}`
+          + (ult ? `\nÚltimo traspaso (${ult.coordinador}, ${ult.fecha}, motivo ${ult.motivo}): ${listar("turnos").filter((f) => f.endsWith("-cede.md")).map((f) => ({ f, ...leer(join(dir("turnos"), f)) })).filter((x) => x.meta.equipo === c.equipo).at(-1)?.cuerpo.trim() ?? ""}` : "");
+      }
+      requerir(o, "nota");
+      if (!titular || titular.coordinador !== c.id) throw new Error(`${c.id} no tiene el turno de ${c.equipo}.`);
+      const motivo = o.motivo ?? "fin";
+      if (!["fin", "cuota", "pausa"].includes(motivo)) throw new Error("--motivo debe ser fin, cuota o pausa");
+      const ev = registrarEventoTurno({ equipo: c.equipo, coordinador: c.id, sesion: o.sesion, modelo: c.modelo, accion: "cede", motivo, nota: o.nota });
+      return `Turno de ${c.equipo} cedido por ${c.id} (motivo: ${motivo}). ${ev}`;
+    }
+    if (o["sin-cuota"] || o.disponible) {
+      requerir(o, "coordinador");
+      const c = Object.entries(cfg.equipos).flatMap(([equipo, e]) => e.coordinadores.map((x) => ({ equipo, ...x }))).find((x) => x.id === o.coordinador);
+      if (!c) throw new Error(`Coordinador desconocido: ${o.coordinador}`);
+      registrarEventoTurno({ equipo: c.equipo, coordinador: c.id, modelo: c.modelo, accion: o["sin-cuota"] ? "sin-cuota" : "disponible" });
+      return `${c.id} marcado como ${o["sin-cuota"] ? "sin cuota" : "disponible"}.`;
+    }
+    requerir(o, "equipo");
+    const eq = cfg.equipos[o.equipo];
+    if (!eq) throw new Error(`Equipo desconocido en turnos.json: ${o.equipo}`);
+    const filas = filasBacklog();
+    let tareas;
+    if (o.texto) tareas = [{ id: "(texto)", titulo: o.texto }];
+    else if (o.tarea) tareas = o.tarea.split(",").map((id) => filas.find((f) => f.id === id.trim()) ?? { id: id.trim(), titulo: id.trim() });
+    else tareas = filas.filter((f) => f.equipo.includes(eq.codigo) && /^(READY|IN_PROGRESS)/.test(f.estado));
+    const titular = titularTurno(o.equipo);
+    const candidatos = eq.coordinadores.map((c) => {
+      const sc = tareas.map((t) => ({ t, ...puntuarTarea(t.titulo, c.modelo, cfg) }));
+      return { ...c, sinCuota: sinCuota(o.equipo, c.id), puntos: sc.reduce((s, x) => s + x.puntos, 0), detalle: sc, coste: cfg.coste_relativo?.[c.modelo] ?? 99 };
+    });
+    const out = [`## Turno de ${o.equipo}`];
+    out.push(`Titular actual: ${titular ? `${titular.coordinador} (desde ${titular.fecha})` : "nadie"}`);
+    out.push(`Tareas consideradas: ${tareas.length ? tareas.map((t) => `${t.id} «${t.titulo}»`).join(" · ") : "(ninguna READY o en curso)"}`);
+    for (const c of candidatos) {
+      const doms = [...new Set(c.detalle.flatMap((d) => d.dominios))];
+      out.push(`- ${c.id} (${c.modelo}): ${c.sinCuota ? "SIN CUOTA · " : ""}${c.puntos} puntos${doms.length ? ` · dominios: ${doms.join(", ")}` : ""}`);
+    }
+    const vivos = candidatos.filter((c) => !c.sinCuota);
+    let elegido;
+    let motivo;
+    if (!vivos.length) {
+      out.push("", "➜ Ningún coordinador de este equipo tiene cuota. Espera al reinicio o valora un relevo (ADR-0013).");
+      return out.join("\n");
+    }
+    const tit = titular && vivos.find((c) => c.id === titular.coordinador);
+    if (tit) {
+      elegido = tit;
+      motivo = "tiene el turno y no lo ha cedido: que termine lo que empezó (cambiar a mitad cuesta contexto)";
+    } else {
+      const ultimo = eventosTurno(o.equipo).filter((e) => e.accion === "toma" || e.accion === "cede").at(-1)?.coordinador;
+      vivos.sort((a, b) => b.puntos - a.puntos || a.coste - b.coste || (a.id === ultimo) - (b.id === ultimo));
+      elegido = vivos[0];
+      const segundo = vivos[1];
+      motivo = !segundo
+        ? `es el único coordinador con cuota (${elegido.puntos} puntos para estas tareas)`
+        : segundo.puntos === elegido.puntos
+          ? `empate a ${elegido.puntos} puntos; se elige por coste${elegido.coste === segundo.coste ? " y alternancia" : ""}`
+          : `mejor perfil para estas tareas (${elegido.puntos} frente a ${segundo.puntos} puntos)`;
+    }
+    out.push("", `➜ Pon a trabajar a: ${elegido.id} (${elegido.modelo}). Motivo: ${motivo}.`);
+    out.push(`  Al empezar: node scripts/coord.mjs turno --tomar --sesion ${elegido.id}   ·   al terminar: turno --ceder --sesion ${elegido.id} --nota "<qué queda>" [--motivo cuota]`);
+    return out.join("\n");
+  },
+  /** Declara caído un equipo (solo con la cita literal del usuario) y guarda el acta de su estado. No toca sus worktrees ni ramas. */
+  caida(o) {
+    requerir(o, "sesion", "equipo", "cita");
+    sesionFile(o.sesion);
+    exigirPresencia("Declarar una caída");
+    const actual = estadoRelevo(o.equipo);
+    if (actual.meta.estado === "caido") throw new Error(`El equipo "${o.equipo}" ya está declarado caído (${actual.meta.desde}).`);
+    const t = ahora();
+    const sello = t.replace(/[-:.]/g, "");
+    const sesiones = listar("sesiones").map((f) => leer(join(dir("sesiones"), f)).meta).filter((s) => s.equipo === o.equipo && s.estado !== "cerrada");
+    const reclamos = listar("reclamos").map((f) => ({ f, ...leer(join(dir("reclamos"), f)).meta })).filter((r) => sesiones.some((s) => s.id === r.sesion));
+    const lineas = [`# Acta de caída: equipo ${o.equipo}`, "", `- Declarada: ${t} por ${o.sesion}`, `- Autoriza el usuario: «${o.cita}»`, "", "## Sesiones activas"];
+    for (const s of sesiones) {
+      const punta = s.rama ? git(["rev-parse", "--short", `refs/heads/${s.rama}`]) : null;
+      const wt = worktreeDeRama(s.rama);
+      const sucio = wt ? git(["status", "--porcelain"], wt) : null;
+      let parche = "";
+      if (sucio) {
+        const diff = git(["diff", "HEAD"], wt);
+        if (diff) {
+          parche = `${sello}-${slug(s.id)}.patch`;
+          writeFileSync(join(dir("relevos"), parche), `${diff}\n`);
+        }
+      }
+      lineas.push(`- ${s.id} · tarea: ${s.tarea} · rama: ${s.rama || "—"} · punta: ${punta ?? "desconocida"} · worktree: ${wt ?? "desconocido"} · último latido: ${s.ultimo_latido}`
+        + (sucio ? ` · **cambios sin commit**: ${sucio.split(/\r?\n/).length} archivo(s)${parche ? ` (parche: ${parche})` : " (solo sin seguimiento)"}` : " · limpio"));
+    }
+    if (!sesiones.length) lineas.push("(ninguna)");
+    lineas.push("", "## Reclamos", ...(reclamos.length ? reclamos.map((r) => `- ${r.rutas} ← ${r.sesion} (${r.motivo})`) : ["(ninguno)"]));
+    const acta = `${sello}-${slug(o.equipo)}-caida.md`;
+    escribir(join(dir("relevos"), acta), { tipo: "acta-caida", equipo: o.equipo, fecha: t, por: o.sesion }, `\n${lineas.join("\n")}\n`);
+    escribir(join(dir("relevos"), `${slug(o.equipo)}.md`), { equipo: o.equipo, estado: "caido", desde: t, acta, cita: o.cita }, "\n## Relevos\n");
+    comandos.enviar({ de: o.sesion, para: "todos", tipo: "info", asunto: `Equipo ${o.equipo} declarado CAÍDO`, texto: `Acta: FME-ops/relevos/${acta}. No toméis sus tareas sin un traspaso de A0 (ADR-0013). Cita del usuario: «${o.cita}».` });
+    return `Equipo ${o.equipo} declarado caído. Acta: ${acta}`;
+  },
+  /** Asigna una tarea del equipo caído a un relevista (con la aprobación literal del usuario): libera sus reclamos y envía el traspaso. */
+  relevar(o) {
+    requerir(o, "sesion", "tarea", "de", "a", "cita");
+    sesionFile(o.sesion);
+    exigirPresencia("Asignar un relevo");
+    const rel = estadoRelevo(o.de);
+    if (rel.meta.estado !== "caido") throw new Error(`El equipo "${o.de}" no está declarado caído: usa primero \`caida\`.`);
+    if (o.de === o.a) throw new Error("El relevista debe ser otro equipo.");
+    const sesiones = listar("sesiones").map((f) => leer(join(dir("sesiones"), f)).meta).filter((s) => s.equipo === o.de);
+    const conTarea = sesiones.filter((s) => (s.tarea ?? "").includes(o.tarea) && s.rama);
+    const rama = o.rama ?? conTarea.at(-1)?.rama ?? "";
+    const punta = rama ? git(["rev-parse", "--short", `refs/heads/${rama}`]) : null;
+    let liberados = 0;
+    for (const f of listar("reclamos")) {
+      const r = leer(join(dir("reclamos"), f)).meta;
+      if (sesiones.some((s) => s.id === r.sesion) && (r.motivo ?? "").includes(o.tarea)) { unlinkSync(join(dir("reclamos"), f)); liberados++; }
+    }
+    const nueva = rama ? `${rama}-relevo-${slug(o.a)}` : `fdn/${o.tarea}-relevo-${slug(o.a)}`;
+    const t = ahora();
+    const linea = `- ${t} · ${o.tarea}: ${o.de} → ${o.a} · rama origen: ${rama || "—"} @ ${punta ?? "desconocida"} · rama nueva: ${nueva} · reclamos liberados: ${liberados} · aprueba el usuario: «${o.cita}»`;
+    guardarRelevo(o.de, rel.meta, `${rel.cuerpo.replace(/\n*$/, "\n")}${linea}\n`);
+    comandos.enviar({ de: o.sesion, para: `equipo:${o.a}`, tipo: "traspaso", asunto: `RELEVO ${o.tarea} (de ${o.de})`,
+      texto: `Tomáis ${o.tarea}, que era de ${o.de} (caído). Rama de origen: ${rama || "—"} @ ${punta ?? "desconocida"}. Cread \`git switch -c ${nueva} ${punta ?? "develop"}\` (no toquéis su rama ni su worktree). Acta con el estado y los posibles parches: FME-ops/relevos/${rel.meta.acta}. Ficha: BACKLOG.md. Termináis vosotros la tarea hasta DONE (ADR-0013 §5).` });
+    return `${o.tarea} relevada de ${o.de} a ${o.a}. Rama sugerida: ${nueva}. Reclamos liberados: ${liberados}.`;
+  },
+  /** Reincorpora un equipo caído: genera la nota con lo ocurrido en su ausencia y se la envía como traspaso. */
+  reincorporar(o) {
+    requerir(o, "sesion", "equipo");
+    sesionFile(o.sesion);
+    const rel = estadoRelevo(o.equipo);
+    if (rel.meta.estado !== "caido") throw new Error(`El equipo "${o.equipo}" no está caído.`);
+    const t = ahora();
+    const relevos = rel.cuerpo.split(/\r?\n/).filter((l) => l.startsWith("- "));
+    const integrado = git(["log", "--first-parent", "--format=- %h %s", `--since=${rel.meta.desde}`, "develop"]);
+    const nota = [
+      `# Nota de reincorporación: equipo ${o.equipo}`, "",
+      `- Caída declarada: ${rel.meta.desde} · Reincorporación: ${t}`,
+      `- Acta de cuando caísteis: FME-ops/relevos/${rel.meta.acta}`, "",
+      "## Tareas relevadas (las termina el relevista; no las continuéis)", ...(relevos.length ? relevos : ["(ninguna)"]), "",
+      "## Integrado en develop desde la caída", integrado || "(nada)", "",
+      "## Qué hacer ahora",
+      "1. Compara tu worktree con el acta: misma punta de rama y los mismos cambios sin commit. Si difieren, avisa a A0 antes de tocar nada.",
+      "2. Haz `git merge develop` en tus ramas de tareas NO relevadas antes de seguir.",
+      "3. No continúes las tareas relevadas: si tienes trabajo propio sin commit sobre ellas, envíaselo al relevista como `solicitud` (parche o rama).",
+      "4. Lee `git show develop:coordinacion/CURRENT_SPRINT.md` y toma tareas READY de tu equipo.",
+    ].join("\n");
+    const archivo = `${t.replace(/[-:.]/g, "")}-${slug(o.equipo)}-reincorporacion.md`;
+    escribir(join(dir("relevos"), archivo), { tipo: "nota-reincorporacion", equipo: o.equipo, fecha: t }, `\n${nota}\n`);
+    guardarRelevo(o.equipo, { ...rel.meta, estado: "reincorporado", reincorporado: t, nota: archivo }, rel.cuerpo);
+    comandos.enviar({ de: o.sesion, para: `equipo:${o.equipo}`, tipo: "traspaso", asunto: "Reincorporación: lee la nota antes de seguir", texto: `Nota: FME-ops/relevos/${archivo}\n\n${nota}` });
+    return `Equipo ${o.equipo} reincorporado. Nota: ${archivo}`;
+  },
+  /** Muestra la carpeta operativa en uso. */
+  raiz() {
+    return ROOT;
+  },
+  ayuda() {
+    return `Comandos (opciones con --nombre valor; --sesion puede venir de FME_SESION):
+  registrar --herramienta <${HERRAMIENTAS.join("|")}> --nombre <slug> --tarea "<texto>" [--equipo <x>] [--rama <r>]
+  avance    --texto "<qué hiciste>"
+  enviar    --para <sesion|equipo:x|todos> --asunto "<..>" --texto "<..>" [--tipo ${TIPOS.join("|")}] [--responde_a <archivo>]
+  buzon     [--todo] [--sinmarcar]
+  reclamar  --ruta a,b --motivo "<..>"      liberar [--ruta a,b]
+  cerrar    --resumen "<..>"
+  estado    (tablero)        raiz  (muestra la carpeta operativa)
+Relevo entre equipos (ADR-0013; solo el integrador, con la cita literal del usuario):
+  equipos                                         estado de cada equipo (sospechoso si no hay latido en ≥ FME_UMBRAL_CAIDA_MIN, 60 por defecto)
+  caida        --equipo <x> --cita "<usuario>"   declara caído y guarda el acta (no toca worktrees)
+  relevar      --tarea FDN-xxx --de <x> --a <y> --cita "<usuario>" [--rama <r>]
+  reincorporar --equipo <x>                       genera la nota de reincorporación y la envía
+Presencia del usuario (ADR-0014; escalones a X, 2X y 3X horas, con X = FME_AUSENCIA_H, 2 por defecto):
+  usuario [--presente]                            registra la presencia (en cada mensaje del usuario) o muestra el escalón
+  pendiente --asunto "<..>" --texto "<..>" [--impacto alto|medio|bajo] [--tarea FDN-xxx]   encola una decisión
+  pendientes                                      lista la cola (alto primero)
+  decidir   --id <archivo> --resolucion aprobada|rechazada|aplazada --cita "<usuario>"
+Turnos de coordinadores que se alternan dentro de un equipo (ADR-0017; configuración en coordinacion/turnos.json):
+  turno --equipo <x> [--tarea FDN-a,FDN-b | --texto "<..>"]   ¿a qué coordinador pongo a trabajar? (y por qué)
+  turno --tomar --sesion <id> [--forzar --cita "<usuario>"]    turno --ceder --sesion <id> --nota "<qué queda>" [--motivo fin|cuota|pausa]
+  turno --sin-cuota --coordinador <id>    turno --disponible --coordinador <id>`;
+  },
+};
+
+export function parseArgs(argv) {
+  const o = {};
+  for (let i = 0; i < argv.length; i++) {
+    if (!argv[i].startsWith("--")) throw new Error(`Argumento inesperado: ${argv[i]}`);
+    const k = argv[i].slice(2);
+    const v = argv[i + 1];
+    if (v === undefined || v.startsWith("--")) o[k] = true;
+    else { o[k] = v; i++; }
+  }
+  return o;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    const [cmd = "ayuda", ...resto] = process.argv.slice(2);
+    if (!comandos[cmd]) throw new Error(`Comando desconocido "${cmd}". Usa \`ayuda\`.`);
+    const o = parseArgs(resto);
+    const s = o.sesion ?? process.env.FME_SESION;
+    if (s && cmd !== "registrar") {
+      if (cmd === "enviar") o.de ??= s; else o.sesion ??= s;
+    }
+    console.log(comandos[cmd](o));
+  } catch (e) {
+    console.error(`✘ ${e.message}`);
+    process.exit(1);
+  }
+}

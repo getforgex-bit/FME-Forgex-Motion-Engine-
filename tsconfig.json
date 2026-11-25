@@ -1,0 +1,47 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/project"
+    },
+    {
+      "path": "packages/connectors"
+    },
+    {
+      "path": "runtime/workers"
+    },
+    {
+      "path": "packages/art-direction"
+    },
+    {
+      "path": "packages/adapters/revideo"
+    },
+    {
+      "path": "packages/cache"
+    },
+    {
+      "path": "packages/router"
+    },
+    {
+      "path": "apps/mcp"
+    },
+    {
+      "path": "packages/adapters/blender"
+    },
+    {
+      "path": "packages/render-plan"
+    },
+    {
+      "path": "packages/recovery"
+    },
+    {
+      "path": "packages/adapters/freecut"
+    },
+    {
+      "path": "apps/cli"
+    },
+    {
+      "path": "packages/pipeline"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "fme",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Forgex Motion Engine: motor audiovisual procedural, modular y AI-first",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "packages/adapters/*",
+    "runtime/workers",
+    "apps/*"
+  ],
+  "engines": {
+    "node": "^22.18.0 || >=24.11.0"
+  },
+  "scripts": {
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
+    "check:memory": "node scripts/check-memory.mjs",
+    "test": "node --test scripts/*.test.mjs \"packages/*/test/**/*.test.ts\" \"packages/adapters/*/test/**/*.test.ts\" \"runtime/*/test/**/*.test.ts\" \"apps/*/test/**/*.test.ts\" \"tests/seguridad/**/*.test.ts\" \"tests/regresion/**/*.test.ts\"",
+    "coord": "node scripts/coord.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3"
+  }
+}
