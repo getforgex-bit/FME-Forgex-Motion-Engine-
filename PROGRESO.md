@@ -1,18 +1,18 @@
 # Progreso de FME  (generado por scripts/progreso.mjs; no editar a mano)
 
-**v0.1: 33/34 hitos (97 %)** · Corto 4/5 · Mediano 29/29 · Largo: catálogo condicionado (0/11, fuera del %)
-Criterios: 8/8 ☑ · Bloqueos humanos: FDN-005
+**v0.1: 34/34 hitos (100 %)** · Corto 5/5 · Mediano 29/29 · Largo: catálogo condicionado (0/11, fuera del %)
+Criterios: 8/8 ☑ · Bloqueos humanos: ninguno
 +0 hitos nuevos desde la última generación.
 
 El % no tiene pesos: cuenta hitos vivos (no retirados) cerrados con evidencia.
 
-## Plazo 1 · Corto  (4/5)
+## Plazo 1 · Corto  (5/5)
 
 ### Parte 1.A
 
 #### Fase 0
 
-- [ ] H-spec-v01-aprobada **(crítico)** ← FDN-005
+- [x] H-spec-v01-aprobada **(crítico)** ← FDN-005
 - [x] H-red-fdn-operativa ← FDN-001, FDN-002, FDN-003, FDN-004, FDN-006, FDN-090, FDN-091, FDN-092
 
 ### Parte 1.B
@@ -115,7 +115,7 @@ El % no tiene pesos: cuenta hitos vivos (no retirados) cerrados con evidencia.
 
 La vista por rol (B1/B2, C1/C2, A1/A2) queda pendiente: el BACKLOG no registra el rol de cada tarea (propuesta v2, hallazgo 12).
 
-- ****USUARIO****: en curso en reposo · integradas 0/1
+- ****USUARIO****: en curso en reposo · integradas 1/1
 - **A DECIDIR**: en curso en reposo · integradas 1/2
 - **A0 + A3**: en curso en reposo · integradas 1/1
 - **AG**: en curso en reposo · integradas 10/10

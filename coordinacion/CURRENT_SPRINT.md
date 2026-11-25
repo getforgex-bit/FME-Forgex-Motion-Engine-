@@ -13,7 +13,7 @@
 | **Claude A2** | En reposo hasta la siguiente tanda | — |
 
 ## Decisiones del usuario pendientes
-- **FDN-005:** aprobación formal de la spec v0.1 (cierra la Fase 0).
+- ~~**FDN-005**~~ **Hecho:** spec v0.1 aprobada por el usuario el 2026-11-25. **v0.1: 34/34 hitos.**
 - ~~¿Llevar `develop` a `main`?~~ **Hecho** con la aprobación del usuario: `main` = `6ff846f` (hito v0.1). No se ha hecho push al remoto.
 - **FDN-070c es prioritaria:** el intermitente de la caché falló 2 de 3 veces al verificar `main`.
 - Largo plazo (Fase 8+): solo se activa una línea cuando se cumple su disparador y hay un ADR.

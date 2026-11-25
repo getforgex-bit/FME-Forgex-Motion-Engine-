@@ -13,7 +13,7 @@
 | FDN-002 | Carpeta operativa `FME-ops` + `coord.mjs` (eventos, solicitudes, raíz) | CL-A0 | — | DONE (arranque) |
 | FDN-003 | Infraestructura de tests de paquetes + typecheck en verde | CL-A0 | — | DONE (arranque) |
 | FDN-004 | Benchmarks verificados por modelo | CL-A3 | — | DONE (7cdfd04, VERIFICADO PARCIAL) |
-| FDN-005 | Aprobación formal de la spec v0.1 | **Usuario** | — | BLOCKED (humano) |
+| FDN-005 | Aprobación formal de la spec v0.1 | **Usuario** | — | DONE (2026-11-25, «Sí, la apruebo») |
 | FDN-006 | `develop`, worktrees, política de índices | CL-A0 | 001–003 | DONE (arranque) |
 | FDN-010 | Verificar Revideo | CL-A1 | 003 | DONE (6ee5826) |
 | FDN-011 | Verificar Blender 5.2 headless | CX | — | DONE (b0a7db7; A0 reprodujo el SHA-256 de píxeles) |
@@ -89,7 +89,7 @@
 
 | id | plazo | parte | fase | clase | estado | evidencia | aportan |
 |---|---|---|---|---|---|---|---|
-| H-spec-v01-aprobada | 1 | 1.A | 0 | critico | [ ] | — | 005 |
+| H-spec-v01-aprobada | 1 | 1.A | 0 | critico | [x] | aprobada por el usuario en el chat de A0 el 2026-11-25: «Sí, la apruebo» | 005 |
 | H-red-fdn-operativa | 1 | 1.A | 0 | normal | [x] | bitácora A0 2026-11-22..25; ADR-0007, 0013, 0014, 0016, 0017, 0018 y 0019 | 001, 002, 003, 004, 006, 090, 091, 092 |
 | H-criterio-1 | 1 | 1.B | 1 | critico | [x] | pruebas-aceptacion #1 | 010, 011, 012, 013, 014, 015, 016 |
 | H-criterio-2 | 1 | 1.B | 2 | critico | [x] | pruebas-aceptacion #2 | 020, 021, 022, 023, 024, 025, 026, 028 |

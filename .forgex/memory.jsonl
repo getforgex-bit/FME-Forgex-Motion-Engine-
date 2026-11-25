@@ -45,3 +45,5 @@
 {"type":"relation","from":"decision:turnos-de-coordinadores","to":"FME","relationType":"part_of"}
 {"type":"entity","name":"task:hito-v01-main","entityType":"task","observations":["2026-11-25 · Prueba híbrida de 10 s superada 8/8 (A0, node scripts/prueba-hibrida.mjs --estricto, motores reales); develop fusionado en main (6ff846f) con la aprobación del usuario; sin push al remoto","Pendientes: FDN-005 (aprobar la spec), FDN-070c (intermitente de la caché, prioritario), FDN-092 (trazabilidad), FDN-063b/c"]}
 {"type":"relation","from":"task:hito-v01-main","to":"FME","relationType":"part_of"}
+{"type":"entity","name":"decision:spec-v01-aprobada","entityType":"decision","observations":["2026-11-25 · El usuario aprobó formalmente la especificación FME v0.1 («Sí, la apruebo»): FDN-005 DONE, Fase 0 cerrada","v0.1 completa: 34/34 hitos y 8/8 criterios (PROGRESO.md; INFORME de la prueba híbrida)"]}
+{"type":"relation","from":"decision:spec-v01-aprobada","to":"FME","relationType":"part_of"}

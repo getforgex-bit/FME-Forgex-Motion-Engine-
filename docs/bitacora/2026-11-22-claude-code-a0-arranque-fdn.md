@@ -283,3 +283,8 @@ Abiertas: FDN-070d (otro intermitente de la caché) y FDN-063d (marcar `3d-with-
 - **Codex reincorporado** (`reincorporar --equipo codex`; `turno --disponible` para c0 y c0a). El usuario dijo que tiene la cuota de 5 h llena pero solo un 4 % de la semanal → **en reserva**, sin tareas nuevas.
 - **FDN-082** consolidado en `docs/licencias-seguridad.md` (tabla de AG + lista de control antes de distribuir) → H-licencias-v01 [x].
 - **FDN-063d** asignada a A1.
+
+
+## 2026-11-25 · Spec v0.1 aprobada; v0.1 completa (A0)
+- El usuario, en el chat de A0, ante la pregunta «¿Apruebas formalmente la especificación v0.1 (FDN-005)?»: **«Sí, la apruebo»**.
+- FDN-005 DONE; H-spec-v01-aprobada [x]; Fase 0 cerrada formalmente; `progreso.mjs --check` conforme → **v0.1 34/34 hitos (100 %)**, criterios 8/8, sin bloqueos humanos.

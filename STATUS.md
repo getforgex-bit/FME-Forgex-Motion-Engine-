@@ -1,12 +1,12 @@
 # Estado del proyecto
 
-_Última actualización: 2026-11-22: repositorio preparado (Fase 0)._
+_Última actualización: 2026-11-25: hito v0.1 completo (34/34 hitos, 8/8 criterios, spec aprobada)._
 
 ## Fases
 
 | Fase | Nombre | Estado | Condición de cierre |
 |---|---|---|---|
-| 0 | Especificar | **Hecha** (pendiente de la aprobación formal del usuario) | Especificación FME 0.1 aprobada |
+| 0 | Especificar | **Hecha** (spec aprobada el 2026-11-25) | Especificación FME 0.1 aprobada |
 | 1 | Verificar software | **Hecha** (2026-11-23, criterio #1) | Tres pruebas individuales repetibles |
 | 2 | Modelo universal | **Hecha** (2026-11-23, criterio #2) | Guardar/abrir sin perder estado |
 | 3 | Conectores | **Hecha** (2026-11-23, E2E con job real) | Descubrimiento y job de extremo a extremo |
@@ -20,7 +20,7 @@ Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-acept
 
 ## Hito: prueba híbrida de 10 s superada (v0.1, mediano plazo)
 
-**8/8 criterios de aceptación**, verificados por A0 el 2026-11-25 con Revideo 0.11.0, Blender 5.2.3 y FreeCut `5ceeeb3` reales: `node scripts/prueba-hibrida.mjs --estricto` → [INFORME](examples/prueba-hibrida-10s/INFORME.md). Fases 0–7 cerradas (la Fase 0 sigue a la espera de la aprobación formal de la spec, FDN-005).
+**8/8 criterios de aceptación**, verificados por A0 el 2026-11-25 con Revideo 0.11.0, Blender 5.2.3 y FreeCut `5ceeeb3` reales: `node scripts/prueba-hibrida.mjs --estricto` → [INFORME](examples/prueba-hibrida-10s/INFORME.md). **Fases 0–7 cerradas.** La spec v0.1 está aprobada por el usuario en el chat de A0 el 2026-11-25: «Sí, la apruebo» (FDN-005).
 
 **`main` = hito v0.1** (`6ff846f`, fusión `--no-ff` de `develop` en `cbd3256` con la aprobación del usuario, 2026-11-25). En `main`: typecheck OK y `npm test` 234 pass (al tercer intento por el intermitente de la caché, FDN-070c). **Publicado en `origin`** el 2026-11-25 con la aprobación del usuario («Sí, haz push»): `main` = 6ff846f y `develop` = e7bf194, ambos en fast-forward y sin `--force`.
 
@@ -89,4 +89,5 @@ Fase 1: fijar las versiones de FreeCut, Revideo y Blender y ejecutar una prueba 
 | 2026-11-25 | Turnos de coordinadores no paralelos (Neon ↔ Carbon en AG; Sol ↔ Astra en CX), recomendación con `coord.mjs turno`; la sospecha de caída cuenta desde la vuelta del usuario | ADR-0017 |
 | 2026-11-25 | El usuario puede declarar su ausencia (`usuario --ausente`) y avisar de cuotas agotadas; trabajo encadenado durante su ausencia | ADR-0018 |
 | 2026-11-25 | Trazabilidad por hitos con PROGRESO.md generado; `--check` bloquea solo la integración de A0 | ADR-0019 |
+| 2026-11-25 | **Especificación FME v0.1 aprobada formalmente** por el usuario (cierra la Fase 0) | FDN-005; ADR-0002 |
 | 2026-11-25 | `develop` → `main` como hito v0.1 (8/8 criterios); push a `origin` aprobado | aprobación del usuario en el chat de A0 |

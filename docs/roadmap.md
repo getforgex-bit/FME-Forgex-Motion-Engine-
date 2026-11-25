@@ -22,7 +22,7 @@ Orden de construcción (spec §19.1): **verificar software → archivo universal
 - [x] Documentación navegable, roadmap, riesgos y glosario.
 - [x] Contratos TypeScript propuestos (`packages/project`, `packages/connectors`) que compilan.
 - [x] Sistema común de memoria y registro (FORGEX Stack + ADR + bitácora + changelog).
-- **Condición de cierre (spec):** especificación FME 0.1 aprobada → **pendiente de la aprobación explícita del usuario.**
+- **Condición de cierre (spec):** especificación FME 0.1 aprobada → ✅ **aprobada por el usuario en el chat de A0 el 2026-11-25: «Sí, la apruebo»** (FDN-005).
 
 ### Fase 1: Verificar el software base
 **Objetivo:** demostrar que FreeCut, Revideo y Blender funcionan en el entorno de referencia antes de diseñar sobre ellos.
