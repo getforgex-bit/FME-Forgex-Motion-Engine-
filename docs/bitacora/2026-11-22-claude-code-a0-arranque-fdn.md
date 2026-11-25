@@ -236,3 +236,14 @@ Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (
 - `git branch main origin/main` (Initial commit 6c86237, ancestro de develop) → `git switch main` → `git merge --no-ff develop` → **`6ff846f`**. El árbol es idéntico al de `develop` (`git diff --stat develop main` vacío).
 - **Verificado en `main`:** `npm run typecheck` OK; `npm test` → 234 pass, 18 skip, 0 fail al tercer intento. Los dos primeros fallaron en «publica una entrada completa con escrituras concurrentes» (FDN-070c, intermitente de la caché, más frecuente) → prioridad para Codex.
 - **Sin push:** `main` y `develop` solo existen en local; el remoto sigue en el Initial commit.
+
+
+## 2026-11-25 · Relevo de Codex (ADR-0013), ejecutado desde una sesión bifurcada de A0
+- Aviso entre sesiones de la bifurcación `local_62488f53…`. El usuario declaró caído a Codex y pidió trasladar sus tareas a una sesión de Antigravity aparte. Cita: «codex se quedó sin cuota, traslada sus tareas a Antigravity … como un relevo en antigravity en otra sesion separada a la del equipo de antigravity».
+- **Verificado por A0 en `FME-ops`:**
+  - `equipos` → codex `caido`;
+  - acta `20261125T080133842Z-codex-caida.md`, con dos `.patch` de los 9 archivos sin commit de FDN-063b;
+  - `relevos/codex.md` registra el paso de FDN-063b, 070c y 073c a `antigravity-relevo`, con 2 reclamos liberados;
+  - el prompt para el usuario está en `FME-ops/relevos/PROMPT-antigravity-relevo.md`.
+- A0 lo refleja en BACKLOG, CURRENT_SPRINT y TEAM_STATUS. Cuando Codex vuelva: `reincorporar --equipo codex` y `turno --disponible`.
+- La «ausencia de archivos» que vio la bifurcación fue el instante en que el checkout estaba en `main` (Initial commit), antes de `git merge --no-ff develop`. El checkout vuelve a estar en `develop` y completo.

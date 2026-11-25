@@ -71,10 +71,10 @@
 | FDN-073b | Endurecimiento: `--root` en la CLI, raíces de anfitrión en las llamadas directas a Revideo y FreeCut, y raíces permitidas en `edit.compose` (los 3 TODO de 073a) | CX | 073a | DONE (d7c625e; 0 TODO) |
 | FDN-075a | Criterio #8: reabrir el proyecto, cambiar una capa y re-renderizar **solo** lo afectado (caché + render-plan en el pipeline) | CL-A1 | 042c, 070, 071 | DONE (d68149e; A0: criterio #8 reproducido) |
 | FDN-080c | `project.export` real en MCP y CLI con `@fme/pipeline` | CL-A2 | 042c, 080b | DONE (7a873f1) |
-| FDN-070c | `DiskCache`: el test «escrituras concurrentes» sigue fallando con la suite completa en carga (~1 de cada 5); revisar el presupuesto de reintentos o el diseño del test | CX | 070b | IN_PROGRESS (CX) |
-| FDN-073c | Regresión: actualizar `tests/regresion/expected/revideo.json` (la referencia se fijó con el SVG vacío, antes de la corrección de cb2d404) según el procedimiento de 073a | CX | 073a, 042c | IN_PROGRESS (candidato aprobado por A0) |
+| FDN-070c | `DiskCache`: el test «escrituras concurrentes» sigue fallando con la suite completa en carga (~1 de cada 5); revisar el presupuesto de reintentos o el diseño del test | CX | 070b | RELEVADA → AG-relevo (prioritaria: falló 2 de 3 al verificar main) |
+| FDN-073c | Regresión: actualizar `tests/regresion/expected/revideo.json` (la referencia se fijó con el SVG vacío, antes de la corrección de cb2d404) según el procedimiento de 073a | CX | 073a, 042c | RELEVADA → AG-relevo (candidato 2e8e4a9d… ya aprobado por A0) |
 | FDN-092 | Trazabilidad por hitos (propuesta v2 del asistente a0s): ADR-0017, § Hitos en BACKLOG, `scripts/progreso.mjs` + `PROGRESO.md` | A0 + A3 | 075 | READY (desbloqueada: la prueba híbrida ya está superada) |
-| FDN-063b | Blender exporta `camera.json` nativo (posición del modelo en pantalla por fotograma) para `guide3DLayerId` | CX | 063 | READY |
+| FDN-063b | Blender exporta `camera.json` nativo (posición del modelo en pantalla por fotograma) para `guide3DLayerId` | CX | 063 | RELEVADA → AG-relevo (Codex caído, 2026-11-25; .patch con 9 archivos sin commit en el acta) |
 | FDN-063c | `3d-with-2d` integrado en `runHybrid` (overlay 2D sobre el render 3D en la composición) | CL-A1 | 063 | READY |
 | FDN-091 | Modo ausencia del usuario (ADR-0014) | CL-A0 | 090 | DONE |
 | FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | IN_PROGRESS |
