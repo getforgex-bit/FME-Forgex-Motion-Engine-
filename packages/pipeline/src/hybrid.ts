@@ -25,6 +25,8 @@ import { planWorkflow } from '@fme/router';
 import type { RouteTask } from '@fme/router';
 import { PRORES_STEP_ID, PRORES_STEP_VERSION, encodeProRes, findInPath, readFfmpegVersion } from './prores.ts';
 import { StepCache } from './stepcache.ts';
+import { guideFromBlenderFrames, overlayZIndexes } from './guide.ts';
+import type { GuideJson } from './guide.ts';
 import type { CacheManifest, CachedFile, CachedStep } from './stepcache.ts';
 
 export type Diag = { code: string; message: string; severity?: string };
@@ -226,7 +228,7 @@ export async function runHybrid(projectPath: string, outDirInput: string, option
     parameters: extra,
   });
   const layerInputs: Record<string, LayerRenderInputs> = {};
-  for (const l of layers.revideo) layerInputs[l.id] = dep(REVIDEO_ID, { alpha: true });
+  for (const l of layers.revideo) layerInputs[l.id] = dep(REVIDEO_ID, { alpha: true, ...(l.techniques.includes('2d-guided-by-3d') && l.guide3DLayerId ? { guide: 'alpha-silhouette-v1' } : {}) });
   for (const l of layers.blender) {
     const blender = dep(BLENDER_ID, { resolution: options.blenderResolution ?? '960x540' });
     layerInputs[l.id] = {
@@ -265,6 +267,14 @@ export async function runHybrid(projectPath: string, outDirInput: string, option
   const artifacts: RenderArtifact[] = [];
   const links = new Map<string, string>(); // layerId -> renderArtifactId
   const overlays = new Map<string, string>(); // layerId -> ruta del MOV para FreeCut
+  const guides = new Map<string, GuideJson>(); // layerId 3D -> guía de posición en pantalla
+  const isGuided = (l: Layer): boolean => l.techniques.includes('2d-guided-by-3d') && l.guide3DLayerId !== undefined;
+  /** Guía de una capa 3D ya en caché (si el manifiesto es anterior y no la trae, se calcula de los PNG). */
+  const loadGuide = (key: string, frames: number): GuideJson => {
+    const p = join(cache.filesRoot, key, 'guide.json');
+    if (isFile(p)) return JSON.parse(readFileSync(p, 'utf8')) as GuideJson;
+    return guideFromBlenderFrames(join(cache.filesRoot, key, 'frames'), frames);
+  };
 
   /** Registra los pasos de un manifiesto acertado como `source: 'cache'`. */
   const fromCache = (m: CacheManifest, key: string): void => {
@@ -272,44 +282,14 @@ export async function runHybrid(projectPath: string, outDirInput: string, option
     artifacts.push(...m.artifacts);
   };
 
-  // 3a. Revideo: título y 2D → MOV ProRes con alpha.
-  for (const layer of layers.revideo) {
-    const key = segmentKey.get(layer.id)!;
-    const id = `render-${layer.id}`;
-    const hit = await cache.lookup(key, 'revideo');
-    if (hit) {
-      fromCache(hit, key);
-      overlays.set(layer.id, join(cache.filesRoot, key, 'layer.mov'));
-      links.set(layer.id, id);
-      continue;
-    }
-    const adapter = chosen.get(`render:${layer.id}`)!;
-    const ctx = newJob(layer.id);
-    const job: JobRequest = { projectId: project.id, operation: 'render.video', inputs: [projectInput], requirements: { layerId: layer.id, alpha: true }, seed: project.seed };
-    const res = await adapter.run(job, ctx);
-    const stepBase = { id: ctx.jobId, layerId: layer.id, operation: job.operation, adapterId: adapter.simple.id, status: res.status === 'ok' ? 'ok' as const : 'failed' as const, source: 'engine' as const, cacheKey: key, workDir: ctx.workDir };
-    if (res.status !== 'ok') {
-      record({ ...stepBase, diagnostics: res.diagnostics, provenance: res.provenance });
-      return fail('step-failed', `${ctx.jobId}: ${res.diagnostics.map((d) => d.message).join(' | ')}`);
-    }
-    const files: CachedFile[] = [];
-    const movPath = cache.adopt(key, toPath(res.provenance[0]!.uri), 'layer.mov', files);
-    const prov: ArtifactProvenance = { ...res.provenance[0]!, uri: pathToFileURL(movPath).href };
-    record({ ...stepBase, diagnostics: res.diagnostics, provenance: [prov] });
-    const artifact = artifactFor({ project, layer, id, uri: prov.uri, type: prov.type, prov, extraSegment: { segmentKey: key } });
-    artifacts.push(artifact);
-    links.set(layer.id, id);
-    overlays.set(layer.id, movPath);
-    await cache.save({ version: 1, key, kind: 'revideo', files, artifacts: [artifact], steps: [toCachedStep(steps[steps.length - 1]!)] }).catch((e) => diagnostics.push({ code: 'cache-save-failed', message: String(e) }));
-  }
-
-  // 3b. Blender: 3D → PNG RGBA → (paso propio) ProRes 4444.
+  // 3a. Blender (primero: las capas 2D guiadas necesitan la posición del objeto 3D): 3D → PNG RGBA → (paso propio) ProRes 4444.
   for (const layer of layers.blender) {
     const key = segmentKey.get(layer.id)!;
     const seqId = `render-${layer.id}`;
     const hit = await cache.lookup(key, 'blender');
     if (hit) {
       fromCache(hit, key);
+      guides.set(layer.id, loadGuide(key, layer.durationFrames));
       overlays.set(layer.id, join(cache.filesRoot, key, 'sequence.mov'));
       links.set(layer.id, seqId);
       continue;
@@ -331,6 +311,12 @@ export async function runHybrid(projectPath: string, outDirInput: string, option
     const files: CachedFile[] = [];
     const framesDir = dirname(toPath(res.provenance[0]!.uri));
     cache.adoptDir(key, framesDir, 'frames', files);
+    // Guía 3D→2D (provisional: silueta alfa; FDN-063b traerá camera.json nativo de Blender), guardada junto a los PNG.
+    const guide = guideFromBlenderFrames(framesDir, layer.durationFrames);
+    const guideTmp = join(ctx.workDir, 'guide.json');
+    writeFileSync(guideTmp, JSON.stringify(guide));
+    cache.adopt(key, guideTmp, 'guide.json', files);
+    guides.set(layer.id, guide);
     const cachedFrames = join(cache.filesRoot, key, 'frames');
     const cachedProv = res.provenance.map((p) => ({ ...p, uri: pathToFileURL(join(cachedFrames, basename(toPath(p.uri)))).href }));
     record({ ...stepBase, diagnostics: res.diagnostics, provenance: cachedProv });
@@ -360,6 +346,45 @@ export async function runHybrid(projectPath: string, outDirInput: string, option
     await cache.save({ version: 1, key, kind: 'blender', files, artifacts: [seqArtifact, movArtifact], steps: [blenderStep, toCachedStep(steps[steps.length - 1]!)] }).catch((e) => diagnostics.push({ code: 'cache-save-failed', message: String(e) }));
   }
 
+  // 3b. Revideo: título y 2D → MOV ProRes con alpha (las capas `2d-guided-by-3d` siguen al objeto 3D de su guía).
+  for (const layer of layers.revideo) {
+    const key = segmentKey.get(layer.id)!;
+    const id = `render-${layer.id}`;
+    const hit = await cache.lookup(key, 'revideo');
+    if (hit) {
+      fromCache(hit, key);
+      overlays.set(layer.id, join(cache.filesRoot, key, 'layer.mov'));
+      links.set(layer.id, id);
+      continue;
+    }
+    const adapter = chosen.get(`render:${layer.id}`)!;
+    const ctx = newJob(layer.id);
+    const requirements: JobRequest['requirements'] = { layerId: layer.id, alpha: true };
+    if (isGuided(layer)) {
+      const guide = guides.get(layer.guide3DLayerId!);
+      if (!guide) return fail('guide-missing', `La capa ${layer.id} sigue a ${layer.guide3DLayerId}, que no produjo guía.`);
+      const guidePath = join(ctx.workDir, 'guide.json');
+      writeFileSync(guidePath, JSON.stringify(guide));
+      requirements.guide = guidePath;
+    }
+    const job: JobRequest = { projectId: project.id, operation: 'render.video', inputs: [projectInput], requirements, seed: project.seed };
+    const res = await adapter.run(job, ctx);
+    const stepBase = { id: ctx.jobId, layerId: layer.id, operation: job.operation, adapterId: adapter.simple.id, status: res.status === 'ok' ? 'ok' as const : 'failed' as const, source: 'engine' as const, cacheKey: key, workDir: ctx.workDir };
+    if (res.status !== 'ok') {
+      record({ ...stepBase, diagnostics: res.diagnostics, provenance: res.provenance });
+      return fail('step-failed', `${ctx.jobId}: ${res.diagnostics.map((d) => d.message).join(' | ')}`);
+    }
+    const files: CachedFile[] = [];
+    const movPath = cache.adopt(key, toPath(res.provenance[0]!.uri), 'layer.mov', files);
+    const prov: ArtifactProvenance = { ...res.provenance[0]!, uri: pathToFileURL(movPath).href };
+    record({ ...stepBase, diagnostics: res.diagnostics, provenance: [prov] });
+    const artifact = artifactFor({ project, layer, id, uri: prov.uri, type: prov.type, prov, extraSegment: { segmentKey: key } });
+    artifacts.push(artifact);
+    links.set(layer.id, id);
+    overlays.set(layer.id, movPath);
+    await cache.save({ version: 1, key, kind: 'revideo', files, artifacts: [artifact], steps: [toCachedStep(steps[steps.length - 1]!)] }).catch((e) => diagnostics.push({ code: 'cache-save-failed', message: String(e) }));
+  }
+
   // 3c. FreeCut: composición final (`edit.compose`). Su clave depende de las claves de todas las capas (cualquier cambio la invalida).
   const layerKeys = [...scene.layers].sort((a, b) => a.zIndex - b.zIndex || a.id.localeCompare(b.id)).map((l) => ({ id: l.id, key: segmentKey.get(l.id)! }));
   const composeKey = dependencyHash({
@@ -383,6 +408,9 @@ export async function runHybrid(projectPath: string, outDirInput: string, option
     mkdirSync(composeDir, { recursive: true });
     const composeProject = structuredClone(project);
     const composeScene = composeProject.sequences[0]!.scenes[0]!;
+    // `3d-with-2d`: las capas 2D guiadas por una capa 3D que lo declara van ENCIMA de ella en la composición.
+    const z = overlayZIndexes(composeScene.layers);
+    for (const layer of composeScene.layers) layer.zIndex = z.get(layer.id)!;
     for (const layer of composeScene.layers) {
       if (!overlays.has(layer.id)) continue;
       if (layer.kind === 'text') { layer.kind = 'drawing'; delete layer.text; }
