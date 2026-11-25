@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { deserialize } from '@fme/project';
 import type { Layer, Project } from '@fme/project';
+import { guideOffsets, parseGuide } from '../src/guide.ts';
 import { MappingError, buildEngineJob, findLayer, sampleCurve, sampleGradientTracks, sampleTracks } from '../src/mapping.ts';
 
 const fixture = new URL('../../../../examples/prueba-hibrida-10s/project.fme.json', import.meta.url);
@@ -144,4 +145,44 @@ test('buildEngineJob: sin curvas expression/integration no hay `gradients` (rend
   const bare: Layer = { ...rest, channels: { opacity: channels.opacity! } };
   assert.equal(buildEngineJob(project, bare).gradients, undefined);
   assert.ok(buildEngineJob(project, findLayer(project, 'capa-titulo')).gradients, 'el título de la fixture tiene expression');
+});
+
+const pan: Layer = {
+  id: 'pl', kind: 'text', startFrame: 30, durationFrames: 11, zIndex: 0, techniques: ['2.5d', '2d-guided-by-3d'], guide3DLayerId: 'g3',
+  channels: { x: { defaultValue: 0, keyframes: [{ frame: 0, value: 0 }, { frame: 10, value: 100, easing: 'linear' }] } },
+};
+const guide3: Layer = { id: 'g3', kind: 'model3d', startFrame: 32, durationFrames: 6, zIndex: 1, techniques: ['3d'], channels: {} };
+
+test('2.5d: el desplazamiento de cámara se atenúa 1/(1+depth) y la escala 1/(1+0,25·depth)', () => {
+  const project = load();
+  const near = buildEngineJob(project, pan, { depth: 0 });
+  const far = buildEngineJob(project, pan, { depth: 1 });
+  assert.equal(near.tracks.x[10], 100);
+  assert.equal(far.tracks.x[10], 50);
+  approx(far.tracks.scale[0]!, 0.8);
+  assert.equal(buildEngineJob(project, pan).tracks.x[10], 100); // sin depth: igual que antes
+  assert.throws(() => buildEngineJob(project, { ...pan, techniques: ['2d'] }, { depth: 1 }), (e) => e instanceof MappingError && e.code === 'technique-missing');
+});
+
+test('guía JSON v1: validación y alineación en tiempo de escena con los extremos fijos', () => {
+  assert.throws(() => parseGuide({ version: 2, frames: [] }), (e) => e instanceof MappingError && e.code === 'bad-guide');
+  assert.throws(() => parseGuide({ version: 1, frames: [{ x: 'a', y: 0 }] }), (e) => e instanceof MappingError && e.code === 'bad-guide');
+  assert.throws(() => parseGuide({ version: 1, frames: [{ x: 0, y: 0, scale: 0 }] }), (e) => e instanceof MappingError && e.code === 'bad-guide');
+  const guide = parseGuide({ version: 1, frames: [0, 0.2, 0.4, 0.6, 0.8, 1].map((x) => ({ x, y: 0.5 })) });
+  const o = guideOffsets(guide, 30, 32, 11, 1000, 500);
+  // La capa 2D empieza 2 fotogramas antes que la 3D: los 2 primeros mantienen el primer fotograma de la guía.
+  assert.deepEqual([o.x[0], o.x[1], o.x[2]], [-500, -500, -500 + 0]);
+  approx(o.x[3]!, -300); // fotograma de escena 33 → índice 1 → x=0,2
+  approx(o.x[7]!, 500); // índice 5 → x=1; después se queda en 1
+  assert.equal(o.x[10], 500);
+  assert.ok(o.y.every((v) => v === 0));
+});
+
+test('guía aplicada: suma el seguimiento al movimiento propio; exige técnica y capa guía', () => {
+  const project = load();
+  const guide = parseGuide({ version: 1, frames: [0, 0.2, 0.4, 0.6, 0.8, 1].map((x) => ({ x, y: 0.5 })) });
+  const job = buildEngineJob(project, pan, { guide, guideLayer: guide3 });
+  approx(job.tracks.x[3]!, (0.2 - 0.5) * project.width + 30);
+  assert.throws(() => buildEngineJob(project, { ...pan, techniques: ['2d'] }, { guide, guideLayer: guide3 }), (e) => e instanceof MappingError && e.code === 'technique-missing');
+  assert.throws(() => buildEngineJob(project, pan, { guide }), (e) => e instanceof MappingError && e.code === 'guide-layer-not-found');
 });
