@@ -12,11 +12,15 @@ _Última actualización: 2026-11-22: repositorio preparado (Fase 0)._
 | 3 | Conectores | **Hecha** (2026-11-23, E2E con job real) | Descubrimiento y job de extremo a extremo |
 | 4 | Integración real | **Hecha** (2026-11-23, criterio #3) | Vídeo final con fuentes enlazadas |
 | 5 | Enrutador | **Hecha** (2026-11-23, criterios #4 y #5) | Selección justificada y verificable |
-| 6 | Dirección artística | **En curso** (criterio #6 ☑ en Revideo y Blender; faltan técnicas, FDN-063) | Cambios reales y reproducibles en la escena |
-| 7 | Calidad | **En curso** (criterio #8 ☑; falta el #7, sincronía sobre la exportación híbrida) | Prueba híbrida de 10 s superada |
+| 6 | Dirección artística | **Hecha** (2026-11-25, criterio #6; limitaciones en FDN-063b/c) | Cambios reales y reproducibles en la escena |
+| 7 | Calidad | **Hecha** (2026-11-25, prueba híbrida de 10 s: 8/8) | Prueba híbrida de 10 s superada |
 | 8 | Evolución | Pendiente | Cada pieza nueva demuestra valor concreto |
 
-Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (7/8).
+Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (**8/8**).
+
+## Hito: prueba híbrida de 10 s superada (v0.1, mediano plazo)
+
+**8/8 criterios de aceptación**, verificados por A0 el 2026-11-25 con Revideo 0.11.0, Blender 5.2.3 y FreeCut `5ceeeb3` reales: `node scripts/prueba-hibrida.mjs --estricto` → [INFORME](examples/prueba-hibrida-10s/INFORME.md). Fases 0–7 cerradas (la Fase 0 sigue a la espera de la aprobación formal de la spec, FDN-005).
 
 ## Qué existe hoy (verificado)
 

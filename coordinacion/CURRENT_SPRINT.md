@@ -1,22 +1,17 @@
-# Tanda actual: Tanda 10 (último criterio y prueba final)
+# Tanda actual: Tanda 11 (después del hito 8/8)
 
-> Dueño: A0. _Actualizado el 2026-11-23 (integración 9)._ **Criterios 7/8**: falta el #7 (sincronía A/V sobre la exportación híbrida). Fases 0–5 cerradas. Fichas en [BACKLOG.md](BACKLOG.md#fichas-de-la-tanda-10-ready-desde-el-2026-11-23-integración-9-último-criterio-y-prueba-final).
-> `develop`: `npm test` 226 pass + 15 skip + 3 TODO. Intermitente conocido: test de concurrencia de la caché en carga (→ FDN-070c).
-> **Paso 0 obligatorio:** `coord.mjs usuario --presente` en cada mensaje del usuario (ADR-0014).
+> Dueño: A0. _Actualizado el 2026-11-25 (integración 10)._ **Prueba híbrida de 10 s superada: 8/8** (A0, `node scripts/prueba-hibrida.mjs --estricto`). Fases 0–7 cerradas; queda la aprobación formal de la spec (FDN-005).
+> **Paso 0:** `coord.mjs usuario --presente`. **Turnos:** `coord.mjs turno --equipo antigravity|codex` (ADR-0017).
 
-| Equipo | Tarea | Criterio | Rama (nueva desde `develop`) |
-|---|---|---|---|
-| **Antigravity** (Neon ↔ Carbon en turno) | FDN-074 Exportación híbrida con sincronía medida (`turno` recomienda Neon) | **#7** | `fdn/FDN-074-av-sync-hibrida` |
-| **Claude A2** | FDN-075 Prueba híbrida final (informe de los 8 criterios) | todos | `fdn/FDN-075-prueba-final` |
-| **Claude A1** | FDN-063 Técnicas compuestas → cierre de la F6 | — | `fdn/FDN-063-tecnicas` |
-| **Codex** (Astra en turno; Sol sin cuota) | FDN-073b (en curso), después FDN-070c y FDN-073c | — | sus ramas |
-| **Claude A3** | — (reservado para FDN-092 tras la prueba híbrida) | — | — |
+| Equipo | Tarea | Notas |
+|---|---|---|
+| **Codex** | FDN-073c (referencia de Revideo, candidato aprobado), FDN-070c (intermitente de la caché) y FDN-063b (`camera.json` de Blender) | `turno` decide entre Sol y Astra |
+| **Claude A1** | FDN-063c `3d-with-2d` en el pipeline | — |
+| **Claude A3 + A0** | FDN-092 Trazabilidad por hitos (ADR-0018, `scripts/progreso.mjs`, PROGRESO.md versionado; `--check` bloquea solo la integración de A0) | decidido por el usuario: después de la prueba híbrida |
+| **Antigravity** | Libre: FDN-082 (auditoría de licencias de las versiones fijadas) o lo que proponga | `turno` decide entre Neon y Carbon |
+| **Claude A2** | En reposo hasta la siguiente tanda | — |
 
-## Turnos (ADR-0017)
-- ¿A quién activar? `node scripts/coord.mjs turno --equipo antigravity` / `--equipo codex`. Al empezar, `turno --tomar`; al terminar, `turno --ceder --nota`.
-
-## Decisiones del usuario pendientes de aplicar
-- **FDN-092 (trazabilidad por hitos):** después de la prueba híbrida; `PROGRESO.md` versionado; `--check` bloquea solo la integración de A0.
-
-## Bloqueos conocidos
-- FDN-005 (aprobación de la spec): solo el usuario.
+## Decisiones del usuario pendientes
+- **FDN-005:** aprobación formal de la spec v0.1 (cierra la Fase 0).
+- **¿Llevar `develop` a `main`?** El hito v0.1 del mediano plazo está verificado; fusionar en `main` requiere tu aprobación (AGENTS.md, regla 8).
+- Largo plazo (Fase 8+): solo se activa una línea cuando se cumple su disparador y hay un ADR.

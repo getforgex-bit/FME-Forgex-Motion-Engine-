@@ -215,3 +215,17 @@ Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (
   - `node --test scripts/coord.test.mjs` → 9/9;
   - sobre el `FME-ops` real: FDN-074 → Neon, FDN-070c → Carbon y Codex → Astra (`codex-c0` marcado sin cuota por lo que dijo el usuario);
   - `equipos` muestra «esperando al usuario» en lugar de «sospechoso».
+
+
+## 2026-11-25 · Integración 10: prueba híbrida 8/8 (A0)
+| Rama | Commit | Verificación de A0 | Resultado |
+|---|---|---|---|
+| FDN-073b endurecimiento | d7c625e | 230 pass + 15 skip, **0 TODO** | fusionada |
+| FDN-063 técnicas | ab8b76e | 234 pass, sin conflictos con 073b | fusionada (3d-with-2d parcial) |
+| FDN-074 sincronía A/V | 4cb1b60 | 234 pass | fusionada |
+| FDN-075 prueba final | a05d809 | 234 pass | fusionada |
+
+- **Ejecución de A0:** `node scripts/prueba-hibrida.mjs --estricto` con Revideo (junction temporal al motor de A1, eliminada después), Blender y FreeCut reales sobre `d94d757` → **8/8 superados**, 0 fallidos, 0 no ejecutados, en 8 min 20 s. El informe queda versionado en `examples/prueba-hibrida-10s/INFORME.md`.
+- **FDN-073c:** revisión visual de A0 (fotograma 0: antes vacío; después, figura naranja) → candidato aprobado.
+- El «fallo» de recovery que vio A1 no se reproduce en `develop` (3/3): es de su entorno.
+- **Fases 6 y 7 cerradas.** FDN-092 queda desbloqueada (el usuario la pidió para después de la prueba híbrida).

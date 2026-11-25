@@ -3,7 +3,7 @@
 > **Dueño único: A0.** Los demás equipos **no** editan este archivo: envían un `evento` o una `solicitud` a `claude-code-a0` ([TASK_PROTOCOL.md](TASK_PROTOCOL.md)).
 > Estados: `BACKLOG` · `READY` (sin dependencias pendientes) · `IN_PROGRESS` · `BLOCKED` · `REVIEW` · `DONE` (integrada en `develop` con evidencia) · `CANCELLED`.
 > Equipos: **CL** (Claude: A0 Opus, A1/A2 Sonnet, A3 Haiku), **AG** (Antigravity: B0 Neon, B1/B2 Hydrogen), **CX** (Codex: C0, C1 y C2, Sol).
-> _Última consolidación: 2026-11-23 (integración 9; **Fase 5 cerrada**, criterios 7/8)._
+> _Última consolidación: 2026-11-25 (integración 10; **prueba híbrida 8/8**, fases 0–7 cerradas)._
 
 ## Resumen
 
@@ -49,13 +49,13 @@
 | FDN-053 | Cierre de la Fase 5 (criterios #4 y #5) | CL-A0 | 051, 052 | DONE (criterios #4 y #5 ☑) |
 | FDN-060 | Dirección artística: perfiles de estilo y reglas | libre (el primero que quede libre) | 021 | DONE (b78af00, AG) |
 | FDN-061 | Gradientes y técnicas → operaciones por backend | CL-A1 | 060, 032, 040 | DONE (ed40273; Revideo, A0: 9/9 con motor) |
-| FDN-062 | Cierre de la Fase 6 (criterio #6) | CL-A0 | 061 | BACKLOG |
+| FDN-062 | Cierre de la Fase 6 (criterio #6) | CL-A0 | 061 | DONE (cierre de la F6) |
 | FDN-070 | Caché con invalidación por dependencias | CX | 021, 031 | DONE (f3ad71f) |
 | FDN-071 | Render por segmentos + preview adaptativa | CX | 070 | DONE (f6a8abb) |
 | FDN-072 | Errores: falta de VRAM, reintento seguro, backend alternativo | libre | 070 | DONE (021582e) |
 | FDN-073 | Suite técnica (temporal, estética, editabilidad, enrutamiento, recursos, seguridad, regresión) | a decidir | 043, 062, 071, 072 | BACKLOG |
-| FDN-074 | Exportación final con audio y sincronía (criterio #7) | AG | 043, 071 | READY |
-| FDN-075 | Prueba híbrida de 10 s: informe único con los 8 criterios | CL-A2 (A0 valida) | 073, 074 | READY |
+| FDN-074 | Exportación final con audio y sincronía (criterio #7) | AG | 043, 071 | DONE (4cb1b60; criterio #7 ☑) |
+| FDN-075 | Prueba híbrida de 10 s: informe único con los 8 criterios | CL-A2 (A0 valida) | 073, 074 | DONE (a05d809; A0: 8/8) |
 | FDN-080 | Servidor MCP mínimo (`apps/mcp`) | CL-A2 | 021, 030, 050 | DONE (0348125) |
 | FDN-081 | CLI (`apps/cli`) | CL-A2 | 080 | DONE (f87d164; A0: `job run` real 9/9) |
 | FDN-090 | Protocolo de relevo entre equipos (equipo sin cuota → otro lo releva; reincorporación con nota de lo avanzado) + ADR-0013 | CL-A0 | — | DONE (ADR-0013 aceptada; `coord.mjs equipos/caida/relevar/reincorporar`) |
@@ -63,17 +63,19 @@
 | FDN-042b | `Project` guarda los `RenderArtifact` y los enlaza (ADR-0015 + `schemaVersion` 3 + migración) | CL-A2 | 028 | DONE (8aaa304; schemaVersion 3) |
 | FDN-042c | Pipeline de la ruta híbrida: router → Revideo + Blender → FreeCut → vídeo final con fuentes enlazadas | CL-A1 | 042a, 042b | DONE (cb2d404; A0 lo reprodujo con 3 motores) |
 | FDN-061b | Gradientes en Blender (mapeo propuesto en `art-direction/backends/blender.ts`) con métrica de píxeles | CX | 040, 061 | DONE (81bad19; A0: Blender real 7/7) |
-| FDN-063 | Técnicas pendientes en los backends: `2.5d`, `3d-with-2d` y `guide3DLayerId` (2D guiado por cámara 3D) | CL-A1 | 061, 061b | READY |
+| FDN-063 | Técnicas pendientes en los backends: `2.5d`, `3d-with-2d` y `guide3DLayerId` (2D guiado por cámara 3D) | CL-A1 | 061, 061b | DONE (ab8b76e; 3d-with-2d parcial → 063b/063c) |
 | FDN-073a | Pruebas técnicas independientes de la ruta: seguridad (rutas, comandos, permisos) y regresión de salidas por hash de contenido | CX | 040, 041, 032 | DONE (b5bfe85; 3 TODO → 073b) |
 | FDN-074a | Audio en `edit.compose`: pista de audio, sample rate explícito y sincronía A/V medida | AG | 042a | DONE (ea2df61) |
 | FDN-080b | MCP y CLI: `preview.render` y `project.export` reales (render-plan + adaptadores), sin simular | CL-A2 | 071, 080, 081 | DONE (991f1f5) |
 | FDN-074b | FreeCut: tratar `ATOMIC_REPLACE_UNAVAILABLE` (EPERM en `.freecut-headless/atomic-test`, ~1 de cada 6) como transitorio y reintentar el job | AG | 074a | DONE |
-| FDN-073b | Endurecimiento: `--root` en la CLI, raíces de anfitrión en las llamadas directas a Revideo y FreeCut, y raíces permitidas en `edit.compose` (los 3 TODO de 073a) | CX | 073a | IN_PROGRESS (CX) |
+| FDN-073b | Endurecimiento: `--root` en la CLI, raíces de anfitrión en las llamadas directas a Revideo y FreeCut, y raíces permitidas en `edit.compose` (los 3 TODO de 073a) | CX | 073a | DONE (d7c625e; 0 TODO) |
 | FDN-075a | Criterio #8: reabrir el proyecto, cambiar una capa y re-renderizar **solo** lo afectado (caché + render-plan en el pipeline) | CL-A1 | 042c, 070, 071 | DONE (d68149e; A0: criterio #8 reproducido) |
 | FDN-080c | `project.export` real en MCP y CLI con `@fme/pipeline` | CL-A2 | 042c, 080b | DONE (7a873f1) |
-| FDN-070c | `DiskCache`: el test «escrituras concurrentes» sigue fallando con la suite completa en carga (~1 de cada 5); revisar el presupuesto de reintentos o el diseño del test | CX | 070b | READY |
-| FDN-073c | Regresión: actualizar `tests/regresion/expected/revideo.json` (la referencia se fijó con el SVG vacío, antes de la corrección de cb2d404) según el procedimiento de 073a | CX | 073a, 042c | READY |
-| FDN-092 | Trazabilidad por hitos (propuesta v2 del asistente a0s): ADR-0017, § Hitos en BACKLOG, `scripts/progreso.mjs` + `PROGRESO.md` | A0 + A3 | 075 | BACKLOG (el usuario: **después de la prueba híbrida**; PROGRESO.md versionado; `--check` bloquea solo la integración de A0) |
+| FDN-070c | `DiskCache`: el test «escrituras concurrentes» sigue fallando con la suite completa en carga (~1 de cada 5); revisar el presupuesto de reintentos o el diseño del test | CX | 070b | IN_PROGRESS (CX) |
+| FDN-073c | Regresión: actualizar `tests/regresion/expected/revideo.json` (la referencia se fijó con el SVG vacío, antes de la corrección de cb2d404) según el procedimiento de 073a | CX | 073a, 042c | IN_PROGRESS (candidato aprobado por A0) |
+| FDN-092 | Trazabilidad por hitos (propuesta v2 del asistente a0s): ADR-0017, § Hitos en BACKLOG, `scripts/progreso.mjs` + `PROGRESO.md` | A0 + A3 | 075 | READY (desbloqueada: la prueba híbrida ya está superada) |
+| FDN-063b | Blender exporta `camera.json` nativo (posición del modelo en pantalla por fotograma) para `guide3DLayerId` | CX | 063 | READY |
+| FDN-063c | `3d-with-2d` integrado en `runHybrid` (overlay 2D sobre el render 3D en la composición) | CL-A1 | 063 | READY |
 | FDN-091 | Modo ausencia del usuario (ADR-0014) | CL-A0 | 090 | DONE |
 | FDN-082 | Auditoría de licencias de las versiones fijadas | CL-A0 (continua) | — | IN_PROGRESS |
 
