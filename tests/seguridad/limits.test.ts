@@ -10,6 +10,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createConnectorRegistry, type AdapterJobResult, type ConnectorAdapter, type JobRequest } from '@fme/connectors';
 import { SCHEMA_VERSION, serialize, type Asset, type Layer, type Project } from '@fme/project';
 
+import { run as runCli } from '../../apps/cli/src/cli.ts';
 import { createFmeServer } from '../../apps/mcp/src/server.ts';
 import { createBlenderAdapter } from '../../packages/adapters/blender/src/index.ts';
 import { FreeCutAdapter } from '../../packages/adapters/freecut/src/index.ts';
@@ -210,6 +211,87 @@ test('MCP rechaza proyectos fuera de la raíz antes de abrirlos o entregar un jo
   }
 });
 
-test.todo('CLI: raíz configurable para abrir proyectos');
-test.todo('Revideo y FreeCut directos: política de raíz de proyecto y workDir del anfitrión');
-test.todo('FreeCut edit.compose directo: raíces configuradas para entradas absolutas');
+test('CLI aplica --root a la lectura y a la escritura de proyectos', async (t) => {
+  const { root, outside } = await sandbox(t);
+  const inside = await writeProject(root, project());
+  const outsideProject = await writeProject(outside, project());
+  await symlink(outside, join(root, 'alias'), junctionType);
+
+  async function execute(args: string[], restricted = true) {
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+    const io = { stdout: (text: string) => stdout.push(text), stderr: (text: string) => stderr.push(text) };
+    const exit = await runCli([...args, '--json', ...(restricted ? ['--root', root] : [])], io);
+    return { exit, output: [...stdout, ...stderr].join('\n') };
+  }
+
+  assert.equal((await execute(['project', 'validate', 'project.fme.json'])).exit, 0);
+  assert.equal((await execute(['project', 'validate', outsideProject], false)).exit, 0);
+  for (const filename of [outsideProject, '../vecino/project.fme.json', 'alias/project.fme.json']) {
+    const result = await execute(['project', 'validate', filename]);
+    assert.notEqual(result.exit, 0);
+    assert.match(result.output, /"code"\s*:\s*"PATH_OUTSIDE_ROOT"/);
+  }
+
+  for (const [command, target] of [['migrate', 'alias/copia.fme.json'], ['export', 'alias/exportacion']] as const) {
+    const result = await execute(['project', command, inside, '--out', target]);
+    assert.notEqual(result.exit, 0);
+    assert.match(result.output, /"code"\s*:\s*"PATH_OUTSIDE_ROOT"/);
+  }
+  assert.deepEqual(await readdir(outside), ['project.fme.json']);
+  assert.equal((await execute(['project', 'migrate', inside, '--out', 'copia.fme.json'])).exit, 0);
+  assert.equal(await readFile(join(root, 'copia.fme.json'), 'utf8'), await readFile(inside, 'utf8'));
+});
+
+test('Revideo y FreeCut directos validan proyecto y workDir contra las raíces del anfitrión', async (t) => {
+  const { root, outside, workDir, ctx } = await sandbox(t);
+  const fixture = project([{ ...layer('text'), text: { content: literal } }]);
+  const inside = await writeProject(root, fixture);
+  const outsideProject = await writeProject(outside, fixture);
+  const alias = join(root, 'alias');
+  await symlink(outside, alias, junctionType);
+
+  const missingEngine = join(root, 'sin-motor');
+  const cases = [
+    { adapter: new RevideoAdapter({ engineDir: missingEngine, allowedRoots: [root] }),
+      operation: 'render.video', requirements: { layerId: 'capa' } },
+    { adapter: new FreeCutAdapter({ freecutDir: missingEngine, allowedRoots: [root] }),
+      operation: 'edit.export', requirements: { sceneId } },
+  ];
+  for (const { adapter, operation, requirements } of cases) {
+    const request = job(operation, inside, requirements);
+    expectRejection(await adapter.run(request, { ...ctx, workDir: outside }), 'path-outside-root');
+    expectRejection(await adapter.run(request, { ...ctx, workDir: alias }), 'path-outside-root');
+    for (const filename of [outsideProject, join(alias, 'project.fme.json')]) {
+      expectRejection(await adapter.run(job(operation, filename, requirements), ctx), 'path-outside-root');
+    }
+    expectRejection(await adapter.run(request, ctx), 'engine-missing');
+  }
+  assert.deepEqual(await readdir(workDir), []);
+  assert.deepEqual(await readdir(outside), ['project.fme.json']);
+});
+
+test('FreeCut edit.compose aplica las raíces del anfitrión a sus entradas absolutas', async (t) => {
+  const { root, outside, workDir, ctx } = await sandbox(t);
+  const inside = await writeProject(root, project([layer('video', 'medio')], [
+    { id: 'medio', type: 'video', uri: 'medio.mp4' },
+  ]));
+  const alias = join(root, 'alias');
+  await symlink(outside, alias, junctionType);
+  await writeFile(join(outside, 'medio.mp4'), 'fixture temporal', { flag: 'wx' });
+  const adapter = new FreeCutAdapter({ freecutDir: join(root, 'sin-motor'), allowedRoots: [root] });
+
+  for (const filename of [join(outside, 'medio.mp4'), join(alias, 'medio.mp4')]) {
+    const uri = pathToFileURL(filename).href;
+    const withInput = job('edit.compose', inside, { sceneId });
+    withInput.inputs = [...withInput.inputs, { uri, type: 'video/mp4' }];
+    const withMap = job('edit.compose', inside, { sceneId, 'input.capa': uri });
+    for (const request of [withInput, withMap]) {
+      expectRejection(await adapter.run(request, ctx), 'asset-outside-project');
+    }
+  }
+  await copyFile(join(outside, 'medio.mp4'), join(root, 'medio.mp4'));
+  const admitted = job('edit.compose', inside, { sceneId, 'input.capa': 'medio.mp4' });
+  expectRejection(await adapter.run(admitted, ctx), 'engine-missing');
+  assert.deepEqual(await readdir(workDir), []);
+});

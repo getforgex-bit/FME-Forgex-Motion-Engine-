@@ -26,6 +26,7 @@ import {
 } from '@fme/mcp/ops';
 import { serialize, type ValidationIssue } from '@fme/project';
 import { planRoute } from '@fme/router';
+import { checkExportPaths, rootPathResolver } from './paths.ts';
 
 export const EXIT = { ok: 0, error: 1, usage: 2, engineUnavailable: 3 } as const;
 
@@ -37,9 +38,12 @@ export type CliOptions = {
 };
 
 /** Adaptadores ejecutables conocidos por la CLI. `FME_REVIDEO_ENGINE_DIR` cambia la carpeta del motor de Revideo. */
-export function defaultAdapters(env: NodeJS.ProcessEnv = process.env): ConnectorAdapter[] {
+export function defaultAdapters(env: NodeJS.ProcessEnv = process.env, probeWorkDir?: string): ConnectorAdapter[] {
   const engineDir = env.FME_REVIDEO_ENGINE_DIR;
-  return [new RevideoAdapter(engineDir ? { engineDir } : {})];
+  return [new RevideoAdapter({
+    ...(engineDir ? { engineDir } : {}),
+    ...(probeWorkDir !== undefined ? { probeWorkDir } : {}),
+  })];
 }
 
 const HELP = `fme: CLI de Forgex Motion Engine
@@ -58,7 +62,7 @@ Comandos:
                                                 Preview de la capa a la resolución del perfil de 4 GB
                                                 (--start <n> --end <n> en fotogramas de la capa, --vram <MiB>, --alpha, --timeout <ms>)
 
-Opciones generales: --json (salida JSON), --help
+Opciones generales: --json (salida JSON), --root <dir> (limita rutas a una raíz), --help
 Códigos de salida: 0 correcto, 1 error, 2 uso incorrecto, 3 motor no disponible
 `;
 
@@ -139,6 +143,7 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
         help: { type: 'boolean', short: 'h' },
         layer: { type: 'string' },
         out: { type: 'string' },
+        root: { type: 'string' },
         capability: { type: 'string' },
         accepts: { type: 'string' },
         produces: { type: 'string' },
@@ -165,11 +170,14 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
     const command = positionals.slice(0, 2).join(' ');
     const file = positionals[2];
     if (positionals.length > 3) throw new CliError('USAGE', `Argumentos de más: ${positionals.slice(3).join(' ')}`, EXIT.usage);
-    const adapters = options.adapters ?? defaultAdapters();
+    const scoped = values.root === undefined ? undefined : await rootPathResolver(values.root);
+    const cliPath = scoped ?? resolve;
+    const adapters = (withProbe = false) => options.adapters ?? defaultAdapters(process.env,
+      withProbe ? scoped?.('.fme-probe') : undefined);
 
     switch (command) {
       case 'project validate': {
-        const { project, sourceVersion } = load(requireString(file, 'el archivo del proyecto'));
+        const { project, sourceVersion } = load(cliPath(requireString(file, 'el archivo del proyecto')));
         const migratedFrom = sourceVersion !== project.schemaVersion ? sourceVersion : undefined;
         const summary = summarize(project);
         emit(out, { valid: true, ...(migratedFrom !== undefined ? { migratedFrom } : {}), summary },
@@ -177,11 +185,12 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
         return EXIT.ok;
       }
       case 'project migrate': {
-        const { project } = load(requireString(file, 'el archivo del proyecto'));
+        const { project } = load(cliPath(requireString(file, 'el archivo del proyecto')));
         const text = serialize(project);
         if (values.out !== undefined) {
-          writeFileSync(resolve(values.out), text);
-          emit(out, { migrated: true, out: resolve(values.out), schemaVersion: project.schemaVersion }, `Migrado a schemaVersion ${project.schemaVersion}: ${values.out}`);
+          const outputFile = cliPath(values.out);
+          writeFileSync(outputFile, text);
+          emit(out, { migrated: true, out: outputFile, schemaVersion: project.schemaVersion }, `Migrado a schemaVersion ${project.schemaVersion}: ${values.out}`);
         } else if (out.json) {
           emit(out, { migrated: true, project }, '');
         } else {
@@ -190,10 +199,11 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
         return EXIT.ok;
       }
       case 'project export': {
-        const projectFile = resolve(requireString(file, 'el archivo del proyecto'));
-        const outDir = resolve(requireString(values.out, '--out <dir>'));
+        const projectFile = cliPath(requireString(file, 'el archivo del proyecto'));
+        const outDir = cliPath(requireString(values.out, '--out <dir>'));
         const timeoutMs = intOption(values.timeout, '--timeout', 1);
         const blenderResolution = values['blender-resolution'];
+        if (scoped) checkExportPaths(load(projectFile).project, projectFile, scoped);
         const exported = await exportProject({
           projectFile, outDir,
           ...(blenderResolution !== undefined ? { blenderResolution } : {}),
@@ -210,28 +220,28 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
         if (values.capability !== undefined) filter.capability = values.capability;
         if (values.accepts !== undefined) filter.accepts = values.accepts;
         if (values.produces !== undefined) filter.produces = values.produces;
-        const entries = buildRegistry(adapters).listSimple(filter);
+        const entries = buildRegistry(adapters()).listSimple(filter);
         emit(out, { connectors: entries },
           entries.length === 0 ? 'Ningún conector coincide.'
             : entries.map((e) => `${e.card.id} ${e.card.version} [${e.card.executor}] ${e.card.capabilities.join(', ')}${e.requiresInspection ? ' (requiere inspección)' : ''}`).join('\n'));
         return EXIT.ok;
       }
       case 'route plan': {
-        const { project } = load(requireString(file, 'el archivo del proyecto'));
+        const { project } = load(cliPath(requireString(file, 'el archivo del proyecto')));
         const { layer } = locate(project, requireString(values.layer, '--layer <id>'));
-        const plan = planRoute(buildRegistry(adapters), routeTaskFor(layer));
+        const plan = planRoute(buildRegistry(adapters()), routeTaskFor(layer));
         emit(out, plan, `${plan.status === 'planned' ? `Conector elegido: ${plan.selected?.connectorId}` : 'Sin conector'}. ${plan.justification}`);
         return plan.status === 'planned' ? EXIT.ok : EXIT.error;
       }
       case 'job run': {
-        const projectFile = resolve(requireString(file, 'el archivo del proyecto'));
+        const projectFile = cliPath(requireString(file, 'el archivo del proyecto'));
         const { project } = load(projectFile);
         const { layer } = locate(project, requireString(values.layer, '--layer <id>'));
-        const outDir = resolve(requireString(values.out, '--out <dir>'));
+        const outDir = cliPath(requireString(values.out, '--out <dir>'));
         const timeoutMs = intOption(values.timeout, '--timeout', 1) ?? 120_000;
         const jobId = randomUUID();
         const rendered = await renderLayer({
-          adapters, projectFile, project, layer, jobId, workDir: resolve(outDir, jobId), timeoutMs,
+          adapters: adapters(true), projectFile, project, layer, jobId, workDir: cliPath(resolve(outDir, jobId)), timeoutMs,
           ...(values.alpha ? { alpha: true } : {}),
         });
         const { result, conformance } = rendered;
@@ -242,16 +252,17 @@ export async function run(argv: string[], io: CliIo, options: CliOptions = {}): 
         return result.status === 'ok' && conformance.length === 0 ? EXIT.ok : EXIT.error;
       }
       case 'preview render': {
-        const projectFile = resolve(requireString(file, 'el archivo del proyecto'));
+        const projectFile = cliPath(requireString(file, 'el archivo del proyecto'));
         const layerId = requireString(values.layer, '--layer <id>');
-        const outDir = resolve(requireString(values.out, '--out <dir>'));
+        const outDir = cliPath(requireString(values.out, '--out <dir>'));
         const startFrame = intOption(values.start, '--start', 0);
         const endFrame = intOption(values.end, '--end', 1);
         const vramBudgetMiB = intOption(values.vram, '--vram', 1) ?? DEFAULT_PREVIEW_VRAM_MIB;
         const timeoutMs = intOption(values.timeout, '--timeout', 1) ?? 120_000;
+        const previewAdapters = adapters(true);
         mkdirSync(outDir, { recursive: true });
         const preview = await previewRender({
-          adapters, projectFile, layerId, workRoot: outDir, vramBudgetMiB, timeoutMs,
+          adapters: previewAdapters, projectFile, layerId, workRoot: outDir, vramBudgetMiB, timeoutMs,
           ...(startFrame !== undefined ? { startFrame } : {}),
           ...(endFrame !== undefined ? { endFrameExclusive: endFrame } : {}),
           ...(values.alpha ? { alpha: true } : {}),
