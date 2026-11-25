@@ -8,7 +8,7 @@
 | **Codex** | **CAÍDO** (sin cuota, declarado por el usuario el 2026-11-25 08:01 UTC; acta en `FME-ops/relevos/`) | Sol y Astra sin cuota |
 | **Antigravity-relevo** (sesión aparte, id `antigravity-r0`) | FDN-070c (prioritaria), FDN-073c y FDN-063b, relevadas de Codex | prompt: `FME-ops/relevos/PROMPT-antigravity-relevo.md`; ramas `<origen>-relevo-antigravity-relevo` |
 | **Claude A1** | FDN-063c `3d-with-2d` en el pipeline | — |
-| **Claude A3 + A0** | FDN-092 Trazabilidad por hitos (ADR-0018, `scripts/progreso.mjs`, PROGRESO.md versionado; `--check` bloquea solo la integración de A0) | decidido por el usuario: después de la prueba híbrida |
+| **Claude A3 + A0** | FDN-092 Trazabilidad por hitos (ADR-0019, `scripts/progreso.mjs`, PROGRESO.md versionado; `--check` bloquea solo la integración de A0) | decidido por el usuario: después de la prueba híbrida |
 | **Antigravity** | Libre: FDN-082 (auditoría de licencias de las versiones fijadas) o lo que proponga | `turno` decide entre Neon y Carbon |
 | **Claude A2** | En reposo hasta la siguiente tanda | — |
 

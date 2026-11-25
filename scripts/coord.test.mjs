@@ -193,3 +193,24 @@ test("turnos de coordinadores alternos (ADR-0017) y sospecha contada desde la vu
     delete process.env.FME_TURNOS;
   }
 });
+
+test("ausencia declarada por el usuario (ADR-0018): escalón 1 inmediato y escalera desde el aviso", () => {
+  process.env.FME_AHORA = "2033-01-01T22:00:00.000Z";
+  try {
+    reg("claude-code", "decl0", "decl");
+    c.usuario({ presente: true, sesion: "claude-code-decl0" });
+    assert.match(c.usuario({}), /escalón 0/);
+    assert.match(c.usuario({ ausente: true, sesion: "claude-code-decl0", nota: "me voy a dormir" }), /Escalón 1 desde ahora/);
+    assert.match(c.usuario({}), /escalón 1 \(ausencia DECLARADA/);
+    assert.throws(() => c.caida({ sesion: "claude-code-decl0", equipo: "x", cita: "y" }), /necesita al usuario presente/);
+    process.env.FME_AHORA = "2033-01-02T00:30:00.000Z"; // +2,5 h desde el aviso → escalón 2
+    assert.match(c.usuario({}), /escalón 2/);
+    process.env.FME_AHORA = "2033-01-02T02:30:00.000Z"; // +4,5 h → escalón 3
+    assert.match(c.usuario({}), /escalón 3[\s\S]*PARADA/);
+    process.env.FME_AHORA = "2033-01-02T08:00:00.000Z";
+    assert.match(c.usuario({ presente: true, sesion: "claude-code-decl0" }), /VUELTA DEL USUARIO/);
+    assert.match(c.usuario({}), /escalón 0/);
+  } finally {
+    delete process.env.FME_AHORA;
+  }
+});
