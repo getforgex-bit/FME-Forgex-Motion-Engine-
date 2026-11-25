@@ -12,11 +12,17 @@ _Última actualización: 2026-11-22: repositorio preparado (Fase 0)._
 | 3 | Conectores | **Hecha** (2026-11-23, E2E con job real) | Descubrimiento y job de extremo a extremo |
 | 4 | Integración real | **Hecha** (2026-11-23, criterio #3) | Vídeo final con fuentes enlazadas |
 | 5 | Enrutador | **Hecha** (2026-11-23, criterios #4 y #5) | Selección justificada y verificable |
-| 6 | Dirección artística | **En curso** (criterio #6 ☑ en Revideo y Blender; faltan técnicas, FDN-063) | Cambios reales y reproducibles en la escena |
-| 7 | Calidad | **En curso** (criterio #8 ☑; falta el #7, sincronía sobre la exportación híbrida) | Prueba híbrida de 10 s superada |
+| 6 | Dirección artística | **Hecha** (2026-11-25, criterio #6; limitaciones en FDN-063b/c) | Cambios reales y reproducibles en la escena |
+| 7 | Calidad | **Hecha** (2026-11-25, prueba híbrida de 10 s: 8/8) | Prueba híbrida de 10 s superada |
 | 8 | Evolución | Pendiente | Cada pieza nueva demuestra valor concreto |
 
-Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (7/8).
+Detalle: [`docs/roadmap.md`](docs/roadmap.md) · Criterios: [`docs/pruebas-aceptacion.md`](docs/pruebas-aceptacion.md) (**8/8**).
+
+## Hito: prueba híbrida de 10 s superada (v0.1, mediano plazo)
+
+**8/8 criterios de aceptación**, verificados por A0 el 2026-11-25 con Revideo 0.11.0, Blender 5.2.3 y FreeCut `5ceeeb3` reales: `node scripts/prueba-hibrida.mjs --estricto` → [INFORME](examples/prueba-hibrida-10s/INFORME.md). Fases 0–7 cerradas (la Fase 0 sigue a la espera de la aprobación formal de la spec, FDN-005).
+
+**`main` = hito v0.1** (`6ff846f`, fusión `--no-ff` de `develop` en `cbd3256` con la aprobación del usuario, 2026-11-25). En `main`: typecheck OK y `npm test` 234 pass (al tercer intento por el intermitente de la caché, FDN-070c). **Publicado en `origin`** el 2026-11-25 con la aprobación del usuario («Sí, haz push»): `main` = 6ff846f y `develop` = e7bf194, ambos en fast-forward y sin `--force`.
 
 ## Qué existe hoy (verificado)
 
@@ -79,3 +85,4 @@ Fase 1: fijar las versiones de FreeCut, Revideo y Blender y ejecutar una prueba 
 | 2026-11-23 | Modo ausencia del usuario: presencia en cada mensaje; escalones a 2, 4 y 6 h (solo lo asignado → solo lo en curso → punto de control y parada); sin relevos falsos; cola de decisiones con resumen y revisión una a una al volver; A0 integra solo lo verde | ADR-0014 |
 | 2026-11-23 | Suplente/asistente de A0 en paralelo: solo crea archivos con la autorización del usuario; no decide ni edita lo compartido | ADR-0016 |
 | 2026-11-25 | Turnos de coordinadores no paralelos (Neon ↔ Carbon en AG; Sol ↔ Astra en CX), recomendación con `coord.mjs turno`; la sospecha de caída cuenta desde la vuelta del usuario | ADR-0017 |
+| 2026-11-25 | `develop` → `main` como hito v0.1 (8/8 criterios); push a `origin` aprobado | aprobación del usuario en el chat de A0 |

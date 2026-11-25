@@ -14,7 +14,8 @@ Las pruebas usan archivos sintéticos y directorios exclusivos bajo el temporal 
 | Revideo | Rechazo de tipo de entrada ajeno al contrato y conservación de `literal&marca` como texto al preparar una capa. |
 | FreeCut | Rechazo de tipo de entrada ajeno al contrato y contención de los medios de `edit.export` en la carpeta del proyecto. |
 | MCP | `project.open` y `job.run` aplican la raíz configurada. Una entrada rechazada no llega al adaptador ni crea su directorio de trabajo. |
+| CLI | Con `--root`, abre proyectos y escribe la migración dentro de la raíz. Rechaza rutas externas y junctions que apuntan fuera. |
+| Revideo y FreeCut directos | Con `allowedRoots`, validan proyecto y directorio de trabajo antes de preparar el job. |
+| FreeCut edit.compose | Con `allowedRoots`, valida los medios locales suministrados como entradas del trabajo o mediante la asignación de capa. |
 
-Los casos `TODO` registran controles sin una política configurable en la API actual. La CLI admite rutas locales sin una raíz de proyecto configurable. Los adaptadores directos de Revideo y FreeCut reciben el contexto autorizado de quien los llama. La llamada directa a `edit.compose` de FreeCut no establece raíces configuradas para sus entradas absolutas. Estos escenarios quedan pendientes de una decisión de alcance.
-
-El comando anterior ejecuta la suite focal. La incorporación a `npm test` corresponde a la integración de A0.
+La raíz es opcional en la CLI y la configura quien instancia los adaptadores directos. La suite focal también forma parte de `npm test`.
