@@ -11,11 +11,17 @@ import { runIsolated } from '@fme/runtime-workers';
 import type { AdapterJobResult, ArtifactProvenance, ConnectorAdapter, JobContext, JobRequest, ProbeResult } from '@fme/connectors';
 import { advanced, ADAPTER_VERSION, simple } from './cards.ts';
 import { MappingError, buildEngineJob, findLayer } from './mapping.ts';
+import { parseGuide } from './guide.ts';
+import type { GuideData } from './guide.ts';
+import type { Layer } from '@fme/project';
 import type { EngineJob } from './mapping.ts';
+import { requireScopedJobId, requireScopedPath, requireUnusedJobPaths, scopedFilePath, scopedRoots } from './paths.ts';
 
 export type RevideoAdapterOptions = {
   /** Carpeta del motor (por defecto `runtime/engines/revideo` del repo). */
   engineDir?: string;
+  /** Raíces locales de confianza para proyectos y directorios de jobs. */
+  allowedRoots?: readonly string[];
   /** Ruta absoluta de ffmpeg; por defecto `FME_FFMPEG_PATH` o el PATH. */
   ffmpegPath?: string;
   /** Ruta absoluta de ffprobe; por defecto `FME_FFPROBE_PATH`, el directorio de ffmpeg o el PATH. */
@@ -78,10 +84,12 @@ export class RevideoAdapter implements ConnectorAdapter {
   readonly advanced = advanced;
   private readonly engineDir: string;
   private readonly opts: RevideoAdapterOptions;
+  private readonly allowedRoots: readonly string[] | undefined;
   private engineVersionCache: string | undefined;
 
   constructor(opts: RevideoAdapterOptions = {}) {
     this.opts = opts;
+    this.allowedRoots = opts.allowedRoots === undefined ? undefined : [...opts.allowedRoots];
     this.engineDir = resolve(opts.engineDir ?? defaultEngineDir);
   }
 
@@ -133,6 +141,22 @@ export class RevideoAdapter implements ConnectorAdapter {
     const layerId = job.requirements.layerId;
     if (typeof layerId !== 'string' || !layerId) return fail('bad-requirements', 'requirements.layerId (string) es obligatorio');
     const alpha = job.requirements.alpha === true;
+    let roots: readonly string[] | undefined;
+    let scopedProject: string | undefined;
+    let scopedWorkDir: string | undefined;
+    if (this.allowedRoots !== undefined) {
+      try {
+        requireScopedJobId(ctx.jobId);
+        roots = scopedRoots(this.allowedRoots);
+        scopedProject = requireScopedPath(scopedFilePath(input.uri), roots, 'file');
+        scopedWorkDir = requireScopedPath(ctx.workDir, roots, 'directory', true);
+        requireUnusedJobPaths(['.scene.json', alpha ? '.mov' : '.mp4', '.tmp'].map((suffix) =>
+          join(scopedWorkDir!, ctx.jobId + suffix),
+        ));
+      } catch (error) {
+        return fail('path-outside-root', error instanceof Error ? error.message : String(error));
+      }
+    }
 
     const tools = this.resolveTools();
     if (tools.diagnostics.length > 0 || !tools.ffmpeg || !tools.ffprobe) {
@@ -140,7 +164,7 @@ export class RevideoAdapter implements ConnectorAdapter {
     }
 
     let projectPath: string;
-    try { projectPath = realpathSync(toPath(input.uri)); } catch { return fail('bad-input', `No se puede leer el proyecto: ${input.uri}`); }
+    try { projectPath = scopedProject ?? realpathSync(toPath(input.uri)); } catch { return fail('bad-input', `No se puede leer el proyecto: ${input.uri}`); }
     const parsed = deserialize(readFileSync(projectPath, 'utf8'));
     if (!parsed.ok) return fail('invalid-project', parsed.errors.map((e) => `${e.path}: ${e.message}`).join('; '));
     const project = parsed.value;
@@ -153,13 +177,43 @@ export class RevideoAdapter implements ConnectorAdapter {
         const asset = project.assets.find((a) => a.id === layer.assetId);
         if (!asset) throw new MappingError('missing-asset', `La capa «${layerId}» no referencia un asset existente`);
         const base = dirname(projectPath);
-        const svgPath = realpathSync(resolve(base, asset.uri));
+        let svgPath: string;
+        if (roots !== undefined) {
+          try {
+            const relativeAsset = scopedFilePath(asset.uri);
+            if (isAbsolute(relativeAsset) || /^[a-z]:/i.test(relativeAsset) || /^file:/i.test(asset.uri)) {
+              throw new Error('El asset SVG debe usar una ruta relativa al proyecto.');
+            }
+            svgPath = requireScopedPath(resolve(base, relativeAsset), [base], 'file');
+          } catch (error) {
+            throw new MappingError('asset-outside-project', error instanceof Error ? error.message : String(error));
+          }
+        } else {
+          svgPath = realpathSync(resolve(base, asset.uri));
+        }
         if (!svgPath.startsWith(base + sep)) throw new MappingError('asset-outside-project', `El asset ${asset.uri} queda fuera de la carpeta del proyecto`);
         if (statSync(svgPath).size > 2_000_000) throw new MappingError('asset-too-large', 'El SVG supera 2 MB');
         svgMarkup = readFileSync(svgPath, 'utf8');
       }
-      const { text, fontSize, fill } = job.requirements;
+      const { text, fontSize, fill, depth, guide } = job.requirements;
+      if (depth !== undefined && (typeof depth !== 'number' || !Number.isFinite(depth) || depth < 0)) throw new MappingError('bad-requirements', 'requirements.depth debe ser un número >= 0');
+      let guideData: GuideData | undefined;
+      let guideLayer: Layer | undefined;
+      if (guide !== undefined) {
+        if (typeof guide !== 'string' || !guide) throw new MappingError('bad-requirements', 'requirements.guide debe ser la ruta de un JSON de guía');
+        // La guía solo se lee dentro de la carpeta del proyecto o del workDir del job (nunca una ruta arbitraria).
+        let guidePath: string;
+        try { guidePath = realpathSync(toPath(guide)); } catch { throw new MappingError('bad-guide', `No existe la guía: ${guide}`); }
+        const roots = [dirname(projectPath), realpathSync(ctx.workDir)];
+        if (!roots.some((r) => guidePath.startsWith(r + sep))) throw new MappingError('guide-outside-roots', 'La guía debe estar en la carpeta del proyecto o en el workDir del job.');
+        if (statSync(guidePath).size > 5_000_000) throw new MappingError('bad-guide', 'La guía supera 5 MB');
+        try { guideData = parseGuide(JSON.parse(readFileSync(guidePath, 'utf8'))); } catch (e) { throw e instanceof MappingError ? e : new MappingError('bad-guide', 'La guía no es un JSON válido'); }
+        if (layer.guide3DLayerId === undefined) throw new MappingError('technique-missing', `«${layer.id}» no tiene guide3DLayerId.`);
+        guideLayer = findLayer(project, layer.guide3DLayerId);
+      }
       engineJob = buildEngineJob(project, layer, {
+        ...(depth !== undefined ? { depth } : {}),
+        ...(guideData && guideLayer ? { guide: guideData, guideLayer } : {}),
         ...(svgMarkup !== undefined ? { svgMarkup } : {}),
         ...(typeof text === 'string' ? { text } : {}),
         ...(typeof fontSize === 'number' ? { fontSize } : {}),
@@ -170,8 +224,10 @@ export class RevideoAdapter implements ConnectorAdapter {
       return fail('bad-input', e instanceof Error ? e.message : String(e));
     }
 
-    mkdirSync(ctx.workDir, { recursive: true });
-    const workDir = realpathSync(ctx.workDir);
+    const jobDirectory = scopedWorkDir ?? ctx.workDir;
+    mkdirSync(jobDirectory, { recursive: true });
+    const workDir =
+      roots === undefined ? realpathSync(jobDirectory) : requireScopedPath(jobDirectory, roots, 'directory');
     const scenePath = join(workDir, `${ctx.jobId}.scene.json`);
     const outPath = join(workDir, `${ctx.jobId}.${alpha ? 'mov' : 'mp4'}`);
     writeFileSync(scenePath, JSON.stringify(engineJob), { flag: 'wx' });

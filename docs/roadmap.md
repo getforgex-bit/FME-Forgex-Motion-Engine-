@@ -78,16 +78,16 @@ Orden de construcción (spec §19.1): **verificar software → archivo universal
 
 ### Fase 6: Dirección artística
 - [x] Perfiles de estilo editables y reglas de animación como procedimientos. → `@fme/art-direction` (FDN-060).
-- [ ] Las 5 técnicas y los 2 gradientes, aplicados y animados con curvas. → **parcial:** 2 gradientes en Revideo y Blender (FDN-061 y FDN-061b); faltan `2.5d`, `3d-with-2d` y `guide3DLayerId` (FDN-063).
+- [x] Las 5 técnicas y los 2 gradientes, aplicados y animados con curvas. → 2 gradientes en Revideo y Blender (FDN-061, FDN-061b); `2.5d` (parallax medido) y `2d-guided-by-3d` (seguimiento < 1 px) en FDN-063. **Limitaciones abiertas:** `3d-with-2d` verificado con composición FFmpeg pero sin integrar en el pipeline (FDN-063c), y la guía 3D todavía sale de la silueta alfa, a la espera de `camera.json` nativo de Blender (FDN-063b).
 - [x] Mapeo de gradientes a operaciones concretas por backend. → `art-direction/src/backends` (Revideo: contorno y sombra; Blender: contorno y luminancia).
-- **Cierre:** cambios reales y reproducibles en la escena (criterio #6).
+- **Cierre:** cambios reales y reproducibles en la escena (criterio #6). ✅ **Cerrada el 2026-11-25** (FDN-062), con las limitaciones anotadas arriba.
 
 ### Fase 7: Calidad
-- [ ] Previsualización adaptativa, render por segmentos y caché con invalidación por dependencias.
-- [ ] Manejo de errores (falta de VRAM, reintento seguro, backend alternativo).
-- [ ] Pruebas técnicas: temporal, estética, editabilidad, enrutamiento, recursos, seguridad y regresión.
-- [ ] Exportación final con audio y sincronía.
-- **Cierre: prueba híbrida de 10 s superada** (criterios #7 y #8).
+- [x] Previsualización adaptativa, render por segmentos y caché con invalidación por dependencias. → FDN-070, 070b, 071, 075a y 080b.
+- [x] Manejo de errores (falta de VRAM, reintento seguro, backend alternativo). → `@fme/recovery` (FDN-072), fallbacks reales (FDN-052) y reintentos transitorios (FDN-074b).
+- [x] Pruebas técnicas: temporal, estética, editabilidad, enrutamiento, recursos, seguridad y regresión. → FDN-022 (temporal), 061/061b (estética medida), 075a (editabilidad), 052 (enrutamiento), 071 (recursos y VRAM), 073a y 073b (seguridad y regresión).
+- [x] Exportación final con audio y sincronía. → FDN-074a y FDN-074: desfase A/V de 0 ms en 3 pulsos sobre la exportación híbrida.
+- **Cierre: prueba híbrida de 10 s superada** (criterios #7 y #8). ✅ **Cerrada el 2026-11-25**: `node scripts/prueba-hibrida.mjs --estricto` → **8/8** con los 3 motores reales ([INFORME](../examples/prueba-hibrida-10s/INFORME.md)).
 
 ### Transversal en el mediano plazo
 - [ ] **Servidor MCP mínimo** (`apps/mcp`) sobre la API: `project.*`, `asset.register`, `scene/layer`, `timeline.animate`, `connectors.*`, `route.plan`, `job.run`, `preview.*` y `project.export`.

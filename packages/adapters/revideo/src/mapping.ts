@@ -8,8 +8,10 @@
  * - Antes del primer fotograma clave se usa su valor; tras el último, el último valor; sin claves, `defaultValue`.
  * - Canales: x, y en píxeles desde el centro del lienzo; rotation en grados; scale y opacity adimensionales.
  */
-import { fnv1a32, mulberry32, revideoGradientOps } from '@fme/art-direction';
+import { depthScale, fnv1a32, mulberry32, parallaxFactor, revideoGradientOps } from '@fme/art-direction';
 import type { Channel, Curve, Layer, Project } from '@fme/project';
+import { guideOffsets } from './guide.ts';
+import type { GuideData } from './guide.ts';
 
 export type Tracks = { x: number[]; y: number[]; opacity: number[]; scale: number[]; rotation: number[] };
 
@@ -109,7 +111,14 @@ export function findLayer(project: Project, layerId: string): Layer {
 }
 
 /** `text`, `fontSize` y `fill` son sobrescrituras explícitas (requirements); si faltan se usa `layer.text` (ADR-0012). */
-export type MapOptions = { text?: string; svgMarkup?: string; fontSize?: number; fill?: string };
+export type MapOptions = {
+  text?: string; svgMarkup?: string; fontSize?: number; fill?: string;
+  /** Técnica `2.5d`: profundidad del plano (≥ 0). Exige `layer.techniques` con `2.5d`. */
+  depth?: number;
+  /** Técnica `2d-guided-by-3d`: guía validada y su capa 3D (`layer.guide3DLayerId`). */
+  guide?: GuideData;
+  guideLayer?: Layer;
+};
 
 /** Construye el job del motor. `svgMarkup` lo lee el adaptador del asset (aquí no se toca el disco). */
 export function buildEngineJob(project: Project, layer: Layer, options: MapOptions = {}): EngineJob {
@@ -127,6 +136,25 @@ export function buildEngineJob(project: Project, layer: Layer, options: MapOptio
     kind: isText ? 'text' : 'svg',
     tracks: sampleTracks(layer),
   };
+  // Técnicas compuestas (FDN-063). Primero el parallax (atenúa el movimiento propio de la capa) y luego la guía (suma).
+  if (options.depth !== undefined) {
+    if (!layer.techniques.includes('2.5d')) throw new MappingError('technique-missing', `«${layer.id}» no declara la técnica 2.5d; no se aplica depth.`);
+    const k = parallaxFactor(options.depth);
+    const s2 = depthScale(options.depth);
+    job.tracks.x = job.tracks.x.map((v) => v * k);
+    job.tracks.y = job.tracks.y.map((v) => v * k);
+    job.tracks.scale = job.tracks.scale.map((v) => v * s2);
+  }
+  if (options.guide !== undefined) {
+    if (!layer.techniques.includes('2d-guided-by-3d') || layer.guide3DLayerId === undefined) {
+      throw new MappingError('technique-missing', `«${layer.id}» necesita la técnica 2d-guided-by-3d y guide3DLayerId para usar una guía.`);
+    }
+    if (!options.guideLayer || options.guideLayer.id !== layer.guide3DLayerId) throw new MappingError('guide-layer-not-found', `No se encontró la capa guía «${layer.guide3DLayerId}».`);
+    const g = guideOffsets(options.guide, layer.startFrame, options.guideLayer.startFrame, layer.durationFrames, project.width, project.height);
+    job.tracks.x = job.tracks.x.map((v, f) => v + g.x[f]!);
+    job.tracks.y = job.tracks.y.map((v, f) => v + g.y[f]!);
+    job.tracks.scale = job.tracks.scale.map((v, f) => v * g.scale[f]!);
+  }
   if (layer.channels.expression || layer.channels.integration) job.gradients = sampleGradientTracks(layer, project.seed);
   if (isText) {
     // Precedencia: sobrescritura explícita > layer.text (ADR-0012) > nombre del proyecto (solo capas v1 sin texto).

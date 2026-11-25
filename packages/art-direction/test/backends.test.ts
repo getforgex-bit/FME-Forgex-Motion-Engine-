@@ -1,7 +1,7 @@
 // Traducción de gradientes y técnicas a operaciones por backend (FDN-061). Sin motor.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { blenderGradientOps, revideoGradientOps, supportedTechniques, techniqueSupport } from '../src/backends/index.ts';
+import { blenderGradientOps, depthScale, parallaxFactor, revideoGradientOps, supportedTechniques, techniqueSupport } from '../src/backends/index.ts';
 
 const steps = [0, 0.25, 0.5, 0.75, 1];
 
@@ -45,8 +45,21 @@ test('técnicas: soporte explícito, `unknown` donde no hay evidencia y copia de
   assert.equal(techniqueSupport('revideo', '3d').support, 'no');
   assert.equal(techniqueSupport('blender', '3d').support, 'yes');
   assert.equal(techniqueSupport('blender', '2.5d').support, 'unknown');
-  assert.deepEqual(supportedTechniques('revideo'), ['2d', '2d-guided-by-3d']);
+  assert.deepEqual(supportedTechniques('revideo'), ['2d', '2.5d', '2d-guided-by-3d', '3d-with-2d']);
   const t = techniqueSupport('revideo', '2d');
   t.support = 'no';
   assert.equal(techniqueSupport('revideo', '2d').support, 'yes');
+});
+
+test('2.5d: el parallax y la escala decrecen de forma monótona con la profundidad', () => {
+  const depths = [0, 0.5, 1, 2, 4, 8];
+  for (let k = 1; k < depths.length; k++) {
+    assert.ok(parallaxFactor(depths[k]!) < parallaxFactor(depths[k - 1]!));
+    assert.ok(depthScale(depths[k]!) < depthScale(depths[k - 1]!));
+  }
+  assert.equal(parallaxFactor(0), 1);
+  assert.equal(parallaxFactor(1), 0.5);
+  assert.equal(depthScale(0), 1);
+  assert.equal(parallaxFactor(-5), 1);
+  assert.equal(parallaxFactor(Number.NaN), 1);
 });
