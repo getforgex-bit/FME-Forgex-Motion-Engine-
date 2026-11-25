@@ -11,6 +11,9 @@ import { runIsolated } from '@fme/runtime-workers';
 import type { AdapterJobResult, ArtifactProvenance, ConnectorAdapter, JobContext, JobRequest, ProbeResult } from '@fme/connectors';
 import { advanced, ADAPTER_VERSION, simple } from './cards.ts';
 import { MappingError, buildEngineJob, findLayer } from './mapping.ts';
+import { parseGuide } from './guide.ts';
+import type { GuideData } from './guide.ts';
+import type { Layer } from '@fme/project';
 import type { EngineJob } from './mapping.ts';
 import { requireScopedJobId, requireScopedPath, requireUnusedJobPaths, scopedFilePath, scopedRoots } from './paths.ts';
 
@@ -192,8 +195,25 @@ export class RevideoAdapter implements ConnectorAdapter {
         if (statSync(svgPath).size > 2_000_000) throw new MappingError('asset-too-large', 'El SVG supera 2 MB');
         svgMarkup = readFileSync(svgPath, 'utf8');
       }
-      const { text, fontSize, fill } = job.requirements;
+      const { text, fontSize, fill, depth, guide } = job.requirements;
+      if (depth !== undefined && (typeof depth !== 'number' || !Number.isFinite(depth) || depth < 0)) throw new MappingError('bad-requirements', 'requirements.depth debe ser un número >= 0');
+      let guideData: GuideData | undefined;
+      let guideLayer: Layer | undefined;
+      if (guide !== undefined) {
+        if (typeof guide !== 'string' || !guide) throw new MappingError('bad-requirements', 'requirements.guide debe ser la ruta de un JSON de guía');
+        // La guía solo se lee dentro de la carpeta del proyecto o del workDir del job (nunca una ruta arbitraria).
+        let guidePath: string;
+        try { guidePath = realpathSync(toPath(guide)); } catch { throw new MappingError('bad-guide', `No existe la guía: ${guide}`); }
+        const roots = [dirname(projectPath), realpathSync(ctx.workDir)];
+        if (!roots.some((r) => guidePath.startsWith(r + sep))) throw new MappingError('guide-outside-roots', 'La guía debe estar en la carpeta del proyecto o en el workDir del job.');
+        if (statSync(guidePath).size > 5_000_000) throw new MappingError('bad-guide', 'La guía supera 5 MB');
+        try { guideData = parseGuide(JSON.parse(readFileSync(guidePath, 'utf8'))); } catch (e) { throw e instanceof MappingError ? e : new MappingError('bad-guide', 'La guía no es un JSON válido'); }
+        if (layer.guide3DLayerId === undefined) throw new MappingError('technique-missing', `«${layer.id}» no tiene guide3DLayerId.`);
+        guideLayer = findLayer(project, layer.guide3DLayerId);
+      }
       engineJob = buildEngineJob(project, layer, {
+        ...(depth !== undefined ? { depth } : {}),
+        ...(guideData && guideLayer ? { guide: guideData, guideLayer } : {}),
         ...(svgMarkup !== undefined ? { svgMarkup } : {}),
         ...(typeof text === 'string' ? { text } : {}),
         ...(typeof fontSize === 'number' ? { fontSize } : {}),

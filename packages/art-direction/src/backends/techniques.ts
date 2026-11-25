@@ -10,10 +10,10 @@ export type TechniqueSupport = { support: 'yes' | 'partial' | 'no' | 'unknown'; 
 const TABLE: Record<BackendId, Record<Technique, TechniqueSupport>> = {
   revideo: {
     '2d': { support: 'yes', note: 'Capas text y svg con canales x,y,opacity,scale,rotation y gradientes (FDN-032/061).' },
-    '2.5d': { support: 'no', note: 'Sin parallax ni capas con profundidad en el adaptador.' },
+    '2.5d': { support: 'yes', note: 'Parallax por profundidad (`requirements.depth`): el desplazamiento de cámara se atenúa 1/(1+d) y la escala 1/(1+0,25·d); verificado con la razón de desplazamientos del centroide en un render real (FDN-063). La composición de planos la hace el pipeline.' },
     '3d': { support: 'no', note: 'Revideo es 2D.' },
-    '2d-guided-by-3d': { support: 'partial', note: 'Se renderiza la capa 2D, pero `guide3DLayerId` aún no condiciona la animación.' },
-    '3d-with-2d': { support: 'no', note: 'El render 3D lo hace otro backend; la composición es de FME.' },
+    '2d-guided-by-3d': { support: 'yes', note: '`guide3DLayerId` + guía JSON v1 (`requirements.guide`): la capa 2D sigue la posición en pantalla del objeto 3D; verificado contra los PNG reales de Blender (FDN-063). La guía la produce hoy la silueta alfa del render; el export nativo de Blender está solicitado.' },
+    '3d-with-2d': { support: 'partial', note: 'El overlay 2D se renderiza con alpha (MOV ProRes 4444) y puede seguir al objeto 3D; la composición sobre el render 3D la hace FreeCut/FFmpeg (verificada con `overlay` en FDN-063, aún no integrada en el pipeline para esta técnica).' },
   },
   blender: {
     '2d': { support: 'no', note: 'Blender no es el backend 2D.' },
