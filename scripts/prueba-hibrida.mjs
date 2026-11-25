@@ -218,7 +218,7 @@ for (const c of toRun) {
       }
     }
     const last = stepResults.at(-1);
-    console.log(`   → ${last.status}${last.r ? ` (${last.r.pass} pass, ${last.r.fail} fail, ${last.r.skipped} skip, ${(last.ms ?? last.r.ms) / 1000 | 0} s)` : ''}`);
+    console.log(`   → ${last.status}${last.r ? ` (${last.r.pass} pass, ${last.r.fail} fail, ${last.r.skipped} skip, ${((last.ms ?? last.r.ms) / 1000).toFixed(1)} s)` : ''}`);
   }
   const statuses = stepResults.map((s) => s.status);
   const status = statuses.includes('fallido') ? 'fallido'
