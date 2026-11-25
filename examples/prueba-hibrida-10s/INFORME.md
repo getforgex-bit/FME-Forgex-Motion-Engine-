@@ -8,8 +8,8 @@
 
 | | |
 |---|---|
-| Fecha | 2026-11-25T07:47:18.829Z |
-| Commit | `d94d757` en `develop` |
+| Fecha | 2026-11-25T08:51:18.208Z |
+| Commit | `9a4959f` en `develop` |
 | Sistema | Windows_NT 10.0.26200 (x64) |
 | Node | v24.21.0 |
 | CPU | AMD Ryzen 7 4800H with Radeon Graphics ×16 |
@@ -29,14 +29,14 @@
 
 | # | Criterio | Estado | Tiempo |
 |---|---|---|---|
-| 1 | FreeCut, Revideo y Blender ejecutan cada uno una operación de muestra de forma independiente | ✅ superado | 76.2 s |
+| 1 | FreeCut, Revideo y Blender ejecutan cada uno una operación de muestra de forma independiente | ✅ superado | 72.9 s |
 | 2 | Un proyecto FME puede guardar, validar, recuperar y versionar su timeline | ✅ superado | 0.7 s |
-| 3 | Los tres adaptadores ejecutan trabajos reales, no simulados | ✅ superado | 174.2 s |
-| 4 | El router selecciona una ruta compatible consultando primero la tarjeta simple | ✅ superado | 0.4 s |
-| 5 | Solo consulta el detalle avanzado cuando una restricción crítica lo requiere | ✅ superado | 12.5 s |
-| 6 | Los gradientes cambian una propiedad visual comprobable a lo largo del tiempo | ✅ superado | 28.4 s |
-| 7 | Se exporta correctamente un vídeo híbrido de 10 s con audio y sincronía adecuados | ✅ superado | 85.9 s |
-| 8 | Se pueden reabrir las fuentes externas y cambiar una parte sin rehacer todos los activos | ✅ superado | 120.9 s |
+| 3 | Los tres adaptadores ejecutan trabajos reales, no simulados | ✅ superado | 261.0 s |
+| 4 | El router selecciona una ruta compatible consultando primero la tarjeta simple | ✅ superado | 1.6 s |
+| 5 | Solo consulta el detalle avanzado cuando una restricción crítica lo requiere | ✅ superado | 26.2 s |
+| 6 | Los gradientes cambian una propiedad visual comprobable a lo largo del tiempo | ✅ superado | 48.9 s |
+| 7 | Se exporta correctamente un vídeo híbrido de 10 s con audio y sincronía adecuados | ✅ superado | 135.2 s |
+| 8 | Se pueden reabrir las fuentes externas y cambiar una parte sin rehacer todos los activos | ✅ superado | 121.4 s |
 
 ## Detalle por criterio
 
@@ -48,21 +48,21 @@ _FreeCut, Revideo y Blender ejecutan cada uno una operación de muestra de forma
 
 - **Comando:** `node --test --test-reporter=tap packages/adapters/revideo/test/adapter.integration.test.ts`
 - **Resultado:** 6 pasan, 0 fallan, 0 omitidas (de 6); salida 0
-- **Tiempo:** 30.2 s
+- **Tiempo:** 28.3 s
 - **packages/adapters/revideo/test/adapter.integration.test.ts (SHA-256):** `d455ff5636ac1ab7ddb7286dfc276bbf374087f76ec18f383bad3d909316159d`
 
 #### Blender (render real de PNG RGBA): ✅ superado
 
 - **Comando:** `node --test --test-reporter=tap packages/adapters/blender/test/adapter.test.ts`
 - **Resultado:** 6 pasan, 0 fallan, 0 omitidas (de 6); salida 0
-- **Tiempo:** 31.0 s
-- **packages/adapters/blender/test/adapter.test.ts (SHA-256):** `c876138fc6b11ec7eb854c3b579f8c64bb45dd82b07b8c20bddeff176847d444`
+- **Tiempo:** 29.5 s
+- **packages/adapters/blender/test/adapter.test.ts (SHA-256):** `74cd6edc4a6676d88804c95f823c929d6c4a607de5e5c0c792e0b1d03c20928d`
 
 #### FreeCut (composición real a MP4): ✅ superado
 
 - **Comando:** `node --test --test-reporter=tap packages/adapters/freecut/test/adapter.integration.test.ts`
 - **Resultado:** 2 pasan, 0 fallan, 0 omitidas (de 2); salida 0
-- **Tiempo:** 14.9 s
+- **Tiempo:** 15.1 s
 - **packages/adapters/freecut/test/adapter.integration.test.ts (SHA-256):** `eda552de96fc254866f2c1c6543ea3e5bbae71473429b6fa69fd688e8524bb89`
 
 ### Criterio 2: ✅ superado
@@ -87,21 +87,21 @@ _Los tres adaptadores ejecutan trabajos reales, no simulados_
 
 - **Comando:** `node --test --test-reporter=tap packages/pipeline/test/hybrid.integration.test.ts`
 - **Resultado:** 1 pasan, 0 fallan, 0 omitidas (de 1); salida 0
-- **Tiempo:** 93.9 s
+- **Tiempo:** 134.7 s
 - **packages/pipeline/test/hybrid.integration.test.ts (SHA-256):** `cbea71a678e6ba2d7a53b6dd55be965eebc3ebcf46b668d47dd14988a5dc2b9b`
 
 #### Exportación con la CLI (`fme project export`) y hash del MP4 final: ✅ superado
 
 - **Comando:** `node apps/cli/src/main.ts project export <entradas> --out <salida> --blender-resolution 640x360 --json`
-- **Resultado:** 300 fotogramas, 30 FPS, 1280×720, audio: true; 5 pasos (todos ok); adaptadores en la procedencia: revideo, adapter.blender, fme.pipeline.prores, adapter.freecut
-- **Tiempo:** 80.3 s
-  - 20261125075012-01-capa-2d (revideo) ok 9.4 s
-  - 20261125075012-02-capa-titulo (revideo) ok 6.6 s
-  - 20261125075012-03-capa-3d (adapter.blender) ok 7002.4 s
-  - 20261125075012-04-capa-3d-prores (fme.pipeline.prores) ok 3.2 s
-  - 20261125075012-05-compose (adapter.freecut) ok 11.2 s
-- **hybrid.mp4 (SHA-256):** `e2cd77922a28aa55a43f14e158b118cbfd918d154f220a71aba734c97632f81b`
-- **project.fme.json enlazado (SHA-256):** `db2bded85b442488dbebe026d12ee757532906de908848d4e65e19630125fb4c`
+- **Resultado:** 300 fotogramas, 30 FPS, 1280×720, audio: true; 5 pasos (todos ok); adaptadores en la procedencia: adapter.blender, fme.pipeline.prores, revideo, adapter.freecut
+- **Tiempo:** 126.3 s
+  - 20261125085449-01-capa-3d (adapter.blender) ok 11605.4 s
+  - 20261125085449-02-capa-3d-prores (fme.pipeline.prores) ok 4.0 s
+  - 20261125085449-03-capa-2d (revideo) ok 12.7 s
+  - 20261125085449-04-capa-titulo (revideo) ok 7.6 s
+  - 20261125085449-05-compose (adapter.freecut) ok 18.4 s
+- **hybrid.mp4 (SHA-256):** `cd77b0514966d53daaec96b04d5bb8b13968ed219651483917ac93edc6b60014`
+- **project.fme.json enlazado (SHA-256):** `32a9ab8ec3ce92b958b5f0595ad8c3154e2ca9bf70732f42465ac9a84d426add`
 
 ### Criterio 4: ✅ superado
 
@@ -111,7 +111,7 @@ _El router selecciona una ruta compatible consultando primero la tarjeta simple_
 
 - **Comando:** `node --test --test-reporter=tap packages/router/test/real-adapters.test.ts`
 - **Resultado:** 2 pasan, 0 fallan, 0 omitidas (de 2); salida 0
-- **Tiempo:** 0.4 s
+- **Tiempo:** 1.6 s
 - **packages/router/test/real-adapters.test.ts (SHA-256):** `5f783d43ae17602fe60e8bbedf762a753ef8bc8a72c52c7250cf506e8fdad933`
 
 ### Criterio 5: ✅ superado
@@ -122,7 +122,7 @@ _Solo consulta el detalle avanzado cuando una restricción crítica lo requiere_
 
 - **Comando:** `node --test --test-reporter=tap packages/router/test/real-adapters.test.ts packages/router/test/tokens.test.ts`
 - **Resultado:** 7 pasan, 0 fallan, 0 omitidas (de 7); salida 0
-- **Tiempo:** 0.4 s
+- **Tiempo:** 1.5 s
 - **packages/router/test/real-adapters.test.ts (SHA-256):** `5f783d43ae17602fe60e8bbedf762a753ef8bc8a72c52c7250cf506e8fdad933`
 - **packages/router/test/tokens.test.ts (SHA-256):** `7e97fa90a75b27588ed98b0149339f6b4bf1444e2a4c439ceb3ce2cdcb45f1e4`
 
@@ -130,7 +130,7 @@ _Solo consulta el detalle avanzado cuando una restricción crítica lo requiere_
 
 - **Comando:** `node --test --test-reporter=tap packages/recovery/test/real-fallbacks.integration.test.ts`
 - **Resultado:** 3 pasan, 0 fallan, 0 omitidas (de 3); salida 0
-- **Tiempo:** 12.1 s
+- **Tiempo:** 24.8 s
 - **packages/recovery/test/real-fallbacks.integration.test.ts (SHA-256):** `0398eb2727f8bace296653e4213b4d0c4d94b647c02eead19307f8e2fb4b1487`
 
 ### Criterio 6: ✅ superado
@@ -141,14 +141,14 @@ _Los gradientes cambian una propiedad visual comprobable a lo largo del tiempo_
 
 - **Comando:** `node --test --test-reporter=tap packages/adapters/revideo/test/gradients.integration.test.ts`
 - **Resultado:** 1 pasan, 0 fallan, 0 omitidas (de 1); salida 0
-- **Tiempo:** 10.1 s
+- **Tiempo:** 11.3 s
 - **packages/adapters/revideo/test/gradients.integration.test.ts (SHA-256):** `8272d7d71d94e20b66143dc7124433f8cd6b2d14e716d4154e0c06aec65b0388`
 
 #### Gradientes en Blender (contorno y luminancia): ✅ superado
 
 - **Comando:** `node --test --test-reporter=tap packages/adapters/blender/test/gradients.integration.test.ts`
 - **Resultado:** 1 pasan, 0 fallan, 0 omitidas (de 1); salida 0
-- **Tiempo:** 18.4 s
+- **Tiempo:** 37.6 s
 - **packages/adapters/blender/test/gradients.integration.test.ts (SHA-256):** `47dccbfff0fae0de185de78f4ebb26fef0eb38578298dc9efc9e4b92d32a2fe4`
 
 ### Criterio 7: ✅ superado
@@ -159,7 +159,7 @@ _Se exporta correctamente un vídeo híbrido de 10 s con audio y sincronía adec
 
 - **Comando:** `node --test --test-reporter=tap packages/pipeline/test/av-sync.integration.test.ts`
 - **Resultado:** 1 pasan, 0 fallan, 0 omitidas (de 1); salida 0
-- **Tiempo:** 85.9 s
+- **Tiempo:** 135.2 s
 - **packages/pipeline/test/av-sync.integration.test.ts (SHA-256):** `4b61484293a379f0e6198333b0b88b11def116557e02de8e872c377a0b5550bf`
 
 ### Criterio 8: ✅ superado
@@ -170,7 +170,7 @@ _Se pueden reabrir las fuentes externas y cambiar una parte sin rehacer todos lo
 
 - **Comando:** `node --test --test-reporter=tap packages/pipeline/test/incremental.integration.test.ts`
 - **Resultado:** 1 pasan, 0 fallan, 0 omitidas (de 1); salida 0
-- **Tiempo:** 120.9 s
+- **Tiempo:** 121.4 s
 - **packages/pipeline/test/incremental.integration.test.ts (SHA-256):** `b55e8343031b7c39f56eadefe05a68f4f41ac1149d1caf45354d3b4f63749bfa`
 
 ## Reproducir
