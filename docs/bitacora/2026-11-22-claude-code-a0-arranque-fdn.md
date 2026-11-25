@@ -254,3 +254,11 @@ Criterio #6 completado con evidencia en los dos motores. Tanda 8 abierta: 042c (
 - **Revisión previa:** sin secretos versionados (`git ls-files` filtrado; las dos coincidencias son los archivos de medición de tokens), sin archivos de más de 1 MB, y las dos ramas en fast-forward (`git merge-base --is-ancestor`).
 - `git push origin main develop` → `6c86237..6ff846f main`, `cd92a71..e7bf194 develop`. Sin `--force`.
 - **Antecedente:** `origin/develop` ya existía en cd92a71 por un push del 2026-11-23 16:49 UTC sin autorización del usuario (probablemente Codex al volver). Queda anotado.
+
+
+## 2026-11-25 · Integración 11 y preparación de la ausencia del usuario (A0)
+- **ADR-0018:** `usuario --ausente` (escalón 1 inmediato) y avisos de cuota; test 10/10. ADR-0014 no se tocó: un ADR aceptado no se edita (una enmienda inicial se revirtió).
+- **FDN-070c (Codex, a73aeed):** el test de concurrencia ya no falla; `npm test` 5/6, con otro intermitente («rechaza un enlace de directorio…»). Se integra como mejora y 070c sigue abierta en el relevo.
+- **FDN-092 (A3) + sección `## Hitos` (A0, 45 hitos) + ADR-0019:** `progreso.mjs --check` → conforme; **PROGRESO.md: v0.1 28/34 (82 %)**, criterios 8/8, bloqueo humano FDN-005.
+- **FDN-073c:** integrada la rama del relevo (incluye el commit de Codex); `tests/regresion` con motores reales → 3/3.
+- Codex entregó 070c y 073c **antes** de su caída (07:44 y 07:46 frente a 08:01): la bifurcación relevó tareas que ya estaban en REVIEW; no hubo pérdida.
