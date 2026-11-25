@@ -4,7 +4,7 @@ import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CONTRACT_VERSION } from '@fme/connectors';
 import { runIsolated } from '@fme/runtime-workers';
-import { collectArtifacts, isRecord, pngType } from './artifacts.ts';
+import { cameraType, collectArtifacts, isRecord, pngType } from './artifacts.ts';
 import { checkRoots, requirePath } from './paths.ts';
 import { operation, prepareJob, projectType } from './request.ts';
 import type { AdapterJobResult, CardAdvanced, CardSimple, ConnectorAdapter, JobContext, JobRequest, ProbeResult } from '@fme/connectors';
@@ -39,7 +39,7 @@ function makeSimpleCard(): CardSimple {
     contractVersion: CONTRACT_VERSION,
     capabilities: ['animate.3d', operation],
     accepts: [projectType],
-    produces: [pngType],
+    produces: [pngType, cameraType],
     executor: 'cli',
   };
 }
@@ -135,7 +135,7 @@ export function createBlenderAdapter(options: BlenderAdapterOptions): BlenderAda
       }
 
       const diagnostics: BlenderDiagnostic[] = [];
-      const { layer, modelPath, request } = prepared;
+      const { layer, modelPath, request, cameraGuide } = prepared;
       if (!modelPath) diagnostics.push({
         severity: 'warning',
         code: 'BLENDER_ASSET_MISSING',
@@ -181,7 +181,7 @@ export function createBlenderAdapter(options: BlenderAdapterOptions): BlenderAda
             fpsDen: request.fps.den,
             fallbackPrimitive: modelPath === undefined,
           },
-        });
+        }, cameraGuide);
         return { jobId: ctx.jobId, status: 'ok', ...artifacts, diagnostics };
       } catch (error) {
         return failed(ctx, 'BLENDER_INVALID_OUTPUT', message(error));
