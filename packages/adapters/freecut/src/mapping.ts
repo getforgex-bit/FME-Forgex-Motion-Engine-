@@ -9,6 +9,7 @@ import { basename, dirname, extname, isAbsolute, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url';
 import type { Layer, Project, Scene } from '@fme/project';
 import { DEFAULT_AUDIO_SAMPLE_RATE } from './audio-sync.ts';
+import { requireScopedPath, scopedFilePath, scopedRoots } from './paths.ts';
 
 export type FreeCutMediaLayer = {
   id: string;
@@ -73,7 +74,10 @@ export function findScene(project: Project, sceneId: string): Scene {
   throw new MappingError('scene-not-found', `No existe la escena «${sceneId}» en el proyecto.`);
 }
 
-function resolveContainedAssetPath(projectDir: string, uri: string, layerId: string): string {
+function resolveContainedAssetPath(projectDir: string, uri: string, layerId: string, scoped = false): string {
+  if (scoped && hasParentTraversal(uri)) {
+    throw new MappingError('asset-outside-project', 'El asset de «' + layerId + '» no puede contener "..".');
+  }
   if (!uri || isAbsolute(uri) || /^[a-zA-Z]:/.test(uri) || uri.startsWith('file:')) {
     throw new MappingError(
       'asset-outside-project',
@@ -93,6 +97,16 @@ function resolveContainedAssetPath(projectDir: string, uri: string, layerId: str
       'asset-outside-project',
       `El asset ${uri} queda fuera de la carpeta del proyecto.`,
     );
+  }
+
+  if (scoped) {
+    try {
+      return requireScopedPath(candidate, [baseReal], 'file');
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      const code = (error as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing-asset' : 'asset-outside-project';
+      throw new MappingError(code, 'Asset de «' + layerId + '» inválido: ' + detail);
+    }
   }
 
   let realAsset: string;
@@ -163,7 +177,7 @@ function resolveExternalInputPath(
     throw new MappingError('missing-asset', `No existe el artefacto de entrada para «${layerId}»: ${rawUri}`);
   }
 
-  if (allowedRoots !== undefined && allowedRoots.length > 0) {
+  if (allowedRoots !== undefined) {
     const insideAllowed = allowedRoots.some((root) => {
       try {
         return isInsideRoot(realInput, realpathSync(root));
@@ -319,7 +333,33 @@ function unsupportedSequenceMessage(layerId: string, uri: string): string {
 
 function isPngSequenceArtifact(artifact: ComposeInputArtifact): boolean {
   if (artifact.type.toLowerCase() === 'image/png-sequence') return true;
-  return /%\d*d|\.png\*|\*\.png/i.test(artifact.uri);
+  return /%(?:25)?\d*d|\.png\*|\*\.png/i.test(artifact.uri);
+}
+
+/** Acota cualquier entrada local antes de inferir el formato o sondear medios. */
+function scopeComposeInput(
+  artifact: ComposeInputArtifact,
+  projectDir: string,
+  roots: readonly string[],
+): string {
+  try {
+    const path = scopedFilePath(artifact.uri);
+    const relative = !isAbsolute(path) && !/^[a-z]:/i.test(path);
+    if (!path || (relative && /^[a-z][a-z0-9+.-]*:/i.test(path))) {
+      throw new Error('La entrada debe identificar una ruta local.');
+    }
+    const sequence = isPngSequenceArtifact(artifact);
+    const candidate = relative ? resolve(projectDir, path) : path;
+    const hasPattern = sequence && /%\d*d|\.png\*|\*\.png/i.test(basename(candidate));
+    const representative = hasPattern ? dirname(candidate) : candidate;
+    const kind = hasPattern ? 'directory' : sequence ? 'sequence' : 'file';
+    if (relative) requireScopedPath(representative, [realpathSync.native(projectDir)], kind, sequence);
+    return requireScopedPath(representative, roots, kind, sequence);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    const code = (error as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing-asset' : 'asset-outside-project';
+    throw new MappingError(code, 'Entrada de composición inválida: ' + detail);
+  }
 }
 
 function readLayerOpacity(layer: Layer): number | undefined {
@@ -344,6 +384,7 @@ export type BuildFreeCutJobOptions = {
   sceneId: string;
   projectDir: string;
   audioSampleRate?: number;
+  allowedInputRoots?: readonly string[];
 };
 
 /** Mapea un `Project` FME y su `sceneId` a un `FreeCutEngineJob` determinista validando assets y rutas. */
@@ -375,7 +416,7 @@ export function buildFreeCutJob(project: Project, options: BuildFreeCutJobOption
           `El asset «${asset.id}» es de tipo ${asset.type}, incompatible con la capa ${layer.kind}.`,
         );
       }
-      const mediaPath = resolveContainedAssetPath(projectDir, asset.uri, layer.id);
+      const mediaPath = resolveContainedAssetPath(projectDir, asset.uri, layer.id, options.allowedInputRoots !== undefined);
       const volume =
         layer.kind === 'audio' || layer.kind === 'video' ? readLayerVolume(layer) : undefined;
       mapped.push({
@@ -454,7 +495,7 @@ function matchComposeInputForLayer(
   layerInputMap: Readonly<Record<string, string>> | undefined,
 ): ComposeInputArtifact | undefined {
   // 1. Asignación explícita en layerInputMap (requirements['input.<layerId>'] o layerInputs)
-  const explicitUri = layerInputMap?.[layer.id];
+  const explicitUri = layerInputMap && Object.hasOwn(layerInputMap, layer.id) ? layerInputMap[layer.id] : undefined;
   if (explicitUri !== undefined) {
     const idx = inputs.findIndex((inp) => inp.uri === explicitUri);
     if (idx !== -1) {
@@ -517,6 +558,24 @@ export function buildFreeCutComposeJob(
   const { fps, scene } = validateProjectAndScene(project, sceneId);
   const inputs = options.inputs ?? [];
   const usedIndices = new Set<number>();
+  const checkedInputs = new Map<string, string>();
+  if (options.allowedInputRoots !== undefined) {
+    let roots: readonly string[];
+    try {
+      roots = scopedRoots(options.allowedInputRoots);
+    } catch (error) {
+      throw new MappingError('asset-outside-project', error instanceof Error ? error.message : String(error));
+    }
+    for (const input of inputs) {
+      const checked = scopeComposeInput(input, projectDir, roots);
+      if (!isPngSequenceArtifact(input)) checkedInputs.set(input.uri, checked);
+    }
+    for (const uri of Object.values(options.layerInputMap ?? {})) {
+      if (!checkedInputs.has(uri)) {
+        checkedInputs.set(uri, scopeComposeInput({ uri, type: inferMimeType(uri) }, projectDir, roots));
+      }
+    }
+  }
 
   const effectiveAllowedRoots: string[] =
     options.allowedInputRoots !== undefined
@@ -591,7 +650,7 @@ export function buildFreeCutComposeJob(
         );
       }
 
-      const mediaPath = resolveExternalInputPath(
+      const mediaPath = checkedInputs.get(delivered.uri) ?? resolveExternalInputPath(
         delivered.uri,
         projectDir,
         layer.id,
@@ -648,7 +707,7 @@ export function buildFreeCutComposeJob(
           `El asset «${asset.id}» es de tipo ${asset.type}, incompatible con la capa ${layer.kind}.`,
         );
       }
-      const mediaPath = resolveContainedAssetPath(projectDir, asset.uri, layer.id);
+      const mediaPath = resolveContainedAssetPath(projectDir, asset.uri, layer.id, options.allowedInputRoots !== undefined);
       const mimeType = inferMimeType(mediaPath);
       const volume =
         layer.kind === 'audio' || layer.kind === 'video' ? readLayerVolume(layer) : undefined;

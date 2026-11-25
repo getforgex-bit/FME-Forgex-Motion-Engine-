@@ -20,6 +20,7 @@ import { delimiter, dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { deserialize } from '@fme/project';
 import { runIsolated } from '@fme/runtime-workers';
+import { requireScopedJobId, requireScopedPath, requireUnusedJobPaths, scopedFilePath, scopedRoots } from './paths.ts';
 import type {
   AdapterJobResult,
   ArtifactProvenance,
@@ -45,6 +46,8 @@ export type FreeCutBrowserMode = 'auto' | 'msedge' | 'chrome' | 'playwright';
 export type FreeCutAdapterOptions = {
   /** Carpeta del wrapper (`runtime/engines/freecut`). */
   engineDir?: string;
+  /** Raíces locales de confianza para proyectos, artefactos de composición y jobs. */
+  allowedRoots?: readonly string[];
   /** Ruta del clon upstream de FreeCut (por defecto `FME_FREECUT_DIR` o `C:\Users\bogex\Documents\Forgex\FME-ext\freecut`). */
   freecutDir?: string;
   /** Navegador Chromium para Playwright (`auto` | `msedge` | `chrome` | `playwright`). */
@@ -336,7 +339,7 @@ function isSupportedAlphaStream(mimeType: string | undefined, info: StreamInspec
 function parseLayerInputMap(
   requirements: JobRequest['requirements'],
 ): Record<string, string> {
-  const map: Record<string, string> = {};
+  const map = Object.create(null) as Record<string, string>;
   const rawJson = requirements.layerInputs;
   if (typeof rawJson === 'string' && rawJson.trim().length > 0) {
     try {
@@ -370,10 +373,12 @@ export class FreeCutAdapter implements ConnectorAdapter {
   private readonly freecutDir: string;
   private readonly browser: FreeCutBrowserMode;
   private readonly opts: FreeCutAdapterOptions;
+  private readonly allowedRoots: readonly string[] | undefined;
   private engineVersionCache: string | undefined;
 
   constructor(opts: FreeCutAdapterOptions = {}) {
     this.opts = opts;
+    this.allowedRoots = opts.allowedRoots === undefined ? undefined : [...opts.allowedRoots];
     this.engineDir = resolve(opts.engineDir ?? DEFAULT_ENGINE_DIR);
     this.freecutDir = resolve(
       opts.freecutDir ?? process.env.FME_FREECUT_DIR ?? DEFAULT_FREECUT_DIR,
@@ -532,10 +537,26 @@ export class FreeCutAdapter implements ConnectorAdapter {
     }
 
     let projectPath: string;
-    try {
-      projectPath = realpathSync(toPath(input.uri));
-    } catch {
-      return fail('bad-input', `No se puede leer el proyecto: ${input.uri}`);
+    let roots: readonly string[] | undefined;
+    let scopedWorkDir: string | undefined;
+    if (this.allowedRoots !== undefined) {
+      try {
+        requireScopedJobId(ctx.jobId);
+        roots = scopedRoots(this.allowedRoots);
+        projectPath = requireScopedPath(scopedFilePath(input.uri), roots, 'file');
+        scopedWorkDir = requireScopedPath(ctx.workDir, roots, 'directory', true);
+        requireUnusedJobPaths(['.job.json', '.mp4', '.tmp', '.engine'].map((suffix) =>
+          join(scopedWorkDir!, ctx.jobId + suffix),
+        ));
+      } catch (error) {
+        return fail('path-outside-root', error instanceof Error ? error.message : String(error));
+      }
+    } else {
+      try {
+        projectPath = realpathSync(toPath(input.uri));
+      } catch {
+        return fail('bad-input', 'No se puede leer el proyecto: ' + input.uri);
+      }
     }
 
     const parsed = deserialize(readFileSync(projectPath, 'utf8'));
@@ -559,6 +580,7 @@ export class FreeCutAdapter implements ConnectorAdapter {
           sceneId,
           projectDir: dirname(projectPath),
           audioSampleRate,
+          ...(roots !== undefined ? { allowedInputRoots: roots } : {}),
           inputs: composeInputs,
           layerInputMap,
         });
@@ -567,6 +589,7 @@ export class FreeCutAdapter implements ConnectorAdapter {
           sceneId,
           projectDir: dirname(projectPath),
           audioSampleRate,
+          ...(roots !== undefined ? { allowedInputRoots: roots } : {}),
         });
       }
     } catch (err) {
@@ -599,8 +622,10 @@ export class FreeCutAdapter implements ConnectorAdapter {
       }
     }
 
-    mkdirSync(ctx.workDir, { recursive: true });
-    const workDir = realpathSync(ctx.workDir);
+    const jobDirectory = scopedWorkDir ?? ctx.workDir;
+    mkdirSync(jobDirectory, { recursive: true });
+    const workDir =
+      roots === undefined ? realpathSync(jobDirectory) : requireScopedPath(jobDirectory, roots, 'directory');
     const jobJsonPath = join(workDir, `${ctx.jobId}.job.json`);
     const outPath = join(workDir, `${ctx.jobId}.mp4`);
     writeFileSync(jobJsonPath, JSON.stringify(engineJob, null, 2), { flag: 'wx' });
@@ -639,8 +664,13 @@ export class FreeCutAdapter implements ConnectorAdapter {
       const attemptSuffix = attempt === 1 ? '' : `-retry-${attempt - 1}`;
       const tmpDir = join(workDir, `${ctx.jobId}.tmp${attemptSuffix}`);
       const engineWorkDir = join(workDir, `${ctx.jobId}.engine${attemptSuffix}`);
-      mkdirSync(tmpDir, { recursive: true });
-      mkdirSync(engineWorkDir, { recursive: true });
+      try {
+        mkdirSync(tmpDir, { recursive: roots === undefined });
+        mkdirSync(engineWorkDir, { recursive: roots === undefined });
+      } catch (error) {
+        if (roots === undefined) throw error;
+        return failWithHistory('path-outside-root', error instanceof Error ? error.message : String(error));
+      }
       if (attempt > 1 && existsSync(outPath)) {
         rmSync(outPath, { force: true });
       }
